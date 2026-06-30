@@ -7,8 +7,6 @@
   </tr>
 </table>
 
-# hammerspoon
-
 This repository collects independent Hammerspoon libraries under
 [`Spoons/`](./Spoons/). Each Spoon brings its own Lua runtime, defaults, data,
 tests, and adjacent documentation. Copy one into an existing Hammerspoon
