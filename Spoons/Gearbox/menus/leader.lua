@@ -1,7 +1,7 @@
 return {
   id = "leader",
   title = "Gearbox",
-  emoji = "🚀",
+  emoji = "⚙️",
   highlightGroups = true,
 
   items = {
