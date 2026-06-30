@@ -33,8 +33,8 @@ A standalone Home Manager flake can expose the repository as an input:
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    hammerspoon-configs.url =
-      "github:cig0/hammerspoon-configs";
+    hammerspoon.url =
+      "github:cig0/hammerspoon";
   };
 
   outputs = inputs@{ nixpkgs, home-manager, ... }:
@@ -64,7 +64,7 @@ settings:
   home.stateVersion = "26.05";
 
   imports = [
-    inputs.hammerspoon-configs.homeModules.default
+    inputs.hammerspoon.homeModules.default
   ];
 
   programs.hammerspoon-gadgets = {
@@ -129,8 +129,8 @@ from a root activation script.
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    hammerspoon-configs.url =
-      "github:cig0/hammerspoon-configs";
+    hammerspoon.url =
+      "github:cig0/hammerspoon";
   };
 
   outputs = inputs@{ nix-darwin, ... }: {
@@ -152,7 +152,7 @@ options to one named user:
 {
   imports = [
     inputs.home-manager.darwinModules.home-manager
-    inputs.hammerspoon-configs.darwinModules.default
+    inputs.hammerspoon.darwinModules.default
   ];
 
   users.users.jane.home = "/Users/jane";

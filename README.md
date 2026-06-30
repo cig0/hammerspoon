@@ -7,7 +7,7 @@
   </tr>
 </table>
 
-# hammerspoon-configs
+# hammerspoon
 
 This repository collects independent Hammerspoon libraries under
 [`Spoons/`](./Spoons/). Each Spoon brings its own Lua runtime, defaults, data,
@@ -27,7 +27,7 @@ does not depend on Nix.
 For a dedicated Hammerspoon configuration:
 
 ```sh
-git clone https://github.com/cig0/hammerspoon-configs.git ~/.hammerspoon
+git clone https://github.com/cig0/hammerspoon.git ~/.hammerspoon
 ```
 
 Uncomment the Spoon in [`init.lua`](./init.lua), reload Hammerspoon, and press
