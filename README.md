@@ -17,7 +17,7 @@ does not depend on Nix.
 
 | Entry | Kind | Purpose |
 | --- | --- | --- |
-| [Gearbox](./Spoons/Gearbox/README.md) | Spoon | Native keyboard launcher with nested menus, arrow navigation, themes, and macOS power controls |
+| [Gearbox](./Spoons/Gearbox/README.md) | Spoon | Native keyboard launcher with nested menus, arrow navigation, themes, and macOS power controls, inspired by [LeaderKey <3>](https://github.com/mikker/LeaderKey) |
 | [Nix delivery](./assets/docs/NIX.md) | Integration | Home Manager and nix-darwin modules for installing Hammerspoon and enabled Spoons |
 
 ## Quick start
