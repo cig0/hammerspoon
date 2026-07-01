@@ -52,7 +52,7 @@ The standalone default is `theme.persistSelection = true`. Nix exposes the
 same behavior as:
 
 ```nix
-programs.hammerspoon-gadgets.gearbox.theme.persistSelection = true;
+programs.hammerspoon-spoons.gearbox.theme.persistSelection = true;
 ```
 
 Changing the configured default invalidates an older interactive selection, so

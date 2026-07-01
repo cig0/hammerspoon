@@ -1,10 +1,10 @@
 { config, lib, pkgs, ... }:
 
 let
-  cfg = config.programs.hammerspoon-gadgets;
+  cfg = config.programs.hammerspoon-spoons;
 in
 {
-  options.programs.hammerspoon-gadgets =
+  options.programs.hammerspoon-spoons =
     (import ./options.nix { inherit lib pkgs; })
     // {
       user = lib.mkOption {
@@ -24,7 +24,7 @@ in
         {
           assertion = cfg.user != null;
           message = ''
-            programs.hammerspoon-gadgets.user must name the Home Manager user
+            programs.hammerspoon-spoons.user must name the Home Manager user
             when the nix-darwin adapter is enabled.
           '';
         }
@@ -35,7 +35,7 @@ in
       home-manager.users.${cfg.user} = {
         imports = [ ./home-manager.nix ];
 
-        programs.hammerspoon-gadgets =
+        programs.hammerspoon-spoons =
           builtins.removeAttrs cfg [ "user" ];
       };
     })

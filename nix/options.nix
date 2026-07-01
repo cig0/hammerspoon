@@ -137,7 +137,7 @@ let
             null
           else
             validateColor
-              "programs.hammerspoon-gadgets.gearbox.theme.overrides.${name}.${field}"
+              "programs.hammerspoon-spoons.gearbox.theme.overrides.${name}.${field}"
               value;
       };
     in
@@ -159,7 +159,7 @@ let
   );
 in
 {
-  enable = mkEnableOption "the Hammerspoon gadgets library";
+  enable = mkEnableOption "the Hammerspoon Spoons integration";
 
   package = mkOption {
     type = types.nullOr types.package;
@@ -177,7 +177,7 @@ in
     description = ''
       Whether to manage ~/.hammerspoon/init.lua. Disable this when an existing
       init.lua should remain authoritative, then require
-      "hammerspoon-gadgets" from that file.
+      "nix-spoons" from that file.
     '';
   };
 
@@ -185,7 +185,7 @@ in
     type = types.lines;
     default = "";
     description = ''
-      Lua appended to the managed init.lua after the enabled gadgets load.
+      Lua appended to the managed init.lua after the enabled Spoons load.
     '';
   };
 
@@ -383,7 +383,7 @@ in
       systemAccentText = mkOption {
         type = color 1;
         apply = validateColor
-          "programs.hammerspoon-gadgets.gearbox.theme.systemAccentText";
+          "programs.hammerspoon-spoons.gearbox.theme.systemAccentText";
         default = {
           white = 1;
           alpha = 1;

@@ -7,17 +7,23 @@ configuration only supplies the override table passed to
 
 ```text
 Nix options
-  → generated ~/.hammerspoon/hammerspoon-gadgets.lua
+  → generated ~/.hammerspoon/nix-spoons.lua
   → require("Spoons.Gearbox").start(overrides)
   → standalone Gearbox runtime
 ```
+
+`nix-spoons.lua` is the Nix-owned loader for enabled Spoons. A managed
+`~/.hammerspoon/init.lua` requires that loader before appending `extraConfig`;
+an externally owned entrypoint requires the same module explicitly.
 
 ## Exports
 
 | Flake output | Destination |
 | --- | --- |
-| `homeModules.default` | Standalone Home Manager or Home Manager embedded elsewhere |
-| `darwinModules.default` | nix-darwin configuration with the Home Manager nix-darwin module |
+| `homeModules.hammerspoon-spoons` | Standalone Home Manager or Home Manager embedded elsewhere |
+| `homeModules.default` | Alias of `homeModules.hammerspoon-spoons` |
+| `darwinModules.hammerspoon-spoons` | nix-darwin configuration with the Home Manager nix-darwin module |
+| `darwinModules.default` | Alias of `darwinModules.hammerspoon-spoons` |
 
 ## Home Manager
 
@@ -67,7 +73,7 @@ settings:
     inputs.hammerspoon.homeModules.default
   ];
 
-  programs.hammerspoon-gadgets = {
+  programs.hammerspoon-spoons = {
     enable = true;
 
     gearbox = {
@@ -99,13 +105,13 @@ By default the module installs Hammerspoon, links Gearbox at
 module or a hand-written file already owns that entry point:
 
 ```nix
-programs.hammerspoon-gadgets.manageInit = false;
+programs.hammerspoon-spoons.manageInit = false;
 ```
 
 The existing `init.lua` then routes to the generated loader:
 
 ```lua
-require("hammerspoon-gadgets")
+require("nix-spoons")
 ```
 
 ## nix-darwin
@@ -163,7 +169,7 @@ options to one named user:
     users.jane.home.stateVersion = "26.05";
   };
 
-  programs.hammerspoon-gadgets = {
+  programs.hammerspoon-spoons = {
     enable = true;
     user = "jane";
 
@@ -190,7 +196,7 @@ field, `user`.
 
 ## Theme persistence
 
-`programs.hammerspoon-gadgets.gearbox.theme.persistSelection` defaults to
+`programs.hammerspoon-spoons.gearbox.theme.persistSelection` defaults to
 `true`. Theme choices made in the Gearbox menu are stored by Hammerspoon under
 the `hs.settings` key `Gearbox.theme.selection`, not written into the Nix store
 or generated Lua.
@@ -211,7 +217,7 @@ Set persistence to `false` when every reload must return to the Nix-selected
 theme:
 
 ```nix
-programs.hammerspoon-gadgets.gearbox.theme.persistSelection = false;
+programs.hammerspoon-spoons.gearbox.theme.persistSelection = false;
 ```
 
 The complete Gearbox option map and standalone defaults live beside the Spoon in
