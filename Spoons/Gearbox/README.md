@@ -110,7 +110,7 @@ config.lua + menus/*.lua + themes/*.lua
 [`config.lua`](./config.lua) is the standalone source of user-facing defaults.
 It contains no Hammerspoon calls. Nix users receive the same shape as an
 override table generated beneath
-`programs.hammerspoon-spoons.gearbox`; see the
+`programs.hammerspoon-spoons.spoons.gearbox`; see the
 [Nix document](../../assets/docs/NIX.md).
 
 ### Hotkey and menu
@@ -226,7 +226,7 @@ hs.settings.clear("Gearbox.theme.selection")
 Nix exposes the same switch:
 
 ```nix
-programs.hammerspoon-spoons.gearbox.theme.persistSelection = true;
+programs.hammerspoon-spoons.spoons.gearbox.theme.persistSelection = true;
 ```
 
 Setting it to `false` clears any stored choice after successful startup and

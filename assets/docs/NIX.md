@@ -1,9 +1,8 @@
 # Nix delivery
 
 The repository exports optional Home Manager and nix-darwin modules. They
-install or reference the same standalone Lua under `Spoons/`; generated Nix
-configuration only supplies the override table passed to
-`Spoons.Gearbox.start()`.
+reference the same standalone Lua under `Spoons/`; generated Nix configuration
+only supplies the override table passed to `Spoons.Gearbox.start()`.
 
 ```text
 Nix options
@@ -24,6 +23,8 @@ an externally owned entrypoint requires the same module explicitly.
 | `homeModules.default` | Alias of `homeModules.hammerspoon-spoons` |
 | `darwinModules.hammerspoon-spoons` | nix-darwin configuration with the Home Manager nix-darwin module |
 | `darwinModules.default` | Alias of `darwinModules.hammerspoon-spoons` |
+| `interfaces.homeManagerOptions` | Reusable Home Manager option schema (for wrapping under another namespace) |
+| `interfaces.homeManagerOptionDocs` | Markdown-ready option documentation metadata |
 
 ## Home Manager
 
@@ -76,7 +77,7 @@ settings:
   programs.hammerspoon-spoons = {
     enable = true;
 
-    gearbox = {
+    spoons.gearbox = {
       font.size = 16;
       font.titleSize = 22;
       menu.position = "top";
@@ -100,9 +101,10 @@ home-manager switch --flake .#jane
 Use the real username, home directory, architecture, and established Home
 Manager `stateVersion`.
 
-By default the module installs Hammerspoon, links Gearbox at
-`~/.hammerspoon/Spoons/Gearbox`, and owns `~/.hammerspoon/init.lua`. When another
-module or a hand-written file already owns that entry point:
+The module links Gearbox at `~/.hammerspoon/Spoons/Gearbox` and owns
+`~/.hammerspoon/init.lua`. Hammerspoon itself must be installed separately
+(Homebrew, a manual app bundle, or another mechanism outside this module). When
+another module or a hand-written file already owns the entry point:
 
 ```nix
 programs.hammerspoon-spoons.manageInit = false;
@@ -173,7 +175,7 @@ options to one named user:
     enable = true;
     user = "jane";
 
-    gearbox = {
+    spoons.gearbox = {
       menu.screen = "mouse";
       menu.width = 460;
       theme.persistSelection = true;
@@ -194,9 +196,23 @@ The named account must exist under `users.users`. The adapter imports the Home
 Manager module for that account and forwards every option except its routing
 field, `user`.
 
+## Option documentation
+
+The flake exposes `interfaces.homeManagerOptionDocs` so downstream projects can
+render the option catalog under their own namespace. A self-contained devShell in
+`shells/devShell/nix-docs/` dumps the options to stdout or writes them to
+`assets/docs/ALL-OPTIONS.md`:
+
+```sh
+cd shells/devShell/nix-docs
+nix develop
+dump-hammerspoon-options
+dump-hammerspoon-options --write
+```
+
 ## Theme persistence
 
-`programs.hammerspoon-spoons.gearbox.theme.persistSelection` defaults to
+`programs.hammerspoon-spoons.spoons.gearbox.theme.persistSelection` defaults to
 `true`. Theme choices made in the Gearbox menu are stored by Hammerspoon under
 the `hs.settings` key `Gearbox.theme.selection`, not written into the Nix store
 or generated Lua.
@@ -217,7 +233,7 @@ Set persistence to `false` when every reload must return to the Nix-selected
 theme:
 
 ```nix
-programs.hammerspoon-spoons.gearbox.theme.persistSelection = false;
+programs.hammerspoon-spoons.spoons.gearbox.theme.persistSelection = false;
 ```
 
 The complete Gearbox option map and standalone defaults live beside the Spoon in

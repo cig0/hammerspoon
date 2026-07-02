@@ -18,7 +18,7 @@ does not depend on Nix.
 | Entry | Kind | Purpose |
 | --- | --- | --- |
 | [Gearbox](./Spoons/Gearbox/README.md) | Spoon | Native keyboard launcher with nested menus, arrow navigation, themes, and macOS power controls, inspired by [LeaderKey](https://github.com/mikker/LeaderKey) <3 |
-| [Nix delivery](./assets/docs/NIX.md) | Integration | Home Manager and nix-darwin modules for installing Hammerspoon and enabled Spoons |
+| [Nix delivery](./assets/docs/NIX.md) | Integration | Home Manager and nix-darwin modules for deploying Hammerspoon configuration and enabled Spoons |
 
 ## Quick start
 
@@ -52,7 +52,7 @@ The standalone default is `theme.persistSelection = true`. Nix exposes the
 same behavior as:
 
 ```nix
-programs.hammerspoon-spoons.gearbox.theme.persistSelection = true;
+programs.hammerspoon-spoons.spoons.gearbox.theme.persistSelection = true;
 ```
 
 Changing the configured default invalidates an older interactive selection, so
