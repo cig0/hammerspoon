@@ -48,24 +48,24 @@
             FLAKE_REF=''${FLAKE_REF:-$HAMMERSPOON_FLAKE_REF}
             TARGET=''${TARGET:-$HAMMERSPOON_DOCS_TARGET}
 
-            if [ -z "$FLAKE_REF" ]; then
-              echo "No flake reference available. Run this script from the devShell or pass a flake ref." >&2
-              exit 1
-            fi
-            if [ -z "$TARGET" ]; then
-              echo "No target path available. Run this script from the devShell or pass a target path." >&2
-              exit 1
-            fi
+              if [ -z "$FLAKE_REF" ]; then
+                echo "No flake reference available. Run this script from the devShell or pass a flake ref." >&2
+                exit 1
+              fi
+              if [ -z "$TARGET" ]; then
+                echo "No target path available. Run this script from the devShell or pass a target path." >&2
+                exit 1
+              fi
 
-            OUT=$(
-              ${pkgs.nix}/bin/nix eval --json --impure --expr "
-                let
-                  f = builtins.getFlake \"$FLAKE_REF\";
-                  pkgs = import ${toString pkgs.path} { system = \"${system}\"; };
-                  docs = f.interfaces.homeManagerOptionDocs { lib = pkgs.lib; };
-                in docs.markdown docs.allEntries
-              " | ${pkgs.jq}/bin/jq -r
-            )
+              OUT=$(
+                ${pkgs.nix}/bin/nix eval --json --impure --expr "
+                  let
+                    f = builtins.getFlake \"$FLAKE_REF\";
+                    pkgs = import ${toString pkgs.path} { system = \"${system}\"; };
+                    docs = f.interfaces.homeManagerOptionDocs { lib = pkgs.lib; };
+                  in docs.markdown docs.allEntries
+                " | ${pkgs.jq}/bin/jq -r
+              )
 
             if [ -n "$WRITE" ]; then
               mkdir -p "$(dirname "$TARGET")"

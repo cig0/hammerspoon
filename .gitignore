@@ -1,6 +1,3 @@
-# Flake
-flake.lock
-
 # Secrets
 secrets/hosts/*/secrets.json
 secrets/shared/profile0-wifi-psk.txt
