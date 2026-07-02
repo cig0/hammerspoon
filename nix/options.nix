@@ -1,30 +1,26 @@
-{ lib, pkgs }:
+{ lib }:
 
 let
   inherit (lib) mkEnableOption mkOption types;
 
-  unitInterval = types.addCheck types.number (
-    value: value >= 0 && value <= 1
-  );
+  unitInterval = types.addCheck types.number (value: value >= 0 && value <= 1);
 
   nonNegativeNumber = types.addCheck types.number (value: value >= 0);
   positiveNumber = types.addCheck types.number (value: value > 0);
   menuWidth = types.addCheck types.int (value: value >= 200);
   loupeScale = types.addCheck types.number (value: value >= 1);
 
-  modifiers = types.addCheck (
-    types.listOf (
-      types.enum [
-        "alt"
-        "option"
-        "cmd"
-        "command"
-        "ctrl"
-        "control"
-        "shift"
-      ]
-    )
-  ) (value: value != [ ]);
+  modifiers = types.addCheck (types.listOf (
+    types.enum [
+      "alt"
+      "option"
+      "cmd"
+      "command"
+      "ctrl"
+      "control"
+      "shift"
+    ]
+  )) (value: value != [ ]);
 
   rgba = types.submodule {
     options = {
@@ -47,34 +43,36 @@ let
     };
   };
 
-  color = defaultAlpha: types.submodule {
-    options = {
-      white = mkOption {
-        type = types.nullOr unitInterval;
-        default = null;
-      };
+  color =
+    defaultAlpha:
+    types.submodule {
+      options = {
+        white = mkOption {
+          type = types.nullOr unitInterval;
+          default = null;
+        };
 
-      red = mkOption {
-        type = types.nullOr unitInterval;
-        default = null;
-      };
+        red = mkOption {
+          type = types.nullOr unitInterval;
+          default = null;
+        };
 
-      green = mkOption {
-        type = types.nullOr unitInterval;
-        default = null;
-      };
+        green = mkOption {
+          type = types.nullOr unitInterval;
+          default = null;
+        };
 
-      blue = mkOption {
-        type = types.nullOr unitInterval;
-        default = null;
-      };
+        blue = mkOption {
+          type = types.nullOr unitInterval;
+          default = null;
+        };
 
-      alpha = mkOption {
-        type = unitInterval;
-        default = defaultAlpha;
+        alpha = mkOption {
+          type = unitInterval;
+          default = defaultAlpha;
+        };
       };
     };
-  };
 
   validColor =
     value:
@@ -87,10 +85,10 @@ let
       hasAnyRGB = lib.any (component: component != null) rgb;
       hasAllRGB = lib.all (component: component != null) rgb;
     in
-    (value.white != null && !hasAnyRGB)
-    || (value.white == null && hasAllRGB);
+    (value.white != null && !hasAnyRGB) || (value.white == null && hasAllRGB);
 
-  validateColor = name: value:
+  validateColor =
+    name: value:
     assert lib.assertMsg (validColor value) ''
       ${name} must define either white or all three RGB components,
       and cannot mix the two color models.
@@ -129,17 +127,18 @@ let
   themeOverride = types.submodule (
     { name, ... }:
     let
-      optionalColor = field: mkOption {
-        type = types.nullOr overrideColor;
-        default = null;
-        apply = value:
-          if value == null then
-            null
-          else
-            validateColor
-              "programs.hammerspoon-spoons.gearbox.theme.overrides.${name}.${field}"
-              value;
-      };
+      optionalColor =
+        field:
+        mkOption {
+          type = types.nullOr overrideColor;
+          default = null;
+          apply =
+            value:
+            if value == null then
+              null
+            else
+              validateColor "programs.hammerspoon-spoons.spoons.gearbox.theme.overrides.${name}.${field}" value;
+        };
     in
     {
       options = {
@@ -161,16 +160,6 @@ in
 {
   enable = mkEnableOption "the Hammerspoon Spoons integration";
 
-  package = mkOption {
-    type = types.nullOr types.package;
-    default = pkgs.hammerspoon;
-    defaultText = lib.literalExpression "pkgs.hammerspoon";
-    description = ''
-      Hammerspoon package to install. Set to null when Hammerspoon is
-      installed outside Nix.
-    '';
-  };
-
   manageInit = mkOption {
     type = types.bool;
     default = true;
@@ -189,247 +178,248 @@ in
     '';
   };
 
-  gearbox = {
-    enable = mkOption {
-      type = types.bool;
-      default = true;
-      description = "Whether to load the Gearbox launcher.";
-    };
-
-    hotkey = {
-      modifiers = mkOption {
-        type = modifiers;
-        default = [
-          "alt"
-          "cmd"
-        ];
-        description = "Modifiers used to enter or close Gearbox.";
-      };
-
-      key = mkOption {
-        type = types.str;
-        default = "space";
-        description = "Hammerspoon key name used to enter or close Gearbox.";
-      };
-    };
-
-    menu = {
-      timeout = mkOption {
-        type = nonNegativeNumber;
-        default = 0;
-        description = "Seconds before the menu closes; zero disables timeout.";
-      };
-
-      position = mkOption {
-        type = types.enum [
-          "top"
-          "center"
-          "bottom"
-        ];
-        default = "top";
-        description = "Vertical menu position within the selected screen.";
-      };
-
-      screen = mkOption {
-        type = types.enum [
-          "main"
-          "mouse"
-        ];
-        default = "main";
-        description = "Screen on which Gearbox appears.";
-      };
-
-      width = mkOption {
-        type = menuWidth;
-        default = 420;
-        description = "Menu width in points.";
-      };
-
-      showEmojis = mkOption {
+  spoons = {
+    gearbox = {
+      enable = mkOption {
         type = types.bool;
         default = true;
-        description = "Whether menu titles include their emoji.";
+        description = "Whether to load the Gearbox launcher.";
       };
 
-      highlightGroups = mkOption {
-        type = types.bool;
-        default = true;
-        description = "Whether group keys use the macOS accent color.";
-      };
-    };
+      hotkey = {
+        modifiers = mkOption {
+          type = modifiers;
+          default = [
+            "alt"
+            "cmd"
+          ];
+          description = "Modifiers used to enter or close Gearbox.";
+        };
 
-    font = {
-      family = mkOption {
-        type = types.nullOr types.str;
-        default = null;
-        description = "Font family; null uses the macOS system font.";
-      };
-
-      size = mkOption {
-        type = positiveNumber;
-        default = 14;
-        description = "Menu item font size.";
-      };
-
-      titleSize = mkOption {
-        type = positiveNumber;
-        default = 20;
-        description = "Menu title font size.";
-      };
-
-      bodyWeight = mkOption {
-        type = types.enum [
-          "regular"
-          "bold"
-        ];
-        default = "regular";
-      };
-
-      groupWeight = mkOption {
-        type = types.enum [
-          "regular"
-          "bold"
-        ];
-        default = "bold";
-      };
-
-      titleWeight = mkOption {
-        type = types.enum [
-          "regular"
-          "bold"
-        ];
-        default = "bold";
-      };
-    };
-
-    loupe = {
-      enabled = mkOption {
-        type = types.bool;
-        default = true;
-        description = "Whether keyboard selection magnifies nearby rows.";
-      };
-
-      selectedScale = mkOption {
-        type = loupeScale;
-        default = 1.18;
-      };
-
-      adjacentScale = mkOption {
-        type = loupeScale;
-        default = 1.06;
-      };
-
-      duration = mkOption {
-        type = nonNegativeNumber;
-        default = 0;
-        description = "Selection animation duration; zero gives immediate input.";
-      };
-    };
-
-    theme = {
-      name = mkOption {
-        type = types.str;
-        default = "system";
-        description = ''
-          Theme ID to select, or "system" to follow the macOS appearance.
-        '';
-      };
-
-      persistSelection = mkOption {
-        type = types.bool;
-        default = true;
-        description = ''
-          Whether selections made from the Themes menu survive Hammerspoon
-          reloads.
-        '';
-      };
-
-      system = {
-        dark = mkOption {
+        key = mkOption {
           type = types.str;
-          default = "gearbox-dark";
-          description = "Theme ID used for the macOS dark appearance.";
+          default = "space";
+          description = "Hammerspoon key name used to enter or close Gearbox.";
+        };
+      };
+
+      menu = {
+        timeout = mkOption {
+          type = nonNegativeNumber;
+          default = 0;
+          description = "Seconds before the menu closes; zero disables timeout.";
         };
 
-        light = mkOption {
+        position = mkOption {
+          type = types.enum [
+            "top"
+            "center"
+            "bottom"
+          ];
+          default = "top";
+          description = "Vertical menu position within the selected screen.";
+        };
+
+        screen = mkOption {
+          type = types.enum [
+            "main"
+            "mouse"
+          ];
+          default = "main";
+          description = "Screen on which Gearbox appears.";
+        };
+
+        width = mkOption {
+          type = menuWidth;
+          default = 420;
+          description = "Menu width in points.";
+        };
+
+        showEmojis = mkOption {
+          type = types.bool;
+          default = true;
+          description = "Whether menu titles include their emoji.";
+        };
+
+        highlightGroups = mkOption {
+          type = types.bool;
+          default = true;
+          description = "Whether group keys use the macOS accent color.";
+        };
+      };
+
+      font = {
+        family = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          description = "Font family; null uses the macOS system font.";
+        };
+
+        size = mkOption {
+          type = positiveNumber;
+          default = 14;
+          description = "Menu item font size.";
+        };
+
+        titleSize = mkOption {
+          type = positiveNumber;
+          default = 20;
+          description = "Menu title font size.";
+        };
+
+        bodyWeight = mkOption {
+          type = types.enum [
+            "regular"
+            "bold"
+          ];
+          default = "regular";
+        };
+
+        groupWeight = mkOption {
+          type = types.enum [
+            "regular"
+            "bold"
+          ];
+          default = "bold";
+        };
+
+        titleWeight = mkOption {
+          type = types.enum [
+            "regular"
+            "bold"
+          ];
+          default = "bold";
+        };
+      };
+
+      loupe = {
+        enabled = mkOption {
+          type = types.bool;
+          default = true;
+          description = "Whether keyboard selection magnifies nearby rows.";
+        };
+
+        selectedScale = mkOption {
+          type = loupeScale;
+          default = 1.18;
+        };
+
+        adjacentScale = mkOption {
+          type = loupeScale;
+          default = 1.06;
+        };
+
+        duration = mkOption {
+          type = nonNegativeNumber;
+          default = 0;
+          description = "Selection animation duration; zero gives immediate input.";
+        };
+      };
+
+      theme = {
+        name = mkOption {
           type = types.str;
-          default = "gearbox-light";
-          description = "Theme ID used for the macOS light appearance.";
+          default = "system";
+          description = ''
+            Theme ID to select, or "system" to follow the macOS appearance.
+          '';
+        };
+
+        persistSelection = mkOption {
+          type = types.bool;
+          default = true;
+          description = ''
+            Whether selections made from the Themes menu survive Hammerspoon
+            reloads.
+          '';
+        };
+
+        system = {
+          dark = mkOption {
+            type = types.str;
+            default = "gearbox-dark";
+            description = "Theme ID used for the macOS dark appearance.";
+          };
+
+          light = mkOption {
+            type = types.str;
+            default = "gearbox-light";
+            description = "Theme ID used for the macOS light appearance.";
+          };
+        };
+
+        accentSource = mkOption {
+          type = types.enum [
+            "system"
+            "theme"
+          ];
+          default = "system";
+          description = ''
+            Whether highlighted controls use the macOS accent or the selected
+            theme's accent.
+          '';
+        };
+
+        fallbackAccent = mkOption {
+          type = rgba;
+          default = {
+            red = 0.04;
+            green = 0.48;
+            blue = 1;
+            alpha = 1;
+          };
+        };
+
+        systemAccentText = mkOption {
+          type = color 1;
+          apply = validateColor "programs.hammerspoon-spoons.spoons.gearbox.theme.systemAccentText";
+          default = {
+            white = 1;
+            alpha = 1;
+          };
+        };
+
+        overrides = mkOption {
+          type = types.attrsOf themeOverride;
+          default = { };
+          description = ''
+            Partial semantic color overrides keyed by discovered theme ID.
+          '';
         };
       };
 
-      accentSource = mkOption {
-        type = types.enum [
-          "system"
-          "theme"
-        ];
-        default = "system";
-        description = ''
-          Whether highlighted controls use the macOS accent or the selected
-          theme's accent.
-        '';
-      };
-
-      fallbackAccent = mkOption {
-        type = rgba;
-        default = {
-          red = 0.04;
-          green = 0.48;
-          blue = 1;
-          alpha = 1;
+      navigation = {
+        enabled = mkOption {
+          type = types.bool;
+          default = true;
         };
-      };
 
-      systemAccentText = mkOption {
-        type = color 1;
-        apply = validateColor
-          "programs.hammerspoon-spoons.gearbox.theme.systemAccentText";
-        default = {
-          white = 1;
-          alpha = 1;
+        wrap = mkOption {
+          type = types.bool;
+          default = true;
         };
-      };
 
-      overrides = mkOption {
-        type = types.attrsOf themeOverride;
-        default = { };
-        description = ''
-          Partial semantic color overrides keyed by discovered theme ID.
-        '';
-      };
-    };
+        activateKey = mkOption {
+          type = types.str;
+          default = "return";
+        };
 
-    navigation = {
-      enabled = mkOption {
-        type = types.bool;
-        default = true;
-      };
+        cancelKey = mkOption {
+          type = types.str;
+          default = "escape";
+        };
 
-      wrap = mkOption {
-        type = types.bool;
-        default = true;
-      };
+        includeFooter = mkOption {
+          type = types.bool;
+          default = true;
+          description = "Whether arrow navigation can select Back or Exit.";
+        };
 
-      activateKey = mkOption {
-        type = types.str;
-        default = "return";
-      };
-
-      cancelKey = mkOption {
-        type = types.str;
-        default = "escape";
-      };
-
-      includeFooter = mkOption {
-        type = types.bool;
-        default = true;
-        description = "Whether arrow navigation can select Back or Exit.";
-      };
-
-      resetTimeoutOnInput = mkOption {
-        type = types.bool;
-        default = true;
-        description = "Whether navigation input restarts an enabled timeout.";
+        resetTimeoutOnInput = mkOption {
+          type = types.bool;
+          default = true;
+          description = "Whether navigation input restarts an enabled timeout.";
+        };
       };
     };
   };
