@@ -64,7 +64,7 @@ missing action targets before runtime bindings are created.
 | `developer.lua` | `leader` | `d` | Developer applications |
 | `finder.lua` | `leader` | `f` | Finder destinations |
 | `browsers.lua` | `leader` | `w` | Web browsers |
-| `macos.lua` | `leader` | `m` | Caffeinate modes and system sleep |
+| `macos.lua` | `leader` | `m` | Hammerspoon, caffeinate, and system controls |
 | `comms.lua` | `applications` | `c` | Communications |
 | `omni.lua` | `applications` | `o` | Omni applications |
 | `photo-and-video.lua` | `applications` | `p` | Photo and video applications |
@@ -82,6 +82,7 @@ groups and before the footer.
 | `openMenu` | Runtime menu transition |
 | `setCaffeinateMode` | Mutually exclusive Hammerspoon caffeinate assertions |
 | `setTheme` | Theme selection and HUD refresh |
+| `reload` | `hs.reload` |
 | `sleep` | `hs.caffeinate.systemSleep` |
 | `exit` | Active modal exit |
 | `custom` | Definition-owned callback escape hatch |

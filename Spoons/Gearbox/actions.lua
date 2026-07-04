@@ -36,7 +36,9 @@ function M.validate(action, location)
     end
   elseif action.type == "custom" then
     expect(action.run, "function", location .. " custom action requires run")
-  elseif action.type ~= "exit" and action.type ~= "sleep" then
+  elseif action.type ~= "exit"
+      and action.type ~= "reload"
+      and action.type ~= "sleep" then
     error(location .. " has unsupported action type: " .. action.type, 2)
   end
 end
@@ -127,6 +129,11 @@ function M.execute(action, context)
   if action.type == "sleep" then
     hs.caffeinate.systemSleep()
     return { close = true }
+  end
+
+  if action.type == "reload" then
+    hs.reload()
+    return { handled = true }
   end
 
   if action.type == "custom" then

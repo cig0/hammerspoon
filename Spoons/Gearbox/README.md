@@ -60,6 +60,8 @@ Gearbox
 ├── Finder Folders
 ├── Web Browsers
 ├── macOS Utilities
+│   ├── System Settings
+│   ├── Reload Hammerspoon
 │   ├── Keep Display Awake
 │   ├── Prevent Idle Sleep
 │   ├── Allow Normal Sleep

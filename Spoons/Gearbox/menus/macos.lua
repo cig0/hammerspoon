@@ -14,6 +14,27 @@ return {
 
   items = {
     {
+      {
+        key = "h",
+        label = "Reload Hammerspoon",
+        kind = "action",
+        action = {
+          type = "reload",
+        },
+      },
+
+      key = "e",
+      label = "System Settings",
+      kind = "application",
+      action = {
+        type = "launchApp",
+        name = "System Settings",
+      },
+    },
+
+    { divider = true },
+
+    {
       key = "a",
       label = "Keep Display Awake",
       kind = "action",
