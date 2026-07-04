@@ -22,7 +22,7 @@ return {
           type = "reload",
         },
       },
-
+    {
       key = "e",
       label = "System Settings",
       kind = "application",
