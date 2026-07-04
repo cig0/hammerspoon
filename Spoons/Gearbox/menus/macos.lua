@@ -14,14 +14,13 @@ return {
 
   items = {
     {
-      {
-        key = "h",
-        label = "Reload Hammerspoon",
-        kind = "action",
-        action = {
-          type = "reload",
-        },
+      key = "h",
+      label = "Reload Hammerspoon",
+      kind = "action",
+      action = {
+        type = "reload",
       },
+    },
     {
       key = "e",
       label = "System Settings",
