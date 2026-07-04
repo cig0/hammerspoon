@@ -18,6 +18,7 @@ local failNextGlobalHotkey = false
 local interfaceStyle = "Dark"
 local interfaceStyleCalls = 0
 local osascriptCalls = 0
+local reloadCalls = 0
 local settings = {}
 
 local function newModal()
@@ -239,6 +240,10 @@ hs = {
     return true
   end,
 
+  reload = function()
+    reloadCalls = reloadCalls + 1
+  end,
+
   osascript = {
     javascript = function()
       osascriptCalls = osascriptCalls + 1
@@ -351,7 +356,7 @@ assert(
 )
 
 assert(
-  rowShape(menus.macos) == "a,i,x,|,s,|,escape",
+  rowShape(menus.macos) == "e,r,|,a,i,x,|,s,|,escape",
   "macOS Utilities menu shape changed"
 )
 
@@ -490,6 +495,10 @@ assert(checkedKey() == "i", "idle mode must be the only checked mode")
 
 Actions.execute(modeActions.x, context)
 assert(checkedKey() == "x", "normal mode must clear both assertions")
+
+local reloadResult = Actions.execute({ type = "reload" }, context)
+assert(reloadCalls == 1, "reload action must reload Hammerspoon")
+assert(reloadResult.handled == true, "reload action must stop runtime processing")
 
 defaultTextStyleCalls = 0
 interfaceStyleCalls = 0
