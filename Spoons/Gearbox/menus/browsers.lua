@@ -11,12 +11,30 @@ return {
 
   items = {
     {
-      key = "b",
+      key = "o",
       label = "Brave Origin",
       kind = "application",
       action = {
         type = "launchApp",
         name = "Brave Origin",
+      },
+    },
+    {
+      key = "a",
+      label = "ChatGPT Atlas",
+      kind = "application",
+      action = {
+        type = "launchApp",
+        name = "ChatGPT Atlas",
+      },
+    },
+    {
+      key = "c",
+      label = "Comet Browser",
+      kind = "application",
+      action = {
+        type = "launchApp",
+        name = "Comet",
       },
     },
     {
