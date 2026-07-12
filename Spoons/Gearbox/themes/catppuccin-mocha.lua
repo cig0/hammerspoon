@@ -1,3 +1,4 @@
+--- Catppuccin Mocha theme (dark).
 return {
   id = "catppuccin-mocha",
   label = "Catppuccin Mocha",

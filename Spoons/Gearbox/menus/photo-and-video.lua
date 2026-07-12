@@ -1,3 +1,4 @@
+--- Photo & Video submenu: Affinity, Photos, PowerPhotos.
 return {
   id = "photovideo",
   title = "Photo & Video",

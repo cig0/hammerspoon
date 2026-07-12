@@ -1,3 +1,4 @@
+--- AI submenu: ChatGPT, Gemini.
 return {
   id = "ai",
   title = "AI",

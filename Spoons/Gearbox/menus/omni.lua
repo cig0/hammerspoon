@@ -1,3 +1,4 @@
+--- Omni Software Suite submenu: OmniFocus, OmniOutliner.
 return {
   id = "omni",
   title = "Omni Software Suite",

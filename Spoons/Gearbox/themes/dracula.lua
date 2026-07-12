@@ -1,3 +1,4 @@
+--- Dracula theme (dark).
 return {
   id = "dracula",
   label = "Dracula",

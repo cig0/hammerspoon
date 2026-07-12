@@ -4,6 +4,11 @@ local Loader = require("Spoons.Gearbox.loader")
 local Runtime = require("Spoons.Gearbox.runtime")
 local Theme = require("Spoons.Gearbox.theme")
 
+--- Gearbox public API.
+--
+-- Merges user overrides with the standalone defaults, validates the resulting
+-- config, and wires together theme discovery, menu loading, the modal runtime,
+-- and the canvas HUD.
 local Gearbox = {}
 local currentRuntime
 
@@ -38,6 +43,9 @@ local hotkeyModifiers = {
   shift = true,
 }
 
+--- Deep-copy a table. Non-tables pass through unchanged.
+---@param value any
+---@return any
 local function copyTable(value)
   if type(value) ~= "table" then
     return value
@@ -52,10 +60,16 @@ local function copyTable(value)
   return result
 end
 
+--- Return true when `value` is a non-empty array-like table.
+---@param value any
+---@return boolean
 local function isArray(value)
   return type(value) == "table" and value[1] ~= nil
 end
 
+--- Classify a color table as "grayscale", "rgb", "mixed", or nil.
+---@param value any
+---@return "grayscale"|"rgb"|"mixed"|nil
 local function colorModel(value)
   if type(value) ~= "table" then
     return nil
@@ -82,6 +96,13 @@ local function colorModel(value)
   return nil
 end
 
+--- Merge overrides into a copy of the base config.
+--
+-- Color tables keep their model (grayscale or RGB) and inherit the base alpha
+-- when the override omits it.
+---@param base table
+---@param overrides table
+---@return table
 local function merge(base, overrides)
   local result = copyTable(base)
 
@@ -110,6 +131,10 @@ local function merge(base, overrides)
   return result
 end
 
+--- Assert that `value` has the expected Lua type.
+---@param value any
+---@param expectedType string
+---@param name string
 local function assertType(value, expectedType, name)
   assert(
     type(value) == expectedType,
@@ -117,6 +142,9 @@ local function assertType(value, expectedType, name)
   )
 end
 
+--- Validate a color table, rejecting mixed white/RGB models.
+---@param color table
+---@param name string
 local function validateColor(color, name)
   assertType(color, "table", name)
   local model = colorModel(color)
@@ -148,6 +176,9 @@ local function validateColor(color, name)
   assert(color.alpha >= 0 and color.alpha <= 1, name .. ".alpha must be 0..1")
 end
 
+--- Return true when `key` is a valid Hammerspoon key name.
+---@param key string
+---@return boolean
 local function validHotkeyKey(key)
   if key:match("^#%d+$") then
     return true
@@ -156,6 +187,12 @@ local function validHotkeyKey(key)
   return hs.keycodes.map[key:lower()] ~= nil
 end
 
+--- Normalize a key string for duplicate detection.
+--
+-- Numeric keypad entries (`#N`) keep their normalized form; all other keys are
+-- lowercased.
+---@param key string
+---@return string
 local function keyIdentity(key)
   if key:match("^#%d+$") then
     return "#" .. tonumber(key:sub(2))
@@ -164,6 +201,8 @@ local function keyIdentity(key)
   return key:lower()
 end
 
+--- Validate a merged Gearbox config table.
+---@param config table
 local function validateConfig(config)
   assertType(config.hotkey.modifiers, "table", "hotkey.modifiers")
   assert(#config.hotkey.modifiers > 0, "Gearbox: hotkey.modifiers cannot be empty")
@@ -257,7 +296,7 @@ local function validateConfig(config)
   assert(
     validHotkeyKey(config.navigation.cancelKey),
     "Gearbox: invalid navigation.cancelKey: "
-        .. config.navigation.cancelKey
+    .. config.navigation.cancelKey
   )
   if config.navigation.enabled then
     assert(
@@ -267,16 +306,16 @@ local function validateConfig(config)
     assert(
       validHotkeyKey(config.navigation.activateKey),
       "Gearbox: invalid navigation.activateKey: "
-          .. config.navigation.activateKey
+      .. config.navigation.activateKey
     )
     assert(
       keyIdentity(config.navigation.activateKey)
-          ~= keyIdentity(config.navigation.cancelKey),
+      ~= keyIdentity(config.navigation.cancelKey),
       "Gearbox: navigation activate and cancel keys must differ"
     )
     assert(
       keyIdentity(config.navigation.activateKey) ~= "up"
-          and keyIdentity(config.navigation.activateKey) ~= "down",
+      and keyIdentity(config.navigation.activateKey) ~= "down",
       "Gearbox: navigation.activateKey cannot be up or down"
     )
   end
@@ -288,6 +327,8 @@ local function validateConfig(config)
   )
 end
 
+--- Locate this Spoon's source directory from `debug.getinfo`.
+---@return string
 local function sourceDirectory()
   local source = debug.getinfo(1, "S").source
 
@@ -302,6 +343,9 @@ local function sourceDirectory()
   return directory
 end
 
+--- Start Gearbox with optional config overrides.
+---@param overrides? table
+---@return table
 function Gearbox.start(overrides)
   local defaults = require("Spoons.Gearbox.config")
   local config = merge(defaults, overrides or {})
@@ -339,6 +383,7 @@ function Gearbox.start(overrides)
   return currentRuntime
 end
 
+--- Stop the active Gearbox runtime, if any.
 function Gearbox.stop()
   if currentRuntime then
     currentRuntime:stop()

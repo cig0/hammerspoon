@@ -1,4 +1,21 @@
+--- Theme loading, persistence, and dynamic accent handling.
+--
+-- Discovers themes from disk, applies user overrides, tracks the macOS accent
+-- color, persists the user's selection, and exposes the generated theme picker
+-- menu.
 local Theme = {}
+---@class Theme
+---@field config table
+---@field themes table
+---@field configuredDefault string
+---@field clearLegacySelectionOnActivation boolean
+---@field clearStoredSelectionOnActivation boolean
+---@field selectionToPersistOnActivation table|nil
+---@field systemAccent table
+---@field fonts table
+---@field selection string
+---@field activeThemeId string|nil
+---@field colors table|nil
 Theme.__index = Theme
 
 local settingsKey = "Gearbox.theme.selection"
@@ -47,10 +64,16 @@ local colorFields = {
   accentText = true,
 }
 
+--- Raise a Gearbox-prefixed error at the caller's level.
+---@param message string
+---@param level? integer
 local function fail(message, level)
   error("Gearbox: " .. message, (level or 1) + 1)
 end
 
+--- Deep-copy a table. Non-tables pass through unchanged.
+---@param value any
+---@return any
 local function copyTable(value)
   if type(value) ~= "table" then
     return value
@@ -65,6 +88,9 @@ local function copyTable(value)
   return result
 end
 
+--- Map legacy Shift7 theme selection records to Gearbox IDs.
+---@param stored any
+---@return any
 local function migrateLegacySelection(stored)
   if type(stored) ~= "table" then
     return stored
@@ -81,6 +107,9 @@ local function migrateLegacySelection(stored)
   return migrated
 end
 
+--- Classify a color table as "grayscale", "rgb", "mixed", or nil.
+---@param value any
+---@return "grayscale"|"rgb"|"mixed"|nil
 local function colorModel(value)
   if type(value) ~= "table" then
     return nil
@@ -107,12 +136,19 @@ local function colorModel(value)
   return nil
 end
 
+--- Validate that `value` is a number in [0, 1].
+---@param value any
+---@param name string
 local function validateUnit(value, name)
   if type(value) ~= "number" or value < 0 or value > 1 then
     fail(name .. " must be a number from 0 to 1", 2)
   end
 end
 
+--- Validate a color table.
+---@param color table
+---@param name string
+---@param requireAlpha boolean
 local function validateColor(color, name, requireAlpha)
   if type(color) ~= "table" then
     fail(name .. " must be a color table", 2)
@@ -145,6 +181,9 @@ local function validateColor(color, name, requireAlpha)
   end
 end
 
+--- Return true when `key` is a valid Hammerspoon key name.
+---@param key string
+---@return boolean
 local function validHotkeyKey(key)
   if key:match("^#%d+$") then
     return true
@@ -153,6 +192,9 @@ local function validHotkeyKey(key)
   return hs.keycodes.map[key:lower()] ~= nil
 end
 
+--- Normalize a key string for duplicate-key detection.
+---@param key string
+---@return string
 local function keyIdentity(key)
   if key:match("^#%d+$") then
     return "#" .. tonumber(key:sub(2))
@@ -161,6 +203,9 @@ local function keyIdentity(key)
   return key:lower()
 end
 
+--- List non-hidden `.lua` theme files in `directory`.
+---@param directory string
+---@return table
 local function themeFiles(directory)
   local files = {}
 
@@ -178,6 +223,9 @@ local function themeFiles(directory)
   return files
 end
 
+--- Validate one theme definition returned by a theme module.
+---@param definition table
+---@param source string
 local function validateDefinition(definition, source)
   if type(definition) ~= "table" then
     fail(source .. " must return one theme definition", 2)
@@ -217,6 +265,9 @@ local function validateDefinition(definition, source)
   end
 end
 
+--- Load and index all theme modules from disk.
+---@param directory string
+---@return table
 local function loadThemes(directory)
   local themes = {}
   local menuKeys = {
@@ -253,7 +304,7 @@ local function loadThemes(directory)
     if menuKeys[key] then
       fail(
         ("duplicate theme menu key %s in %s and %s")
-          :format(definition.key, menuKeys[key], definition.id),
+        :format(definition.key, menuKeys[key], definition.id),
         2
       )
     end
@@ -267,6 +318,9 @@ local function loadThemes(directory)
   return themes
 end
 
+--- Apply user overrides to the loaded theme definitions.
+---@param themes table
+---@param overrides table
 local function applyOverrides(themes, overrides)
   if type(overrides) ~= "table" then
     fail("theme.overrides must be a table", 2)
@@ -306,6 +360,12 @@ local function applyOverrides(themes, overrides)
   end
 end
 
+--- Resolve a font table from config and optional default.
+---@param config table
+---@param defaultFont any
+---@param size number
+---@param weight "regular"|"bold"
+---@return table
 local function configuredFont(config, defaultFont, size, weight)
   local font
 
@@ -335,6 +395,8 @@ local function configuredFont(config, defaultFont, size, weight)
   return font
 end
 
+--- Query the current macOS control accent color via JavaScript for Automation.
+---@return table|nil
 local function macOSAccentColor()
   local invoked, ok, encodedColor = pcall(
     hs.osascript.javascript,
@@ -360,6 +422,10 @@ local function macOSAccentColor()
   return valid and color or nil
 end
 
+--- Return theme definitions in `group`, sorted by label then id.
+---@param themes table
+---@param group "light"|"dark"
+---@return table
 local function sortedThemes(themes, group)
   local result = {}
 
@@ -380,6 +446,10 @@ local function sortedThemes(themes, group)
   return result
 end
 
+--- Create a new theme manager.
+---@param config table
+---@param rootDirectory string
+---@return Theme
 function Theme.new(config, rootDirectory)
   if config.font.family then
     assert(
@@ -448,10 +518,15 @@ function Theme.new(config, rootDirectory)
   return self
 end
 
+--- Return true when `selection` is a known theme or "system".
+---@param selection string
+---@return boolean
 function Theme:isValidSelection(selection)
   return selection == "system" or self.themes[selection] ~= nil
 end
 
+--- Restore the persisted theme selection or fall back to the configured default.
+---@return string
 function Theme:restoredSelection()
   if not self.config.theme.persistSelection then
     self.clearLegacySelectionOnActivation = true
@@ -488,6 +563,7 @@ function Theme:restoredSelection()
   return self.configuredDefault
 end
 
+--- Persist or clear stored selection records during startup.
 function Theme:activate()
   if self.clearStoredSelectionOnActivation then
     hs.settings.clear(settingsKey)
@@ -503,6 +579,7 @@ function Theme:activate()
   end
 end
 
+--- Store the current selection under `hs.settings`.
 function Theme:persistSelection()
   if not self.config.theme.persistSelection then
     return
@@ -514,6 +591,8 @@ function Theme:persistSelection()
   })
 end
 
+--- Resolve "system" to the configured light or dark theme id.
+---@return string
 function Theme:selectedThemeId()
   if self.selection ~= "system" then
     return self.selection
@@ -526,6 +605,7 @@ function Theme:selectedThemeId()
   return self.config.theme.system.light
 end
 
+--- Refresh the active semantic color set from the selected theme.
 function Theme:refreshAppearance()
   local id = self:selectedThemeId()
   local definition = assert(
@@ -556,6 +636,8 @@ function Theme:refreshAppearance()
   }
 end
 
+--- Select a theme and refresh the active color set.
+---@param selection string
 function Theme:select(selection)
   assert(
     self:isValidSelection(selection),
@@ -567,10 +649,15 @@ function Theme:select(selection)
   self:refreshAppearance()
 end
 
+--- Return true when `selection` matches the current selection.
+---@param selection string
+---@return boolean
 function Theme:isSelected(selection)
   return self.selection == selection
 end
 
+--- Build the generated "Themes" menu definition for `loader.lua`.
+---@return table
 function Theme:menuDefinition()
   local items = {
     {
@@ -621,6 +708,10 @@ function Theme:menuDefinition()
   }
 end
 
+--- Return a font table sized for the loupe animation.
+---@param font table
+---@param size number
+---@return table
 function Theme.resizedFont(font, size)
   local result = { size = size }
 
@@ -631,6 +722,12 @@ function Theme.resizedFont(font, size)
   return result
 end
 
+--- Build styled text for a canvas element.
+---@param text string
+---@param font table
+---@param color table
+---@param alignment? string
+---@return any
 function Theme.styledText(text, font, color, alignment)
   return hs.styledtext.new(text, {
     font = font,

@@ -1,3 +1,4 @@
+--- Gearbox Light theme (light).
 return {
   id = "gearbox-light",
   label = "Gearbox Light",

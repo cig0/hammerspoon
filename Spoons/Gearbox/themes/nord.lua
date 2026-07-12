@@ -1,3 +1,4 @@
+--- Nord theme (dark).
 return {
   id = "nord",
   label = "Nord",
