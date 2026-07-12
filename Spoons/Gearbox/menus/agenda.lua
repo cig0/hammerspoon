@@ -1,3 +1,4 @@
+--- Agenda submenu: Calendar, Mail, Reminders.
 return {
   id = "agenda",
   title = "Agenda",

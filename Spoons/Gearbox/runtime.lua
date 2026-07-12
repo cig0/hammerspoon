@@ -1,6 +1,26 @@
+--- Modal runtime.
+--
+-- Registers hotkeys, drives menu navigation, handles timeouts, and dispatches
+-- actions through the Actions module. Input: assembled menus from `loader.lua`.
+-- Output: modal lifecycle and HUD updates.
 local Runtime = {}
+
+---@class Runtime
+---@field config table
+---@field menus table
+---@field rootId string
+---@field actions table
+---@field theme table
+---@field hud table
+---@field activeMenu table|nil
+---@field timeoutTimer any
+---@field globalHotkey any
+---@field started boolean
 Runtime.__index = Runtime
 
+--- Normalize a key string for duplicate and reserved-key detection.
+---@param key string
+---@return string
 local function keyIdentity(key)
   if key:match("^#%d+$") then
     return "#" .. tonumber(key:sub(2))
@@ -9,6 +29,14 @@ local function keyIdentity(key)
   return key:lower()
 end
 
+--- Create a new runtime instance.
+---@param config table
+---@param menus table
+---@param rootId string
+---@param actions table
+---@param theme table
+---@param hud table
+---@return Runtime
 function Runtime.new(config, menus, rootId, actions, theme, hud)
   local self = setmetatable({}, Runtime)
 
@@ -27,6 +55,7 @@ function Runtime.new(config, menus, rootId, actions, theme, hud)
   return self
 end
 
+--- Cancel the active auto-close timer.
 function Runtime:clearTimeout()
   if self.timeoutTimer then
     self.timeoutTimer:stop()
@@ -34,6 +63,8 @@ function Runtime:clearTimeout()
   end
 end
 
+--- Restart the auto-close timer for `menu`.
+---@param menu table
 function Runtime:resetTimeout(menu)
   self:clearTimeout()
 
@@ -52,10 +83,21 @@ function Runtime:resetTimeout(menu)
   )
 end
 
+--- Bind a bare (unmodified) key in a modal.
+---@param modal table
+---@param key string
+---@param callback function
 function Runtime:bindBare(modal, key, callback)
   modal:bind({}, key, callback)
 end
 
+--- Bind a key both bare and with the configured Gearbox modifiers.
+--
+-- Skips the modifier binding when the key matches the global toggle key so that
+-- pressing the toggle again closes Gearbox instead of firing a menu action.
+---@param modal table
+---@param key string
+---@param callback function
 function Runtime:bindFlexible(modal, key, callback)
   self:bindBare(modal, key, callback)
 
@@ -65,11 +107,18 @@ function Runtime:bindFlexible(modal, key, callback)
   end
 end
 
+--- Bind a key that repeats while held.
+---@param modal table
+---@param key string
+---@param callback function
 function Runtime:bindRepeating(modal, key, callback)
   -- Hammerspoon's message-less overload expects pressedfn in position three.
   modal:bind({}, key, callback, nil, callback)
 end
 
+--- Determine which rows should show a checkmark.
+---@param menu table
+---@return table
 function Runtime:checkedRows(menu)
   local checked = {}
   local caffeinateMode
@@ -90,6 +139,9 @@ function Runtime:checkedRows(menu)
   return checked
 end
 
+--- Transition from `currentMenu` to the menu identified by `targetId`.
+---@param currentMenu table
+---@param targetId string
 function Runtime:openMenu(currentMenu, targetId)
   local target = self.menus[targetId]
 
@@ -99,6 +151,9 @@ function Runtime:openMenu(currentMenu, targetId)
   target.modal:enter()
 end
 
+--- Execute a row's action and update the menu state.
+---@param menu table
+---@param row table
 function Runtime:runAction(menu, row)
   local result = self.actions.execute(row.action, {
     openMenu = function(targetId)
@@ -127,6 +182,9 @@ function Runtime:runAction(menu, row)
   end
 end
 
+--- Move the selection up or down by `direction` rows.
+---@param menu table
+---@param direction integer
 function Runtime:moveSelection(menu, direction)
   local count = #menu.navigableRows
 
@@ -154,6 +212,8 @@ function Runtime:moveSelection(menu, direction)
   end
 end
 
+--- Activate the currently selected row, if any.
+---@param menu table
 function Runtime:activateSelection(menu)
   if not menu.selectedIndex then
     return
@@ -166,6 +226,8 @@ function Runtime:activateSelection(menu)
   end
 end
 
+--- Register hotkeys and lifecycle callbacks for `menu`.
+---@param menu table
 function Runtime:registerMenu(menu)
   menu.navigableRows = {}
 
@@ -229,6 +291,7 @@ function Runtime:registerMenu(menu)
   end
 end
 
+--- Delete the global hotkey and all modal bindings.
 function Runtime:deleteBindings()
   if self.globalHotkey then
     self.globalHotkey:delete()
@@ -240,6 +303,8 @@ function Runtime:deleteBindings()
   end
 end
 
+--- Start the runtime and register all bindings.
+---@return Runtime
 function Runtime:start()
   if self.started then
     return self
@@ -278,6 +343,7 @@ function Runtime:start()
   return self
 end
 
+--- Stop the runtime, close the HUD, and clear all bindings.
 function Runtime:stop()
   if not self.started then
     return

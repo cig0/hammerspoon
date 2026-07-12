@@ -1,3 +1,4 @@
+--- Monokai theme (dark).
 return {
   id = "monokai",
   label = "Monokai",

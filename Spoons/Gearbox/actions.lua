@@ -1,4 +1,12 @@
+--- Action schema validation and execution.
+--
+-- Menu items define an `action` table with a `type`. This module validates those
+-- tables at load time and dispatches them when an item is triggered. Return
+-- flags tell the runtime whether to close, refresh, or leave the menu as-is.
 local M = {}
+
+---@type fun(path: string): any
+local hsOpen = hs.open
 
 local caffeinateModes = {
   display = true,
@@ -6,12 +14,19 @@ local caffeinateModes = {
   normal = true,
 }
 
+--- Raise a descriptive error when `value` is not of the expected Lua type.
+---@param value any
+---@param expectedType string
+---@param message string
 local function expect(value, expectedType, message)
   if type(value) ~= expectedType then
     error(message, 3)
   end
 end
 
+--- Validate an action table and report a location-aware error on failure.
+---@param action table
+---@param location? string
 function M.validate(action, location)
   location = location or "menu item"
 
@@ -43,6 +58,9 @@ function M.validate(action, location)
   end
 end
 
+--- Return true if the action's row can show a checkmark in the HUD.
+---@param action table
+---@return boolean
 function M.isCheckable(action)
   return action
       and (
@@ -51,8 +69,12 @@ function M.isCheckable(action)
       )
 end
 
+--- Detect the current caffeinate assertion level.
+--
+-- If both display and system idle assertions are active, prefer "display"
+-- because it is the stronger of the two.
+---@return "display"|"idle"|"normal"
 function M.currentCaffeinateMode()
-  -- Prefer the stronger display assertion if another tool enabled both.
   if hs.caffeinate.get("displayIdle") == true then
     return "display"
   end
@@ -64,6 +86,8 @@ function M.currentCaffeinateMode()
   return "normal"
 end
 
+--- Apply a caffeinate assertion and clear the weaker opposing one.
+---@param mode "display"|"idle"|"normal"
 local function setCaffeinateMode(mode)
   if mode == "display" then
     hs.caffeinate.set("systemIdle", false)
@@ -77,6 +101,9 @@ local function setCaffeinateMode(mode)
   end
 end
 
+--- Expand a leading `~` or `~/` in `path` into the user's home directory.
+---@param path string
+---@return string
 local function expandHome(path)
   local home = os.getenv("HOME")
 
@@ -95,6 +122,15 @@ local function expandHome(path)
   return path
 end
 
+--- Execute an action and tell the runtime how the menu should react.
+--
+-- Return flags:
+--   `close`   – dismiss the menu
+--   `refresh` – redraw to reflect state changes
+--   `handled` – the action already managed the menu itself
+---@param action table
+---@param context table
+---@return table
 function M.execute(action, context)
   if action.type == "launchApp" then
     hs.application.launchOrFocus(action.name)
@@ -102,7 +138,7 @@ function M.execute(action, context)
   end
 
   if action.type == "openPath" then
-    hs.open(expandHome(action.path))
+    hsOpen(expandHome(action.path))
     return { close = true }
   end
 

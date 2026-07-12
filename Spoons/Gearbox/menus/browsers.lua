@@ -1,3 +1,4 @@
+--- Web browsers submenu: Brave Origin, ChatGPT Atlas, Comet Browser, Safari.
 return {
   id = "browsers",
   title = "Web Browsers",

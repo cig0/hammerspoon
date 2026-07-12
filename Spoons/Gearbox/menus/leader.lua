@@ -1,3 +1,4 @@
+--- Gearbox root menu: Calculator, ForkLift, KeePassXC, Passwords.
 return {
   id = "leader",
   title = "Gearbox",

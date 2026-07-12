@@ -1,4 +1,7 @@
--- User-facing defaults. This module intentionally contains no Hammerspoon calls.
+--- Default Gearbox configuration.
+--
+-- User-facing defaults. This module contains no Hammerspoon calls; overrides
+-- passed to `Gearbox.start()` are merged on top.
 return {
   hotkey = {
     modifiers = { "alt", "cmd" },

@@ -1,3 +1,4 @@
+--- Catppuccin Latte theme (light).
 return {
   id = "catppuccin-latte",
   label = "Catppuccin Latte",

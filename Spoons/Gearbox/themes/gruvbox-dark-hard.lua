@@ -1,3 +1,4 @@
+--- Gruvbox Dark Hard theme (dark).
 return {
   id = "gruvbox-dark-hard",
   label = "Gruvbox Dark Hard",
