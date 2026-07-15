@@ -38,7 +38,7 @@ return {
       label = "Obsidian",
       kind = "application",
       action = {
-        type = "launchapp",
+        type = "launchApp",
         name = "Obsidian",
       },
     },
