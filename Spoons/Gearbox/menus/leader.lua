@@ -36,7 +36,7 @@ return {
     {
       key = "o",
       label = "Obsidian",
-      kind = "applications",
+      kind = "application",
       action = {
         type = "launchapp",
         name = "Obsidian",
