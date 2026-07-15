@@ -34,6 +34,15 @@ return {
       },
     },
     {
+      key = "o",
+      label = "Obsidian",
+      kind = "applications",
+      action = {
+        type = "launchapp",
+        name = "Obsidian",
+      },
+    },
+    {
       key = "s",
       label = "Passwords",
       kind = "application",
