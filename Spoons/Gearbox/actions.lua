@@ -49,6 +49,8 @@ function M.validate(action, location)
     if action.theme == "" then
       error(location .. " setTheme action requires a non-empty theme", 2)
     end
+  elseif action.type == "openScratchpad" then
+    return
   elseif action.type == "custom" then
     expect(action.run, "function", location .. " custom action requires run")
   elseif action.type ~= "exit"
@@ -160,6 +162,11 @@ function M.execute(action, context)
   if action.type == "setTheme" then
     context.setTheme(action.theme)
     return { refresh = true }
+  end
+
+  if action.type == "openScratchpad" then
+    context.openScratchpad()
+    return { handled = true }
   end
 
   if action.type == "sleep" then

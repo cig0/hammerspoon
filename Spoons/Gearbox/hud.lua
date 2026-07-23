@@ -334,8 +334,8 @@ function HUD:show(menu, checkedRows)
     action = "fill",
     fillColor = colors.background,
     roundedRectRadii = {
-      xRadius = 16,
-      yRadius = 16,
+      xRadius = self.theme.metrics.windowCornerRadius,
+      yRadius = self.theme.metrics.windowCornerRadius,
     },
   })
 

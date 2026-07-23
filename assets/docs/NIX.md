@@ -87,6 +87,16 @@ settings:
         accentSource = "system";
         persistSelection = true;
       };
+
+      scratchpad = {
+        enable = true;
+        menuKey = "p";
+        width = 720;
+        height = 480;
+        maxCharacters = 4096;
+        persistContent = true;
+        showInstructions = true;
+      };
     };
   };
 }
@@ -199,16 +209,9 @@ field, `user`.
 ## Option documentation
 
 The flake exposes `interfaces.homeManagerOptionDocs` so downstream projects can
-render the option catalog under their own namespace. A self-contained devShell in
-`shells/devShell/nix-docs/` dumps the options to stdout or writes them to
-`assets/docs/ALL-OPTIONS.md`:
-
-```sh
-cd shells/devShell/nix-docs
-nix develop
-dump-hammerspoon-options
-dump-hammerspoon-options --write
-```
+render the option catalog under their own namespace.
+[`assets/docs/ALL-OPTIONS.md`](./ALL-OPTIONS.md) is the repository snapshot of
+that generated interface.
 
 ## Theme persistence
 
@@ -235,6 +238,25 @@ theme:
 ```nix
 programs.hammerspoon-spoons.spoons.gearbox.theme.persistSelection = false;
 ```
+
+## Scratchpad persistence
+
+`programs.hammerspoon-spoons.spoons.gearbox.scratchpad.persistContent`
+defaults to `true`. The generated Lua contains only this policy value; editable
+content remains mutable Hammerspoon state:
+
+```text
+scratchpad textarea
+  → hs.settings["Gearbox.scratchpad.content"]
+  → ~/Library/Preferences/org.hammerspoon.Hammerspoon.plist
+  → restored on the next Hammerspoon load
+```
+
+The preferences file is local and unencrypted. Setting `persistContent = false`
+keeps the text only in the active Gearbox runtime and does not place it in the
+Nix store or generated Lua. `maxCharacters` defaults to 4096 and limits new
+input; existing saved text above a newly lowered limit is preserved until the
+user reduces it.
 
 The complete Gearbox option map and standalone defaults live beside the Spoon in
 [`Spoons/Gearbox/README.md`](../../Spoons/Gearbox/README.md#configuration-configlua).

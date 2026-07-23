@@ -148,6 +148,26 @@ local function loadDefinitions(directory, supplementalDefinitions)
   return definitions
 end
 
+local function addSupplementalItems(definitions, supplementalItems)
+  for menuId, items in pairs(supplementalItems or {}) do
+    local definition = definitions[menuId]
+
+    if not definition then
+      fail("supplemental items reference missing menu: " .. menuId)
+    end
+
+    if type(items) ~= "table" then
+      fail("supplemental items for " .. menuId .. " must be a table")
+    end
+
+    definition.items = definition.items or {}
+
+    for _, item in ipairs(items) do
+      table.insert(definition.items, copyTable(item))
+    end
+  end
+end
+
 --- Validate the full menu graph and return the single root menu id.
 ---@param definitions table
 ---@param config table
@@ -478,16 +498,19 @@ end
 ---@return table menus
 ---@return string rootId
 function Loader.load(
-    rootDirectory,
-    config,
-    actions,
-    supplementalDefinitions,
-    theme
+  rootDirectory,
+  config,
+  actions,
+  supplementalDefinitions,
+  theme,
+  supplementalItems
 )
   local definitions = loadDefinitions(
     rootDirectory .. "/menus",
     supplementalDefinitions
   )
+  addSupplementalItems(definitions, supplementalItems)
+
   local rootId = validateDefinitions(definitions, config, actions, theme)
   local menus = assembleMenus(definitions, rootId, config, actions)
 
