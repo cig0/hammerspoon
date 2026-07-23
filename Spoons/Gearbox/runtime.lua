@@ -9,7 +9,7 @@ local function keyIdentity(key)
   return key:lower()
 end
 
-function Runtime.new(config, menus, rootId, actions, theme, hud)
+function Runtime.new(config, menus, rootId, actions, theme, hud, scratchpad)
   local self = setmetatable({}, Runtime)
 
   self.config = config
@@ -18,6 +18,7 @@ function Runtime.new(config, menus, rootId, actions, theme, hud)
   self.actions = actions
   self.theme = theme
   self.hud = hud
+  self.scratchpad = scratchpad
 
   self.activeMenu = nil
   self.timeoutTimer = nil
@@ -109,6 +110,11 @@ function Runtime:runAction(menu, row)
     end,
     setTheme = function(selection)
       self.theme:select(selection)
+    end,
+    openScratchpad = function()
+      assert(self.scratchpad, "Gearbox: scratchpad is disabled")
+      menu.modal:exit()
+      self.scratchpad:show()
     end,
   })
 
@@ -254,7 +260,9 @@ function Runtime:start()
       self.config.hotkey.modifiers,
       self.config.hotkey.key,
       function()
-        if self.activeMenu then
+        if self.scratchpad and self.scratchpad:isVisible() then
+          self.scratchpad:hide()
+        elseif self.activeMenu then
           self.activeMenu.modal:exit()
         else
           self.menus[self.rootId].modal:enter()
@@ -267,9 +275,17 @@ function Runtime:start()
     end
 
     self.theme:activate()
+
+    if self.scratchpad then
+      self.scratchpad:prepare()
+    end
   end, debug.traceback)
 
   if not started then
+    if self.scratchpad then
+      self.scratchpad:delete()
+    end
+
     self:deleteBindings()
     error(startError, 0)
   end
@@ -289,6 +305,10 @@ function Runtime:stop()
 
   self:clearTimeout()
   self.hud:close()
+
+  if self.scratchpad then
+    self.scratchpad:delete()
+  end
 
   self:deleteBindings()
 

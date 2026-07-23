@@ -443,6 +443,10 @@ function Theme.new(config, rootDirectory)
     ),
   }
 
+  self.metrics = {
+    windowCornerRadius = 16,
+  }
+
   self.selection = self:restoredSelection()
 
   return self

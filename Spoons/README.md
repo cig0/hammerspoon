@@ -17,7 +17,7 @@ the others.
 
 | Spoon | Entry point | Concern |
 | --- | --- | --- |
-| [Gearbox](./Gearbox/README.md) | `require("Spoons.Gearbox").start()` | Keyboard launcher, nested menus, themes, navigation, and macOS power controls |
+| [Gearbox](./Gearbox/README.md) | `require("Spoons.Gearbox").start()` | Keyboard launcher, scratchpad, nested menus, themes, navigation, and macOS power controls |
 
 The root [`init.lua`](../init.lua) is a clone-friendly loader with Spoon imports
 left commented until selected.

@@ -8,6 +8,9 @@ let
   nonNegativeNumber = types.addCheck types.number (value: value >= 0);
   positiveNumber = types.addCheck types.number (value: value > 0);
   menuWidth = types.addCheck types.int (value: value >= 200);
+  scratchpadWidth = types.addCheck types.int (value: value >= 360);
+  scratchpadHeight = types.addCheck types.int (value: value >= 240);
+  positiveInteger = types.addCheck types.int (value: value >= 1);
   loupeScale = types.addCheck types.number (value: value >= 1);
 
   modifiers = types.addCheck (types.listOf (
@@ -419,6 +422,57 @@ in
           type = types.bool;
           default = true;
           description = "Whether navigation input restarts an enabled timeout.";
+        };
+      };
+
+      scratchpad = {
+        enable = mkOption {
+          type = types.bool;
+          default = true;
+          description = "Whether to expose the editable scratchpad in the Gearbox root menu.";
+        };
+
+        menuKey = mkOption {
+          type = types.str;
+          default = "p";
+          description = "Gearbox root-menu key used to open the scratchpad.";
+        };
+
+        width = mkOption {
+          type = scratchpadWidth;
+          default = 720;
+          description = "Scratchpad width in points.";
+        };
+
+        height = mkOption {
+          type = scratchpadHeight;
+          default = 480;
+          description = "Scratchpad height in points.";
+        };
+
+        maxCharacters = mkOption {
+          type = positiveInteger;
+          default = 4096;
+          description = ''
+            Maximum editable scratchpad capacity in characters. Existing saved
+            content above the limit is preserved and must be reduced before
+            more text can be added.
+          '';
+        };
+
+        persistContent = mkOption {
+          type = types.bool;
+          default = true;
+          description = ''
+            Whether scratchpad content survives Hammerspoon reloads through
+            local, unencrypted hs.settings storage.
+          '';
+        };
+
+        showInstructions = mkOption {
+          type = types.bool;
+          default = true;
+          description = "Whether to show the non-editable keyboard reference footer.";
         };
       };
     };

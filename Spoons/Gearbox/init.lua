@@ -2,6 +2,7 @@ local Actions = require("Spoons.Gearbox.actions")
 local HUD = require("Spoons.Gearbox.hud")
 local Loader = require("Spoons.Gearbox.loader")
 local Runtime = require("Spoons.Gearbox.runtime")
+local Scratchpad = require("Spoons.Gearbox.scratchpad")
 local Theme = require("Spoons.Gearbox.theme")
 
 local Gearbox = {}
@@ -286,6 +287,48 @@ local function validateConfig(config)
     "boolean",
     "navigation.resetTimeoutOnInput"
   )
+
+  assertType(config.scratchpad.enable, "boolean", "scratchpad.enable")
+  assertType(config.scratchpad.menuKey, "string", "scratchpad.menuKey")
+  assert(
+    config.scratchpad.menuKey ~= "",
+    "Gearbox: scratchpad.menuKey cannot be empty"
+  )
+  assert(
+    validHotkeyKey(config.scratchpad.menuKey),
+    "Gearbox: invalid scratchpad.menuKey: "
+        .. config.scratchpad.menuKey
+  )
+  assertType(config.scratchpad.width, "number", "scratchpad.width")
+  assert(
+    config.scratchpad.width >= 360,
+    "Gearbox: scratchpad.width must be at least 360"
+  )
+  assertType(config.scratchpad.height, "number", "scratchpad.height")
+  assert(
+    config.scratchpad.height >= 240,
+    "Gearbox: scratchpad.height must be at least 240"
+  )
+  assertType(
+    config.scratchpad.maxCharacters,
+    "number",
+    "scratchpad.maxCharacters"
+  )
+  assert(
+    config.scratchpad.maxCharacters >= 1
+        and config.scratchpad.maxCharacters % 1 == 0,
+    "Gearbox: scratchpad.maxCharacters must be a positive integer"
+  )
+  assertType(
+    config.scratchpad.persistContent,
+    "boolean",
+    "scratchpad.persistContent"
+  )
+  assertType(
+    config.scratchpad.showInstructions,
+    "boolean",
+    "scratchpad.showInstructions"
+  )
 end
 
 local function sourceDirectory()
@@ -310,12 +353,25 @@ function Gearbox.start(overrides)
   validateConfig(config)
 
   local theme = Theme.new(config, directory)
+  local scratchpad = config.scratchpad.enable
+      and Scratchpad.new(config, theme)
+      or nil
+
+  local supplementalItems = scratchpad
+      and {
+        leader = {
+          scratchpad:menuItem(),
+        },
+      }
+      or nil
+
   local menus, rootId = Loader.load(
     directory,
     config,
     Actions,
     { theme:menuDefinition() },
-    theme
+    theme,
+    supplementalItems
   )
   local hud = HUD.new(config, theme)
 
@@ -325,7 +381,8 @@ function Gearbox.start(overrides)
     rootId,
     Actions,
     theme,
-    hud
+    hud,
+    scratchpad
   )
 
   candidateRuntime:start()

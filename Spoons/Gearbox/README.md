@@ -1,9 +1,9 @@
 # Gearbox
 
 Gearbox is a native Hammerspoon keyboard launcher with nested menus, direct
-shortcuts, arrow navigation, loupe scaling, macOS power controls, and
-auto-discovered themes. It uses the macOS system font by default and can follow
-the current appearance and accent.
+shortcuts, arrow navigation, an editable scratchpad, loupe scaling, macOS power
+controls, and auto-discovered themes. It uses the macOS system font by default
+and can follow the current appearance and accent.
 
 ## Enable Gearbox
 
@@ -29,11 +29,13 @@ the repository's root [`init.lua`](../../init.lua) needs to be enabled.
 ## Controls
 
 ```text
-alt+cmd+space → open or close Gearbox
+alt+cmd+space → open or close Gearbox and its scratchpad
 letter key    → run or open the displayed entry
 ↑ / ↓         → select an entry
 Return        → activate the selection
 Esc           → return to the parent or exit
+p             → open the scratchpad from the root menu
+Tab           → insert a tab while editing the scratchpad
 ```
 
 The first arrow press selects the first or last entry. Selection wraps by
@@ -48,6 +50,7 @@ Gearbox
 ├── ForkLift
 ├── KeePassXC
 ├── Passwords
+├── Scratchpad
 ├── Agenda
 │   ├── Calendar
 │   ├── Mail
@@ -96,6 +99,7 @@ Hammerspoon releases those assertions when its configuration reloads.
 | [`actions.lua`](./actions.lua) | Application, filesystem, power, and theme operations |
 | [`runtime.lua`](./runtime.lua) | Modal lifecycle, hotkeys, timeout, selection, and rollback |
 | [`hud.lua`](./hud.lua) | Canvas geometry, text, checks, selection, and loupe rendering |
+| [`scratchpad.lua`](./scratchpad.lua) | Editable webview, keyboard handling, persistence, and focus |
 | [`theme.lua`](./theme.lua) | Theme loading, persistence, fonts, appearance, and colors |
 | [`init.lua`](./init.lua) | Public `start()` and `stop()` boundary |
 | [`tests/`](../../tests/README.md) | Mocked-Hammerspoon smoke and regression coverage |
@@ -104,7 +108,9 @@ Hammerspoon releases those assertions when its configuration reloads.
 config.lua + menus/*.lua + themes/*.lua
   → init.lua validation
   → loader.lua + theme.lua
-  → runtime.lua + actions.lua + hud.lua
+  → runtime.lua + actions.lua
+    → hud.lua
+    → scratchpad.lua
 ```
 
 ## Configuration (`config.lua`)
@@ -189,6 +195,32 @@ Displayed item shortcuts accept the retained Gearbox modifiers, allowing an
 immediate choice before those keys are released. Escape, Up, Down, and Return
 remain bare controls, preserving modified macOS shortcuts such as
 `alt+cmd+escape`.
+
+### Scratchpad
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `scratchpad.enable` | `true` | Includes the scratchpad in the root menu |
+| `scratchpad.menuKey` | `"p"` | Root-menu key used to open the scratchpad |
+| `scratchpad.width` | `720` | Width in points, clamped to the selected screen |
+| `scratchpad.height` | `480` | Height in points, clamped to the selected screen |
+| `scratchpad.maxCharacters` | `4096` | Maximum editable text capacity; existing longer content is preserved |
+| `scratchpad.persistContent` | `true` | Restores content through local `hs.settings` storage |
+| `scratchpad.showInstructions` | `true` | Displays the non-editable keyboard reference footer |
+
+The scratchpad inherits `menu.screen`, `menu.position`, the active semantic
+palette, and the resolved Gearbox font family. Its borderless webview is created
+during Gearbox startup, kept hidden, and reused so invocation does not pay
+WebKit's initialization cost. The non-editable footer derives the configured
+Gearbox hotkey using the same modifier and key order as the main-menu Exit row.
+That hotkey closes the scratchpad; no second global hotkey is created.
+
+With persistence enabled, content is stored under
+`hs.settings["Gearbox.scratchpad.content"]`. The backing Hammerspoon preferences
+file is local and unencrypted, so scratchpad content should not be treated as a
+secret store. Disabling persistence keeps content only for the lifetime of the
+current Hammerspoon runtime. `maxCharacters` limits new input without silently
+truncating content that was already saved above the configured limit.
 
 ## Theme persistence
 

@@ -117,6 +117,26 @@ local function loadDefinitions(directory, supplementalDefinitions)
   return definitions
 end
 
+local function addSupplementalItems(definitions, supplementalItems)
+  for menuId, items in pairs(supplementalItems or {}) do
+    local definition = definitions[menuId]
+
+    if not definition then
+      fail("supplemental items reference missing menu: " .. menuId)
+    end
+
+    if type(items) ~= "table" then
+      fail("supplemental items for " .. menuId .. " must be a table")
+    end
+
+    definition.items = definition.items or {}
+
+    for _, item in ipairs(items) do
+      table.insert(definition.items, copyTable(item))
+    end
+  end
+end
+
 local function validateDefinitions(definitions, config, actions, theme)
   local rootIds = {}
   local reservedKeys = {
@@ -428,12 +448,15 @@ function Loader.load(
   config,
   actions,
   supplementalDefinitions,
-  theme
+  theme,
+  supplementalItems
 )
   local definitions = loadDefinitions(
     rootDirectory .. "/menus",
     supplementalDefinitions
   )
+  addSupplementalItems(definitions, supplementalItems)
+
   local rootId = validateDefinitions(definitions, config, actions, theme)
   local menus = assembleMenus(definitions, rootId, config, actions)
 

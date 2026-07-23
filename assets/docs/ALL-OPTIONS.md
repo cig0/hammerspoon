@@ -28,6 +28,13 @@
 | `programs.hammerspoon-spoons.spoons.gearbox.navigation.includeFooter` | boolean | `true` | Whether arrow navigation can select Back or Exit. |
 | `programs.hammerspoon-spoons.spoons.gearbox.navigation.resetTimeoutOnInput` | boolean | `true` | Whether navigation input restarts an enabled timeout. |
 | `programs.hammerspoon-spoons.spoons.gearbox.navigation.wrap` | boolean | `true` |  |
+| `programs.hammerspoon-spoons.spoons.gearbox.scratchpad.enable` | boolean | `true` | Whether to expose the editable scratchpad in the Gearbox root menu. |
+| `programs.hammerspoon-spoons.spoons.gearbox.scratchpad.height` | signed integer | `480` | Scratchpad height in points. |
+| `programs.hammerspoon-spoons.spoons.gearbox.scratchpad.maxCharacters` | signed integer | `4096` | Maximum editable scratchpad capacity in characters. Existing saved content above the limit is preserved and must be reduced before more text can be added. |
+| `programs.hammerspoon-spoons.spoons.gearbox.scratchpad.menuKey` | string | `"p"` | Gearbox root-menu key used to open the scratchpad. |
+| `programs.hammerspoon-spoons.spoons.gearbox.scratchpad.persistContent` | boolean | `true` | Whether scratchpad content survives Hammerspoon reloads through local, unencrypted hs.settings storage. |
+| `programs.hammerspoon-spoons.spoons.gearbox.scratchpad.showInstructions` | boolean | `true` | Whether to show the non-editable keyboard reference footer. |
+| `programs.hammerspoon-spoons.spoons.gearbox.scratchpad.width` | signed integer | `720` | Scratchpad width in points. |
 | `programs.hammerspoon-spoons.spoons.gearbox.theme.accentSource` | one of "system", "theme" | `"system"` | Whether highlighted controls use the macOS accent or the selected theme's accent. |
 | `programs.hammerspoon-spoons.spoons.gearbox.theme.fallbackAccent` | submodule | `{"alpha":1,"blue":1,"green":0.48,"red":0.04}` |  |
 | `programs.hammerspoon-spoons.spoons.gearbox.theme.name` | string | `"system"` | Theme ID to select, or "system" to follow the macOS appearance. |

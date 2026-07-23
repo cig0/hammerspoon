@@ -10,6 +10,8 @@ local caffeinateState = {
 }
 
 local createdModals = {}
+local createdWebviews = {}
+local createdWebviewControllers = {}
 local globalHotkeyPressed
 local launchedApplication
 local defaultTextStyleCalls = 0
@@ -111,6 +113,107 @@ local function newCanvas()
   return canvas
 end
 
+local function newWebview(frame, controller)
+  local webview = {
+    currentFrame = frame,
+    controller = controller,
+    evaluatedScripts = {},
+    visible = false,
+  }
+
+  local function chain(name)
+    webview[name] = function(self, value)
+      self[name .. "Value"] = value
+      return self
+    end
+  end
+
+  for _, name in ipairs({
+    "allowGestures",
+    "allowNewWindows",
+    "allowTextEntry",
+    "deleteOnClose",
+    "shadow",
+    "transparent",
+    "windowStyle",
+  }) do
+    chain(name)
+  end
+
+  function webview:bringToFront()
+    self.broughtToFront = true
+    return self
+  end
+
+  function webview:delete()
+    self.deleted = true
+    self.visible = false
+  end
+
+  function webview:evaluateJavaScript(script, callback)
+    table.insert(self.evaluatedScripts, script)
+
+    if callback then
+      callback(self.contentResult, nil)
+    end
+
+    return self
+  end
+
+  function webview:frame(value)
+    if value then
+      self.currentFrame = value
+      return self
+    end
+
+    return self.currentFrame
+  end
+
+  function webview:hide()
+    self.visible = false
+    return self
+  end
+
+  function webview:hswindow()
+    return {
+      focus = function()
+        self.focused = true
+      end,
+    }
+  end
+
+  function webview:html(value)
+    self.document = value
+
+    if self.navigationCallbackValue then
+      self.navigationCallbackValue(
+        "didFinishNavigation",
+        self,
+        "mock-navigation"
+      )
+    end
+
+    return self
+  end
+
+  function webview:isVisible()
+    return self.visible
+  end
+
+  function webview:navigationCallback(callback)
+    self.navigationCallbackValue = callback
+    return self
+  end
+
+  function webview:show()
+    self.visible = true
+    return self
+  end
+
+  table.insert(createdWebviews, webview)
+  return webview
+end
+
 hs = {
   alert = {
     show = function() end,
@@ -209,6 +312,9 @@ hs = {
 
       return nil
     end,
+    encode = function()
+      return "{}"
+    end,
   },
 
   keycodes = {
@@ -305,6 +411,27 @@ hs = {
       }
     end,
   },
+
+  webview = {
+    new = function(frame, _, controller)
+      return newWebview(frame, controller)
+    end,
+    usercontent = {
+      new = function(name)
+        local controller = {
+          name = name,
+        }
+
+        function controller:setCallback(callback)
+          self.callback = callback
+          return self
+        end
+
+        table.insert(createdWebviewControllers, controller)
+        return controller
+      end,
+    },
+  },
 }
 
 local Actions = require("Spoons.Gearbox.actions")
@@ -316,6 +443,14 @@ assert(
   config.loupe.selectedScale == 1.18
       and config.loupe.duration == 0,
   "standalone loupe defaults must retain immediate navigation"
+)
+assert(
+  config.scratchpad.enable
+      and config.scratchpad.menuKey == "p"
+      and config.scratchpad.width == 720
+      and config.scratchpad.height == 480
+      and config.scratchpad.maxCharacters == 4096,
+  "standalone scratchpad defaults changed"
 )
 
 local discoveredTheme = Theme.new(
@@ -356,7 +491,7 @@ assert(
 )
 
 assert(
-  rowShape(menus.macos) == "e,r,|,a,i,x,|,s,|,escape",
+  rowShape(menus.macos) == "h,e,|,a,i,x,|,s,|,escape",
   "macOS Utilities menu shape changed"
 )
 
@@ -509,6 +644,7 @@ settings["Shift7.theme.selection"] = {
   selection = "shift7-dark",
   configuredDefault = "system",
 }
+settings["Gearbox.scratchpad.content"] = "restored draft"
 
 local Gearbox = require("Spoons.Gearbox")
 local runtime = Gearbox.start({
@@ -548,8 +684,8 @@ assert(
 globalHotkeyPressed()
 assert(runtime.activeMenu.id == "leader", "global hotkey must open leader")
 assert(
-  interfaceStyleCalls == 1,
-  "menu entry must resolve system appearance once"
+  interfaceStyleCalls == 0,
+  "a migrated manual theme must not resolve system appearance"
 )
 
 assert(
@@ -572,7 +708,20 @@ assert(
 
 assert(
   runtime.theme.activeThemeId == "gearbox-dark",
-  "system mode must initially follow the dark appearance"
+  "migrated dark selection must resolve the Gearbox dark theme"
+)
+assert(
+  runtime.scratchpad.content == "restored draft",
+  "scratchpad must restore persisted content"
+)
+assert(
+  #createdWebviews == 1 and not createdWebviews[1].visible,
+  "scratchpad webview must be prewarmed before its first invocation"
+)
+assert(
+  runtime.hud.canvas.elements[1].roundedRectRadii.xRadius
+      == runtime.theme.metrics.windowCornerRadius,
+  "menu HUD and scratchpad must share the outer corner radius"
 )
 
 assert(
@@ -631,6 +780,91 @@ assert(
 runtime.menus.leader.modal.bindings["return"]()
 assert(launchedApplication == "Calculator", "Return must activate selected entry")
 assert(runtime.activeMenu == nil, "application launch must close Gearbox")
+
+globalHotkeyPressed()
+runtime.menus.leader.modal.bindings.p()
+
+assert(runtime.activeMenu == nil, "scratchpad must replace the menu HUD")
+assert(#createdWebviews == 1, "scratchpad must reuse its prewarmed webview")
+assert(
+  createdWebviewControllers[1].name == "gearboxScratchpad",
+  "scratchpad must use its private message bridge"
+)
+assert(createdWebviews[1].visible, "scratchpad action must show the webview")
+assert(
+  createdWebviews[1].allowTextEntryValue == true
+      and createdWebviews[1].transparentValue == true
+      and createdWebviews[1].shadowValue == true
+      and #createdWebviews[1].windowStyleValue == 0,
+  "scratchpad must be an editable, transparent, borderless panel"
+)
+assert(
+  createdWebviews[1].currentFrame.w == 720
+      and createdWebviews[1].currentFrame.h == 480
+      and createdWebviews[1].currentFrame.x == 600
+      and createdWebviews[1].currentFrame.y == 150,
+  "scratchpad must use configured size and Gearbox placement"
+)
+assert(
+  createdWebviews[1].document:match("Tab inserts tabs"),
+  "scratchpad must include the non-editable instructions"
+)
+assert(
+  not createdWebviews[1].document:match('event.key === "Escape"'),
+  "scratchpad must not bind Escape"
+)
+
+local scratchpadState = runtime.scratchpad:state(false)
+
+assert(
+  scratchpadState.instructions
+      == "Cursor keys move · Tab inserts tabs · alt+cmd+space closes scratchpad",
+  "scratchpad instructions must include the configured Gearbox hotkey"
+)
+assert(
+  scratchpadState.footerSize == 13,
+  "scratchpad instructions must remain subtle but legible"
+)
+assert(
+  scratchpadState.maxCharacters == 4096
+      and createdWebviews[1].document:match(
+        "editor.maxLength = state.maxCharacters"
+      ),
+  "scratchpad must expose its configured capacity to the native editor"
+)
+
+createdWebviewControllers[1].callback({
+  action = "save",
+  content = "persistent draft",
+})
+
+assert(
+  settings["Gearbox.scratchpad.content"] == "persistent draft",
+  "scratchpad content must persist through hs.settings"
+)
+
+createdWebviews[1].contentResult = "persistent draft"
+globalHotkeyPressed()
+assert(
+  not createdWebviews[1].visible,
+  "global Gearbox hotkey must hide the scratchpad"
+)
+
+globalHotkeyPressed()
+runtime.menus.leader.modal.bindings.p()
+assert(
+  #createdWebviews == 1 and createdWebviews[1].visible,
+  "scratchpad must reuse its existing webview"
+)
+
+createdWebviews[1].contentResult = "reopened draft"
+globalHotkeyPressed()
+
+assert(
+  not createdWebviews[1].visible
+      and settings["Gearbox.scratchpad.content"] == "reopened draft",
+  "Gearbox hotkey must save and hide the reopened scratchpad"
+)
 
 globalHotkeyPressed()
 runtime.menus.leader.modal.bindings.m()
@@ -810,6 +1044,57 @@ assert(
   "reserved key failures must preserve the active menu"
 )
 
+local smallScratchpadAccepted = pcall(function()
+  Gearbox.start({
+    scratchpad = {
+      width = 359,
+    },
+  })
+end)
+
+assert(
+  not smallScratchpadAccepted,
+  "undersized scratchpad dimensions must fail early"
+)
+assert(
+  validRuntime.activeMenu.id == "themes",
+  "scratchpad validation failures must preserve the active menu"
+)
+
+local invalidScratchpadCapacityAccepted = pcall(function()
+  Gearbox.start({
+    scratchpad = {
+      maxCharacters = 0,
+    },
+  })
+end)
+
+assert(
+  not invalidScratchpadCapacityAccepted,
+  "scratchpad capacity must be a positive integer"
+)
+assert(
+  validRuntime.activeMenu.id == "themes",
+  "scratchpad capacity failures must preserve the active menu"
+)
+
+local duplicateScratchpadKeyAccepted = pcall(function()
+  Gearbox.start({
+    scratchpad = {
+      menuKey = "c",
+    },
+  })
+end)
+
+assert(
+  not duplicateScratchpadKeyAccepted,
+  "scratchpad menu keys must not collide with root entries"
+)
+assert(
+  validRuntime.activeMenu.id == "themes",
+  "scratchpad key failures must preserve the active menu"
+)
+
 local fontCallsBeforePartialStart = defaultTextStyleCalls
 local partialStartModalIndex = #createdModals + 1
 failNextModalBind = true
@@ -985,6 +1270,20 @@ globalHotkeyPressed()
 assert(
   systemAccentRuntime.theme.colors.accent.red == 0.2,
   "system accent source must use the resolved macOS accent"
+)
+
+local noScratchpadRuntime = Gearbox.start({
+  scratchpad = {
+    enable = false,
+  },
+  theme = {
+    accentSource = "theme",
+  },
+})
+
+assert(
+  noScratchpadRuntime.menus.leader.modal.bindings.p == nil,
+  "disabled scratchpad must not register a root-menu key"
 )
 
 Gearbox.stop()
