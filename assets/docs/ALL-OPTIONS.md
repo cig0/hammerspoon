@@ -31,7 +31,6 @@
 | `programs.hammerspoon-spoons.spoons.gearbox.scratchpad.enable` | boolean | `true` | Whether to expose the editable scratchpad in the Gearbox root menu. |
 | `programs.hammerspoon-spoons.spoons.gearbox.scratchpad.height` | signed integer | `480` | Scratchpad height in points. |
 | `programs.hammerspoon-spoons.spoons.gearbox.scratchpad.maxCharacters` | signed integer | `4096` | Maximum editable scratchpad capacity in characters. Existing saved content above the limit is preserved and must be reduced before more text can be added. |
-| `programs.hammerspoon-spoons.spoons.gearbox.scratchpad.menuKey` | string | `"p"` | Gearbox root-menu key used to open the scratchpad. |
 | `programs.hammerspoon-spoons.spoons.gearbox.scratchpad.persistContent` | boolean | `true` | Whether scratchpad content survives Hammerspoon reloads through local, unencrypted hs.settings storage. |
 | `programs.hammerspoon-spoons.spoons.gearbox.scratchpad.showInstructions` | boolean | `true` | Whether to show the non-editable keyboard reference footer. |
 | `programs.hammerspoon-spoons.spoons.gearbox.scratchpad.width` | signed integer | `720` | Scratchpad width in points. |

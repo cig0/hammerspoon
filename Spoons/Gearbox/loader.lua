@@ -148,23 +148,46 @@ local function loadDefinitions(directory, supplementalDefinitions)
   return definitions
 end
 
-local function addSupplementalItems(definitions, supplementalItems)
-  for menuId, items in pairs(supplementalItems or {}) do
-    local definition = definitions[menuId]
+--- Remove declarative feature entries disabled by the active configuration.
+---@param definitions table
+---@param config table
+local function applyConfiguration(definitions, config)
+  for id, definition in pairs(definitions) do
+    local items = {}
 
-    if not definition then
-      fail("supplemental items reference missing menu: " .. menuId)
+    for index, item in ipairs(definition.items or {}) do
+      local requirement = item.requires
+      local enabled = true
+
+      if requirement ~= nil then
+        local location = ("%s item %d"):format(id, index)
+
+        if type(requirement) ~= "string" or requirement == "" then
+          fail(location .. " requires must be a non-empty string")
+        end
+
+        local feature = config[requirement]
+
+        if type(feature) ~= "table"
+            or type(feature.enable) ~= "boolean" then
+          fail(
+            location
+            .. " requires missing configurable feature: "
+            .. requirement
+          )
+        end
+
+        enabled = feature.enable
+      end
+
+      if enabled then
+        local configuredItem = copyTable(item)
+        configuredItem.requires = nil
+        table.insert(items, configuredItem)
+      end
     end
 
-    if type(items) ~= "table" then
-      fail("supplemental items for " .. menuId .. " must be a table")
-    end
-
-    definition.items = definition.items or {}
-
-    for _, item in ipairs(items) do
-      table.insert(definition.items, copyTable(item))
-    end
+    definition.items = items
   end
 end
 
@@ -502,14 +525,13 @@ function Loader.load(
   config,
   actions,
   supplementalDefinitions,
-  theme,
-  supplementalItems
+  theme
 )
   local definitions = loadDefinitions(
     rootDirectory .. "/menus",
     supplementalDefinitions
   )
-  addSupplementalItems(definitions, supplementalItems)
+  applyConfiguration(definitions, config)
 
   local rootId = validateDefinitions(definitions, config, actions, theme)
   local menus = assembleMenus(definitions, rootId, config, actions)

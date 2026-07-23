@@ -432,12 +432,6 @@ in
           description = "Whether to expose the editable scratchpad in the Gearbox root menu.";
         };
 
-        menuKey = mkOption {
-          type = types.str;
-          default = "p";
-          description = "Gearbox root-menu key used to open the scratchpad.";
-        };
-
         width = mkOption {
           type = scratchpadWidth;
           default = 720;

@@ -267,17 +267,6 @@ function Scratchpad.new(config, theme)
   return self
 end
 
-function Scratchpad:menuItem()
-  return {
-    key = self.config.scratchpad.menuKey,
-    label = "Scratchpad",
-    kind = "action",
-    action = {
-      type = "openScratchpad",
-    },
-  }
-end
-
 function Scratchpad:targetScreen()
   if self.config.menu.screen == "mouse" then
     return hs.mouse.getCurrentScreen() or hs.screen.mainScreen()

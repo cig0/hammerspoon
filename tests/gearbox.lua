@@ -446,7 +446,6 @@ assert(
 )
 assert(
   config.scratchpad.enable
-      and config.scratchpad.menuKey == "p"
       and config.scratchpad.width == 720
       and config.scratchpad.height == 480
       and config.scratchpad.maxCharacters == 4096,
@@ -479,14 +478,31 @@ local function rowShape(menu)
   return table.concat(rows, ",")
 end
 
+local leaderShape = rowShape(menus.leader)
+
 assert(
-  rowShape(menus.leader)
-      == "c,l,k,s,|,n,a,d,f,w,|,m,t,|,escape",
-  "leader ordering or divider placement changed"
+  leaderShape == "c,l,k,o,p,s,|,n,i,a,d,f,w,|,m,t,|,escape",
+  "leader ordering or divider placement changed: " .. leaderShape
+)
+
+local scratchpadRow
+
+for _, row in ipairs(menus.leader.rows) do
+  if row.action and row.action.type == "openScratchpad" then
+    scratchpadRow = row
+    break
+  end
+end
+
+assert(
+  scratchpadRow
+      and scratchpadRow.key == "s"
+      and scratchpadRow.requires == nil,
+  "declarative feature requirements must resolve before runtime assembly"
 )
 
 assert(
-  rowShape(menus.browsers) == "b,s,|,escape",
+  rowShape(menus.browsers) == "o,a,c,s,|,escape",
   "browser menu shape changed"
 )
 
@@ -525,6 +541,42 @@ end
 assert(themeCount == 10, "all bundled themes must be discovered")
 
 local modalCountBeforeInvalidDefinitions = #createdModals
+
+local missingFeatureRequirementAccepted = pcall(function()
+  Loader.load(
+    root .. "/Spoons/Gearbox",
+    config,
+    Actions,
+    {
+      discoveredTheme:menuDefinition(),
+      {
+        id = "requires-test",
+        title = "Requires Test",
+        parent = "leader",
+        entry = {
+          key = "q",
+        },
+        items = {
+          {
+            key = "r",
+            label = "Missing Feature",
+            kind = "action",
+            requires = "missingFeature",
+            action = {
+              type = "reload",
+            },
+          },
+        },
+      },
+    },
+    discoveredTheme
+  )
+end)
+
+assert(
+  not missingFeatureRequirementAccepted,
+  "unknown declarative feature requirements must fail early"
+)
 
 local missingThemeActionAccepted = pcall(function()
   Loader.load(
@@ -782,7 +834,7 @@ assert(launchedApplication == "Calculator", "Return must activate selected entry
 assert(runtime.activeMenu == nil, "application launch must close Gearbox")
 
 globalHotkeyPressed()
-runtime.menus.leader.modal.bindings.p()
+runtime.menus.leader.modal.bindings.s()
 
 assert(runtime.activeMenu == nil, "scratchpad must replace the menu HUD")
 assert(#createdWebviews == 1, "scratchpad must reuse its prewarmed webview")
@@ -851,7 +903,7 @@ assert(
 )
 
 globalHotkeyPressed()
-runtime.menus.leader.modal.bindings.p()
+runtime.menus.leader.modal.bindings.s()
 assert(
   #createdWebviews == 1 and createdWebviews[1].visible,
   "scratchpad must reuse its existing webview"
@@ -1078,23 +1130,6 @@ assert(
   "scratchpad capacity failures must preserve the active menu"
 )
 
-local duplicateScratchpadKeyAccepted = pcall(function()
-  Gearbox.start({
-    scratchpad = {
-      menuKey = "c",
-    },
-  })
-end)
-
-assert(
-  not duplicateScratchpadKeyAccepted,
-  "scratchpad menu keys must not collide with root entries"
-)
-assert(
-  validRuntime.activeMenu.id == "themes",
-  "scratchpad key failures must preserve the active menu"
-)
-
 local fontCallsBeforePartialStart = defaultTextStyleCalls
 local partialStartModalIndex = #createdModals + 1
 failNextModalBind = true
@@ -1282,7 +1317,7 @@ local noScratchpadRuntime = Gearbox.start({
 })
 
 assert(
-  noScratchpadRuntime.menus.leader.modal.bindings.p == nil,
+  noScratchpadRuntime.menus.leader.modal.bindings.s == nil,
   "disabled scratchpad must not register a root-menu key"
 )
 
