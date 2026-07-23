@@ -328,16 +328,6 @@ local function validateConfig(config)
   )
 
   assertType(config.scratchpad.enable, "boolean", "scratchpad.enable")
-  assertType(config.scratchpad.menuKey, "string", "scratchpad.menuKey")
-  assert(
-    config.scratchpad.menuKey ~= "",
-    "Gearbox: scratchpad.menuKey cannot be empty"
-  )
-  assert(
-    validHotkeyKey(config.scratchpad.menuKey),
-    "Gearbox: invalid scratchpad.menuKey: "
-        .. config.scratchpad.menuKey
-  )
   assertType(config.scratchpad.width, "number", "scratchpad.width")
   assert(
     config.scratchpad.width >= 360,
@@ -401,21 +391,12 @@ function Gearbox.start(overrides)
       and Scratchpad.new(config, theme)
       or nil
 
-  local supplementalItems = scratchpad
-      and {
-        leader = {
-          scratchpad:menuItem(),
-        },
-      }
-      or nil
-
   local menus, rootId = Loader.load(
     directory,
     config,
     Actions,
     { theme:menuDefinition() },
-    theme,
-    supplementalItems
+    theme
   )
   local hud = HUD.new(config, theme)
 

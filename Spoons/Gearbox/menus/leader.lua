@@ -1,4 +1,4 @@
---- Gearbox root menu: Calculator, ForkLift, KeePassXC, Passwords.
+--- Gearbox root menu: applications and the Scratchpad.
 return {
   id = "leader",
   title = "Gearbox",
@@ -43,12 +43,21 @@ return {
       },
     },
     {
-      key = "s",
+      key = "p",
       label = "Passwords",
       kind = "application",
       action = {
         type = "launchApp",
         name = "Passwords",
+      },
+    },
+    {
+      key = "s",
+      label = "Scratchpad",
+      kind = "action",
+      requires = "scratchpad",
+      action = {
+        type = "openScratchpad",
       },
     },
   },

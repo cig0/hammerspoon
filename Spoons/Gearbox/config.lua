@@ -68,7 +68,6 @@ return {
 
   scratchpad = {
     enable = true,
-    menuKey = "p",
     width = 720,
     height = 480,
     maxCharacters = 4096,

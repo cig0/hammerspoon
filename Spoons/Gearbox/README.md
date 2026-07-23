@@ -34,7 +34,7 @@ letter key    → run or open the displayed entry
 ↑ / ↓         → select an entry
 Return        → activate the selection
 Esc           → return to the parent or exit
-p             → open the scratchpad from the root menu
+s             → open the scratchpad from the root menu
 Tab           → insert a tab while editing the scratchpad
 ```
 
@@ -201,12 +201,16 @@ remain bare controls, preserving modified macOS shortcuts such as
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `scratchpad.enable` | `true` | Includes the scratchpad in the root menu |
-| `scratchpad.menuKey` | `"p"` | Root-menu key used to open the scratchpad |
 | `scratchpad.width` | `720` | Width in points, clamped to the selected screen |
 | `scratchpad.height` | `480` | Height in points, clamped to the selected screen |
 | `scratchpad.maxCharacters` | `4096` | Maximum editable text capacity; existing longer content is preserved |
 | `scratchpad.persistContent` | `true` | Restores content through local `hs.settings` storage |
 | `scratchpad.showInstructions` | `true` | Displays the non-editable keyboard reference footer |
+
+The `s` shortcut and `openScratchpad` action are declared directly in
+[`menus/leader.lua`](./menus/leader.lua), following the same structure as the
+other root entries. Its generic `requires = "scratchpad"` metadata tells the
+loader to omit the entry when `scratchpad.enable` is false.
 
 The scratchpad inherits `menu.screen`, `menu.position`, the active semantic
 palette, and the resolved Gearbox font family. Its borderless webview is created
