@@ -1,3 +1,4 @@
+--- Tokyo Night theme (dark).
 return {
   id = "tokyo-night",
   label = "Tokyo Night",

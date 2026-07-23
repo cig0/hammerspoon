@@ -1,3 +1,4 @@
+--- Gearbox Dark theme (dark).
 return {
   id = "gearbox-dark",
   label = "Gearbox Dark",

@@ -1,3 +1,8 @@
+--- Menu discovery, validation, and assembly.
+--
+-- Loads menu modules from disk, validates the menu graph, and assembles runtime
+-- menu tables. Output: ordered rows, auto-generated dividers, child-group rows,
+-- and Back/Exit footers bound by `runtime.lua`.
 local Loader = {}
 
 local validKinds = {
@@ -5,10 +10,15 @@ local validKinds = {
   application = true,
 }
 
+--- Raise a Gearbox-prefixed error at the caller's level.
+---@param message string
 local function fail(message)
   error("Gearbox: " .. message, 3)
 end
 
+--- Deep-copy a table. Non-tables pass through unchanged.
+---@param value any
+---@return any
 local function copyTable(value)
   if type(value) ~= "table" then
     return value
@@ -23,12 +33,17 @@ local function copyTable(value)
   return result
 end
 
+--- Insert a divider row when the last row is not already a divider.
+---@param rows table
 local function appendDivider(rows)
   if #rows > 0 and not rows[#rows].divider then
     table.insert(rows, { divider = true })
   end
 end
 
+--- Return true when `key` is a valid Hammerspoon key name.
+---@param key string
+---@return boolean
 local function validHotkeyKey(key)
   if key:match("^#%d+$") then
     return true
@@ -37,6 +52,9 @@ local function validHotkeyKey(key)
   return hs.keycodes.map[key:lower()] ~= nil
 end
 
+--- Normalize a key string for duplicate and reserved-key detection.
+---@param key string
+---@return string
 local function keyIdentity(key)
   if key:match("^#%d+$") then
     return "#" .. tonumber(key:sub(2))
@@ -45,6 +63,9 @@ local function keyIdentity(key)
   return key:lower()
 end
 
+--- List non-hidden `.lua` files in `directory`, sorted alphabetically.
+---@param directory string
+---@return table
 local function menuFiles(directory)
   local files = {}
 
@@ -62,6 +83,12 @@ local function menuFiles(directory)
   return files
 end
 
+--- Add a menu definition to the index after validating its id.
+--
+-- Stamps the source filename onto the definition for error messages.
+---@param definitions table
+---@param definition table
+---@param source string
 local function addDefinition(definitions, definition, source)
   if type(definition) ~= "table" then
     fail(source .. " must return one menu definition")
@@ -81,6 +108,10 @@ local function addDefinition(definitions, definition, source)
   definitions[definition.id] = definition
 end
 
+--- Load and index all menu modules from disk plus supplemental definitions.
+---@param directory string
+---@param supplementalDefinitions table
+---@return table
 local function loadDefinitions(directory, supplementalDefinitions)
   local definitions = {}
   local files = menuFiles(directory)
@@ -137,6 +168,12 @@ local function addSupplementalItems(definitions, supplementalItems)
   end
 end
 
+--- Validate the full menu graph and return the single root menu id.
+---@param definitions table
+---@param config table
+---@param actions table
+---@param theme table
+---@return string
 local function validateDefinitions(definitions, config, actions, theme)
   local rootIds = {}
   local reservedKeys = {
@@ -246,8 +283,8 @@ local function validateDefinitions(definitions, config, actions, theme)
             and not definitions[item.action.menu] then
           fail(
             location
-              .. " references missing menu: "
-              .. item.action.menu
+            .. " references missing menu: "
+            .. item.action.menu
           )
         end
 
@@ -258,8 +295,8 @@ local function validateDefinitions(definitions, config, actions, theme)
             ) then
           fail(
             location
-              .. " references missing theme: "
-              .. item.action.theme
+            .. " references missing theme: "
+            .. item.action.theme
           )
         end
 
@@ -289,6 +326,9 @@ local function validateDefinitions(definitions, config, actions, theme)
   return rootIds[1]
 end
 
+--- Sort children inside each section, then sort the sections themselves.
+---@param sections table
+---@return table
 local function sortedSections(sections)
   local result = {}
 
@@ -325,6 +365,12 @@ local function sortedSections(sections)
   return result
 end
 
+--- Build runtime menu tables from validated definitions.
+---@param definitions table
+---@param rootId string
+---@param config table
+---@param actions table
+---@return table
 local function assembleMenus(definitions, rootId, config, actions)
   local menus = {}
   local sectionsByParent = {}
@@ -348,7 +394,7 @@ local function assembleMenus(definitions, rootId, config, actions)
       if section and section.order ~= sectionOrder then
         fail(
           ("section %s in %s has conflicting sectionOrder values")
-            :format(sectionId, definition.parent)
+          :format(sectionId, definition.parent)
         )
       end
 
@@ -443,6 +489,14 @@ local function assembleMenus(definitions, rootId, config, actions)
   return menus
 end
 
+--- Load, validate, and assemble the Gearbox menu graph.
+---@param rootDirectory string
+---@param config table
+---@param actions table
+---@param supplementalDefinitions table
+---@param theme table
+---@return table menus
+---@return string rootId
 function Loader.load(
   rootDirectory,
   config,

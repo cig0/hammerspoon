@@ -1,4 +1,16 @@
+--- Canvas-based HUD renderer.
+--
+-- Builds the visual menu with a header, rows, dividers, selection highlight, and
+-- optional loupe scaling animation. Input: menu definitions and theme colors
+-- from `theme.lua`. Output: an `hs.canvas` shown by `runtime.lua`.
 local HUD = {}
+
+---@class HUD
+---@field config table
+---@field theme table
+---@field canvas any
+---@field animationTimer any
+---@field layout table
 HUD.__index = HUD
 
 local verticalPositions = {
@@ -12,15 +24,29 @@ local keyDisplayNames = {
   ["return"] = "↩",
 }
 
+--- Round to the nearest integer.
+---@param value number
+---@return integer
 local function round(value)
   return math.floor(value + 0.5)
 end
 
+--- Append a canvas element and return its 1-based index.
+--
+-- The index is later used to update element attributes during the loupe
+-- animation.
+---@param elements table
+---@param element table
+---@return integer
 local function appendElement(elements, element)
   table.insert(elements, element)
   return #elements
 end
 
+--- Create a new HUD instance for the given config and theme.
+---@param config table
+---@param theme table
+---@return HUD
 function HUD.new(config, theme)
   local self = setmetatable({}, HUD)
 
@@ -56,6 +82,7 @@ function HUD.new(config, theme)
   return self
 end
 
+--- Stop any running selection animation.
 function HUD:stopAnimation()
   if self.animationTimer then
     self.animationTimer:stop()
@@ -63,6 +90,7 @@ function HUD:stopAnimation()
   end
 end
 
+--- Hide and destroy the canvas.
 function HUD:close()
   self:stopAnimation()
 
@@ -72,6 +100,8 @@ function HUD:close()
   end
 end
 
+--- Choose the screen that should host the HUD.
+---@return any
 function HUD:targetScreen()
   if self.config.menu.screen == "mouse" then
     return hs.mouse.getCurrentScreen() or hs.screen.mainScreen()
@@ -80,6 +110,9 @@ function HUD:targetScreen()
   return hs.screen.mainScreen()
 end
 
+--- Calculate the total canvas height for `rows`.
+---@param rows table
+---@return number
 function HUD:calculateHeight(rows)
   local height = self.layout.contentTop + self.layout.bottomPadding
 
@@ -94,10 +127,16 @@ function HUD:calculateHeight(rows)
   return height
 end
 
+--- Return the key string shown for a row.
+---@param row table
+---@return string
 function HUD:displayKey(row)
   return row.displayKey or keyDisplayNames[row.key] or row.key
 end
 
+--- Return the menu title, optionally prefixed by its emoji.
+---@param menu table
+---@return string
 function HUD:displayTitle(menu)
   if self.config.menu.showEmojis and menu.emoji ~= "" then
     return menu.emoji .. "  " .. menu.title
@@ -106,14 +145,25 @@ function HUD:displayTitle(menu)
   return menu.title
 end
 
+--- Render one menu row onto the canvas element list.
+--
+-- Populates `menu.rowVisuals[rowIndex]` with indices and base geometry needed
+-- for later scale updates.
+---@param elements table
+---@param menu table
+---@param row table
+---@param rowIndex integer
+---@param y number
+---@param navigationPosition integer|nil
+---@param isChecked boolean
 function HUD:appendMenuRow(
-  elements,
-  menu,
-  row,
-  rowIndex,
-  y,
-  navigationPosition,
-  isChecked
+    elements,
+    menu,
+    row,
+    rowIndex,
+    y,
+    navigationPosition,
+    isChecked
 )
   local layout = self.layout
   local colors = self.theme.colors
@@ -238,6 +288,9 @@ function HUD:appendMenuRow(
   }
 end
 
+--- Build and display the canvas for `menu`.
+---@param menu table
+---@param checkedRows table
 function HUD:show(menu, checkedRows)
   self:close()
 
@@ -360,6 +413,10 @@ function HUD:show(menu, checkedRows)
   self.canvas:show()
 end
 
+--- Update the rendered scale of one row for the loupe effect.
+---@param menu table
+---@param rowIndex integer
+---@param scale number
 function HUD:renderRowScale(menu, rowIndex, scale)
   if not self.canvas then
     return
@@ -478,6 +535,10 @@ function HUD:renderRowScale(menu, rowIndex, scale)
   )
 end
 
+--- Determine the target scale for a row based on its distance from selection.
+---@param menu table
+---@param visual table
+---@return number
 function HUD:targetScale(menu, visual)
   if not self.config.loupe.enabled then
     return 1
@@ -501,6 +562,9 @@ function HUD:targetScale(menu, visual)
   return 1
 end
 
+--- Move the selection highlight frame to `y`.
+---@param menu table
+---@param y number
 function HUD:setSelectionFrame(menu, y)
   menu.selectionY = y
 
@@ -516,6 +580,8 @@ function HUD:setSelectionFrame(menu, y)
   )
 end
 
+--- Move and animate the selection highlight to the current selected row.
+---@param menu table
 function HUD:select(menu)
   if not self.canvas then
     return
@@ -587,6 +653,9 @@ function HUD:select(menu)
   animationStep()
 end
 
+--- Redraw `menu` and restore the current selection, if any.
+---@param menu table
+---@param checkedRows table
 function HUD:refresh(menu, checkedRows)
   self:show(menu, checkedRows)
 

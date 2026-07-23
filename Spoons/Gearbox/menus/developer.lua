@@ -1,3 +1,4 @@
+--- Developer tools submenu: Codex, Sublime Merge, VirtualBuddy, Zed.
 return {
   id = "developer",
   title = "Developer Tools",

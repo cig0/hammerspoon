@@ -1,3 +1,4 @@
+--- Finder folders submenu: Desktop, Documents, Downloads, Home.
 return {
   id = "finder",
   title = "Finder Folders",

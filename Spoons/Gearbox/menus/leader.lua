@@ -1,3 +1,4 @@
+--- Gearbox root menu: Calculator, ForkLift, KeePassXC, Passwords.
 return {
   id = "leader",
   title = "Gearbox",
@@ -30,6 +31,15 @@ return {
       action = {
         type = "launchApp",
         name = "KeePassXC",
+      },
+    },
+    {
+      key = "o",
+      label = "Obsidian",
+      kind = "application",
+      action = {
+        type = "launchApp",
+        name = "Obsidian",
       },
     },
     {

@@ -1,3 +1,4 @@
+--- Communications submenu: Discord, WhatsApp.
 return {
   id = "comms",
   title = "Communications",

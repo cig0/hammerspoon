@@ -1,3 +1,4 @@
+--- Gruvbox Light theme (light).
 return {
   id = "gruvbox-light",
   label = "Gruvbox Light",
