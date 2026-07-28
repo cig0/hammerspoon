@@ -35,7 +35,7 @@ For an existing configuration, copy the desired Spoon beneath
 `~/.hammerspoon/Spoons/` and load it from `~/.hammerspoon/init.lua`:
 
 ```lua
-require("Spoons.Gearbox").start()
+require("Spoons.Gearbox").start({menu = {timeout = 5}})
 ```
 
 The [Gearbox guide](./Spoons/Gearbox/README.md) contains the exact copy command,

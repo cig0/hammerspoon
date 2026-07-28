@@ -15,11 +15,11 @@ mkdir -p ~/.hammerspoon/Spoons/Gearbox
 cp -R Spoons/Gearbox/. ~/.hammerspoon/Spoons/Gearbox/
 ```
 
-Add `require("Spoons.Gearbox").start()` to your
+Add Gearbox with an explicit positive timeout to your
 `~/.hammerspoon/init.lua` file:
 
 ```lua
-require("Spoons.Gearbox").start()
+require("Spoons.Gearbox").start({menu = {timeout = 5}})
 ```
 
 Reload Hammerspoon and press `alt+cmd+space`. A full clone at
@@ -127,12 +127,17 @@ override table generated beneath
 | --- | --- | --- |
 | `hotkey.modifiers` | `{ "alt", "cmd" }` | Modifiers used to open or close Gearbox |
 | `hotkey.key` | `"space"` | Hammerspoon key name paired with the modifiers |
-| `menu.timeout` | `0` | Seconds before closing; zero disables timeout |
+| `menu.timeout` | `0` | Seconds before closing; zero disables timeout and intentionally fails startup |
 | `menu.position` | `"top"` | `"top"`, `"center"`, or `"bottom"` screen placement |
 | `menu.screen` | `"main"` | `"main"` or the `"mouse"` pointer screen |
 | `menu.width` | `420` | HUD width in points |
 | `menu.showEmojis` | `true` | Includes the menu definition's emoji in its title |
 | `menu.highlightGroups` | `true` | Uses the active accent behind group shortcuts |
+
+The zero timeout is a deliberate disabled sentinel, not a usable runtime
+setting. `Gearbox.start()` displays a ten-second configuration alert and raises
+an error before allocating menus, hotkeys, the HUD, or the scratchpad. Set a
+positive timeout to start Gearbox normally.
 
 ### Fonts and loupe
 

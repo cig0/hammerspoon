@@ -4,10 +4,14 @@ package.path = root .. "/?.lua;" .. root .. "/?/init.lua;" .. package.path
 
 local caffeinateState = {displayIdle = false, systemIdle = false}
 
+local createdCanvases = {}
 local createdModals = {}
+local createdTimers = {}
 local createdWebviews = {}
 local createdWebviewControllers = {}
+local shownAlerts = {}
 local globalHotkeyPressed
+local globalHotkeyBindCalls = 0
 local launchedApplication
 local defaultTextStyleCalls = 0
 local failNextModalBind = false
@@ -83,6 +87,7 @@ local function newCanvas()
 
     function canvas:delete() self.visible = false end
 
+    table.insert(createdCanvases, canvas)
     return canvas
 end
 
@@ -170,7 +175,16 @@ local function newWebview(frame, controller)
 end
 
 hs = {
-    alert = {show = function() end},
+    alert = {
+        defaultStyle = {textFont = ".AppleSystemUIFont", textSize = 27},
+        show = function(message, style, duration)
+            table.insert(shownAlerts, {
+                message = message,
+                style = style,
+                duration = duration
+            })
+        end
+    },
 
     application = {
         launchOrFocus = function(name) launchedApplication = name end
@@ -211,6 +225,8 @@ hs = {
 
     hotkey = {
         bind = function(_, _, callback)
+            globalHotkeyBindCalls = globalHotkeyBindCalls + 1
+
             if failNextGlobalHotkey then
                 failNextGlobalHotkey = false
                 return nil
@@ -297,7 +313,14 @@ hs = {
 
     timer = {
         absoluteTime = function() return 0 end,
-        doAfter = function() return {stop = function() end} end,
+        doAfter = function(duration, callback)
+            local timer = {duration = duration, callback = callback}
+
+            function timer:stop() self.stopped = true end
+
+            table.insert(createdTimers, timer)
+            return timer
+        end,
         doEvery = function() return {stop = function() end} end
     },
 
@@ -326,6 +349,8 @@ local Loader = require("Spoons.Gearbox.loader")
 local Theme = require("Spoons.Gearbox.theme")
 local config = require("Spoons.Gearbox.config")
 
+assert(config.menu.timeout == 0,
+       "zero must remain the standalone disabled-timeout sentinel")
 assert(config.loupe.selectedScale == 1.18 and config.loupe.duration == 0,
        "standalone loupe defaults must retain immediate navigation")
 assert(config.scratchpad.enable and config.scratchpad.width == 720 and
@@ -508,7 +533,69 @@ settings["Shift7.theme.selection"] = {
 settings["Gearbox.scratchpad.content"] = "restored draft"
 
 local Gearbox = require("Spoons.Gearbox")
+local expectedDisabledTimeoutMessage = table.concat({
+    "Gearbox failed to start because `menu.timeout` is set to `0` (disabled).",
+    "Set `menu.timeout` to a positive number of seconds, then reload Hammerspoon.",
+    "This message will close in 10 seconds."
+}, "\n")
+local canvasesBeforeDisabledTimeout = #createdCanvases
+local modalsBeforeDisabledTimeout = #createdModals
+local timersBeforeDisabledTimeout = #createdTimers
+local webviewsBeforeDisabledTimeout = #createdWebviews
+local controllersBeforeDisabledTimeout = #createdWebviewControllers
+local hotkeysBeforeDisabledTimeout = globalHotkeyBindCalls
+local fontCallsBeforeDisabledTimeout = defaultTextStyleCalls
+local appearanceCallsBeforeDisabledTimeout = interfaceStyleCalls
+local accentCallsBeforeDisabledTimeout = osascriptCalls
+local disabledTimeoutAccepted, disabledTimeoutError = pcall(function()
+    Gearbox.start()
+end)
+
+assert(not disabledTimeoutAccepted,
+       "the zero timeout sentinel must fail Gearbox startup")
+assert(
+    disabledTimeoutError == "Gearbox: menu.timeout must be greater than zero",
+    "zero timeout must raise the dedicated configuration error")
+assert(#shownAlerts == 1, "zero timeout must show one configuration alert")
+
+local disabledTimeoutAlert = shownAlerts[1]
+local disabledTimeoutStyle = disabledTimeoutAlert.style
+
+assert(disabledTimeoutAlert.message == expectedDisabledTimeoutMessage,
+       "zero-timeout alert message changed")
+assert(disabledTimeoutAlert.duration == 10,
+       "zero-timeout alert must own a ten-second lifetime")
+assert(disabledTimeoutStyle.textSize ==
+           math.max(config.font.titleSize + 2, hs.alert.defaultStyle.textSize) and
+           disabledTimeoutStyle.textSize > config.font.titleSize,
+       "zero-timeout alert font must be larger than the menu header")
+assert(disabledTimeoutStyle.fillColor.white == 0.08 and
+           disabledTimeoutStyle.fillColor.alpha == 0.96,
+       "zero-timeout alert must use a dark translucent background")
+assert(disabledTimeoutStyle.strokeColor.red == 1 and
+           disabledTimeoutStyle.strokeColor.green == 0.56 and
+           disabledTimeoutStyle.strokeColor.blue == 0.15 and
+           disabledTimeoutStyle.strokeColor.alpha == 1 and
+           disabledTimeoutStyle.strokeWidth == 3,
+       "zero-timeout alert must use the warning border")
+assert(disabledTimeoutStyle.textColor.white == 1 and
+           disabledTimeoutStyle.textColor.alpha == 1,
+       "zero-timeout alert must use white text")
+assert(disabledTimeoutStyle.radius == 16,
+       "zero-timeout alert must use rounded corners")
+assert(#createdCanvases == canvasesBeforeDisabledTimeout and #createdModals ==
+           modalsBeforeDisabledTimeout and #createdTimers ==
+           timersBeforeDisabledTimeout and #createdWebviews ==
+           webviewsBeforeDisabledTimeout and #createdWebviewControllers ==
+           controllersBeforeDisabledTimeout and globalHotkeyBindCalls ==
+           hotkeysBeforeDisabledTimeout and defaultTextStyleCalls ==
+           fontCallsBeforeDisabledTimeout and interfaceStyleCalls ==
+           appearanceCallsBeforeDisabledTimeout and osascriptCalls ==
+           accentCallsBeforeDisabledTimeout,
+       "zero timeout must fail before allocating the Gearbox runtime")
+
 local runtime = Gearbox.start({
+    menu = {timeout = 5},
     theme = {
         accentSource = "theme",
         overrides = {
@@ -533,6 +620,8 @@ assert(interfaceStyleCalls == 0,
 
 globalHotkeyPressed()
 assert(runtime.activeMenu.id == "leader", "global hotkey must open leader")
+assert(runtime.timeoutTimer and runtime.timeoutTimer.duration == 5,
+       "a positive timeout must arm the menu timer")
 assert(interfaceStyleCalls == 0,
        "a migrated manual theme must not resolve system appearance")
 
@@ -591,10 +680,21 @@ local downBinding = assert(findBinding(rootModal, "down", {}))
 assert(downBinding.pressed and downBinding.repeated,
        "arrow navigation must run on key press and key repeat")
 
+local menuEntryTimer = runtime.timeoutTimer
+
 runtime.menus.leader.modal.bindings.down()
 assert(runtime.menus.leader.selectedIndex == 1,
        "first Down press must select the first entry")
+assert(menuEntryTimer.stopped and runtime.timeoutTimer ~= menuEntryTimer and
+           runtime.timeoutTimer.duration == 5,
+       "navigation input must reset a positive timeout")
 
+runtime.timeoutTimer.callback()
+assert(runtime.activeMenu == nil and runtime.timeoutTimer == nil,
+       "an elapsed positive timeout must exit the active modal")
+
+globalHotkeyPressed()
+runtime.menus.leader.modal.bindings.down()
 runtime.menus.leader.modal.bindings["return"]()
 assert(launchedApplication == "Calculator",
        "Return must activate selected entry")
@@ -730,8 +830,40 @@ assert(runtime.theme.selection == "dracula",
        "manual selection must switch away from system mode")
 
 local validRuntime = runtime
+local alertsBeforeFailedReplacement = #shownAlerts
+local canvasesBeforeFailedReplacement = #createdCanvases
+local modalsBeforeFailedReplacement = #createdModals
+local timersBeforeFailedReplacement = #createdTimers
+local webviewsBeforeFailedReplacement = #createdWebviews
+local controllersBeforeFailedReplacement = #createdWebviewControllers
+local hotkeysBeforeFailedReplacement = globalHotkeyBindCalls
+local fontCallsBeforeFailedReplacement = defaultTextStyleCalls
+local failedReplacementAccepted, failedReplacementError = pcall(function()
+    Gearbox.start({menu = {timeout = 0}})
+end)
+
+assert(not failedReplacementAccepted and failedReplacementError ==
+           "Gearbox: menu.timeout must be greater than zero",
+       "zero-timeout replacement must fail with the dedicated error")
+assert(#shownAlerts == alertsBeforeFailedReplacement + 1 and
+           shownAlerts[#shownAlerts].message == expectedDisabledTimeoutMessage and
+           shownAlerts[#shownAlerts].duration == 10,
+       "zero-timeout replacement must show the configuration alert")
+assert(
+    #createdCanvases == canvasesBeforeFailedReplacement and #createdModals ==
+        modalsBeforeFailedReplacement and #createdTimers ==
+        timersBeforeFailedReplacement and #createdWebviews ==
+        webviewsBeforeFailedReplacement and #createdWebviewControllers ==
+        controllersBeforeFailedReplacement and globalHotkeyBindCalls ==
+        hotkeysBeforeFailedReplacement and defaultTextStyleCalls ==
+        fontCallsBeforeFailedReplacement,
+    "zero-timeout replacement must not allocate a candidate runtime")
+assert(validRuntime.started and validRuntime.activeMenu.id == "themes",
+       "zero-timeout replacement must preserve the active runtime")
+
 local mixedColorAccepted = pcall(function()
     Gearbox.start({
+        menu = {timeout = 5},
         theme = {
             overrides = {
                 dracula = {
@@ -754,21 +886,27 @@ assert(validRuntime.activeMenu.id == "themes",
        "invalid overrides must preserve the active menu")
 
 local unknownThemeAccepted = pcall(function()
-    Gearbox.start({theme = {overrides = {missing = {selectionAlpha = 0.2}}}})
+    Gearbox.start({
+        menu = {timeout = 5},
+        theme = {overrides = {missing = {selectionAlpha = 0.2}}}
+    })
 end)
 
 assert(not unknownThemeAccepted, "unknown theme overrides must fail")
 assert(validRuntime.started, "unknown overrides must preserve active runtime")
 
 local unknownFieldAccepted = pcall(function()
-    Gearbox.start({theme = {overrides = {dracula = {unknown = 1}}}})
+    Gearbox.start({
+        menu = {timeout = 5},
+        theme = {overrides = {dracula = {unknown = 1}}}
+    })
 end)
 
 assert(not unknownFieldAccepted, "unknown theme override fields must fail")
 assert(validRuntime.started, "unknown fields must preserve active runtime")
 
 local invalidKeyAccepted = pcall(function()
-    Gearbox.start({hotkey = {key = "not-a-real-key"}})
+    Gearbox.start({hotkey = {key = "not-a-real-key"}, menu = {timeout = 5}})
 end)
 
 assert(not invalidKeyAccepted, "invalid Hammerspoon keys must fail early")
@@ -777,7 +915,7 @@ assert(validRuntime.activeMenu.id == "themes",
        "invalid keys must preserve the active menu")
 
 local reservedCaseAccepted = pcall(function()
-    Gearbox.start({navigation = {activateKey = "Down"}})
+    Gearbox.start({menu = {timeout = 5}, navigation = {activateKey = "Down"}})
 end)
 
 assert(not reservedCaseAccepted,
@@ -786,7 +924,7 @@ assert(validRuntime.activeMenu.id == "themes",
        "reserved key failures must preserve the active menu")
 
 local smallScratchpadAccepted = pcall(function()
-    Gearbox.start({scratchpad = {width = 359}})
+    Gearbox.start({menu = {timeout = 5}, scratchpad = {width = 359}})
 end)
 
 assert(not smallScratchpadAccepted,
@@ -795,7 +933,7 @@ assert(validRuntime.activeMenu.id == "themes",
        "scratchpad validation failures must preserve the active menu")
 
 local invalidScratchpadCapacityAccepted = pcall(function()
-    Gearbox.start({scratchpad = {maxCharacters = 0}})
+    Gearbox.start({menu = {timeout = 5}, scratchpad = {maxCharacters = 0}})
 end)
 
 assert(not invalidScratchpadCapacityAccepted,
@@ -808,7 +946,7 @@ local partialStartModalIndex = #createdModals + 1
 failNextModalBind = true
 
 local partialStartAccepted = pcall(function()
-    Gearbox.start({theme = {accentSource = "theme"}})
+    Gearbox.start({menu = {timeout = 5}, theme = {accentSource = "theme"}})
 end)
 
 assert(not partialStartAccepted, "partial modal registration must fail startup")
@@ -829,7 +967,10 @@ local globalFailureModalIndex = #createdModals + 1
 failNextGlobalHotkey = true
 
 local unavailableHotkeyAccepted = pcall(function()
-    Gearbox.start({theme = {name = "gearbox-light", accentSource = "theme"}})
+    Gearbox.start({
+        menu = {timeout = 5},
+        theme = {name = "gearbox-light", accentSource = "theme"}
+    })
 end)
 
 assert(not unavailableHotkeyAccepted,
@@ -852,7 +993,10 @@ assert(settings["Gearbox.theme.selection"].selection == "dracula" and
 
 local fontCallsBeforeReplacements = defaultTextStyleCalls
 
-local replacementRuntime = Gearbox.start({theme = {accentSource = "theme"}})
+local replacementRuntime = Gearbox.start({
+    menu = {timeout = 5},
+    theme = {accentSource = "theme"}
+})
 
 assert(replacementRuntime.started, "replacement runtime must start")
 assert(replacementRuntime.theme.selection == "dracula",
@@ -861,6 +1005,7 @@ assert(not validRuntime.started,
        "successful replacement must stop the previous runtime")
 
 local configuredRuntime = Gearbox.start({
+    menu = {timeout = 5},
     theme = {name = "gearbox-light", accentSource = "theme"}
 })
 
@@ -875,6 +1020,7 @@ settings["Gearbox.theme.selection"] = {
 }
 
 local missingThemeRuntime = Gearbox.start({
+    menu = {timeout = 5},
     theme = {name = "gearbox-light", accentSource = "theme"}
 })
 
@@ -889,6 +1035,7 @@ settings["Gearbox.theme.selection"] = {
 }
 
 local nonPersistentRuntime = Gearbox.start({
+    menu = {timeout = 5},
     theme = {
         name = "gearbox-light",
         persistSelection = false,
@@ -906,6 +1053,7 @@ assert(defaultTextStyleCalls == fontCallsBeforeReplacements + 4,
 
 local accentCallsBefore = osascriptCalls
 local systemAccentRuntime = Gearbox.start({
+    menu = {timeout = 5},
     theme = {
         name = "gearbox-dark",
         persistSelection = false,
@@ -922,6 +1070,7 @@ assert(systemAccentRuntime.theme.colors.accent.red == 0.2,
        "system accent source must use the resolved macOS accent")
 
 local noScratchpadRuntime = Gearbox.start({
+    menu = {timeout = 5},
     scratchpad = {enable = false},
     theme = {accentSource = "theme"}
 })

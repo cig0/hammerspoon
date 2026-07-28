@@ -31,6 +31,36 @@ local hotkeyModifiers = {
     shift = true
 }
 
+local disabledTimeoutAlertDuration = 10
+
+local disabledTimeoutAlertMessage = table.concat({
+    "Gearbox failed to start because `menu.timeout` is set to `0` (disabled).",
+    "Set `menu.timeout` to a positive number of seconds, then reload Hammerspoon.",
+    "This message will close in 10 seconds."
+}, "\n")
+
+--- Report the intentionally disabled timeout and abort Gearbox startup.
+---@param config table
+local function failDisabledTimeout(config)
+    local textSize = math.max(config.font.titleSize + 2,
+                              hs.alert.defaultStyle.textSize)
+    local style = {
+        fillColor = {white = 0.08, alpha = 0.96},
+        strokeColor = {red = 1, green = 0.56, blue = 0.15, alpha = 1},
+        strokeWidth = 3,
+        textColor = {white = 1, alpha = 1},
+        textSize = textSize,
+        radius = 16,
+        padding = textSize
+    }
+
+    if config.font.family then style.textFont = config.font.family end
+
+    hs.alert.show(disabledTimeoutAlertMessage, style,
+                  disabledTimeoutAlertDuration)
+    error("Gearbox: menu.timeout must be greater than zero", 0)
+end
+
 --- Deep-copy a table. Non-tables pass through unchanged.
 ---@param value any
 ---@return any
@@ -296,10 +326,12 @@ end
 function Gearbox.start(overrides)
     local defaults = require("Spoons.Gearbox.config")
     local config = merge(defaults, overrides or {})
-    local directory = sourceDirectory()
 
     validateConfig(config)
 
+    if config.menu.timeout == 0 then failDisabledTimeout(config) end
+
+    local directory = sourceDirectory()
     local theme = Theme.new(config, directory)
     local scratchpad = config.scratchpad.enable and
                            Scratchpad.new(config, theme) or nil

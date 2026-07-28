@@ -6,7 +6,7 @@ return {
     hotkey = {modifiers = {"alt", "cmd"}, key = "space"},
 
     menu = {
-        timeout = 0, -- Set to 0 to disable.
+        timeout = 0, -- Zero disables timeout and intentionally aborts startup.
         position = "top", -- "top", "center", "bottom"
         screen = "main", -- "main", "mouse"
         width = 420,
