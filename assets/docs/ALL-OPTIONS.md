@@ -20,7 +20,7 @@
 | `programs.hammerspoon-spoons.spoons.gearbox.menu.position` | one of "top", "center", "bottom" | `"top"` | Vertical menu position within the selected screen. |
 | `programs.hammerspoon-spoons.spoons.gearbox.menu.screen` | one of "main", "mouse" | `"main"` | Screen on which Gearbox appears. |
 | `programs.hammerspoon-spoons.spoons.gearbox.menu.showEmojis` | boolean | `true` | Whether menu titles include their emoji. |
-| `programs.hammerspoon-spoons.spoons.gearbox.menu.timeout` | signed integer or floating point number | `0` | Seconds before the menu closes; zero disables timeout. |
+| `programs.hammerspoon-spoons.spoons.gearbox.menu.timeout` | signed integer or floating point number | `0` | Seconds before the menu closes. Zero disables timeout and intentionally causes Gearbox startup to fail; normal use requires a positive value. |
 | `programs.hammerspoon-spoons.spoons.gearbox.menu.width` | signed integer | `420` | Menu width in points. |
 | `programs.hammerspoon-spoons.spoons.gearbox.navigation.activateKey` | string | `"return"` |  |
 | `programs.hammerspoon-spoons.spoons.gearbox.navigation.cancelKey` | string | `"escape"` |  |

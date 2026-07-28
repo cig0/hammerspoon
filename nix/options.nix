@@ -210,7 +210,11 @@ in
         timeout = mkOption {
           type = nonNegativeNumber;
           default = 0;
-          description = "Seconds before the menu closes; zero disables timeout.";
+          description = ''
+            Seconds before the menu closes. Zero disables timeout and
+            intentionally causes Gearbox startup to fail; normal use requires
+            a positive value.
+          '';
         };
 
         position = mkOption {

@@ -80,6 +80,7 @@ settings:
     spoons.gearbox = {
       font.size = 16;
       font.titleSize = 22;
+      menu.timeout = 5;
       menu.position = "top";
 
       theme = {
@@ -185,6 +186,7 @@ options to one named user:
     user = "jane";
 
     spoons.gearbox = {
+      menu.timeout = 5;
       menu.screen = "mouse";
       menu.width = 460;
       theme.persistSelection = true;
@@ -211,6 +213,11 @@ The flake exposes `interfaces.homeManagerOptionDocs` so downstream projects can
 render the option catalog under their own namespace.
 [`assets/docs/ALL-OPTIONS.md`](./ALL-OPTIONS.md) is the repository snapshot of
 that generated interface.
+
+The option schema deliberately accepts its default `menu.timeout = 0`; Nix
+evaluation does not reject it. At runtime, zero disables timeout and makes
+`Gearbox.start()` show a ten-second configuration alert before raising an
+error. Set a positive value in every enabled Gearbox configuration.
 
 ## Theme persistence
 
