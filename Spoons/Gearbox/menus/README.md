@@ -78,7 +78,7 @@ groups and before the footer.
 | Type | Owner at runtime |
 | --- | --- |
 | `launchApp` | `hs.application.launchOrFocus` |
-| `openPath` | `hs.open` after home-directory expansion |
+| `openPath` | `hs.open` |
 | `openMenu` | Runtime menu transition |
 | `setCaffeinateMode` | Mutually exclusive Hammerspoon caffeinate assertions |
 | `setTheme` | Theme selection and HUD refresh |

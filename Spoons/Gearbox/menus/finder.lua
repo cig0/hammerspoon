@@ -1,4 +1,6 @@
---- Finder folders submenu: Desktop, Documents, Downloads, Home.
+--- Finder folders submenu: Desktop, Documents, Downloads, Home, Pictures, tmp.
+local home = os.getenv("HOME") or ""
+
 return {
     id = "finder",
     title = "Finder Folders",
@@ -9,30 +11,58 @@ return {
 
     items = {
         {
+            key = "w",
+            label = "codedir",
+            kind = "action",
+            action = {type = "openPath", path = home .. "/codedir"}
+        }, {
             key = "e",
             label = "Desktop",
             kind = "action",
-            action = {type = "openPath", path = "~/Desktop"}
+            action = {type = "openPath", path = home .. "/Desktop"}
         }, {
             key = "o",
             label = "Documents",
             kind = "action",
-            action = {type = "openPath", path = "~/Documents"}
+            action = {type = "openPath", path = home .. "/Documents"}
         }, {
             key = "d",
             label = "Downloads",
             kind = "action",
-            action = {type = "openPath", path = "~/Downloads"}
+            action = {type = "openPath", path = home .. "/Downloads"}
         }, {
             key = "h",
             label = "Home",
             kind = "action",
-            action = {type = "openPath", path = "~/"}
+            action = {type = "openPath", path = home}
+        }, {
+            key = "i",
+            label = "iCloud",
+            kind = "action",
+            action = {
+                type = "openPath",
+                path = home .. "/Library/Mobile Documents/com~apple~CloudDocs"
+            }
+        }, {
+            key = "p",
+            label = "Pictures",
+            kind = "action",
+            action = {type = "openPath", path = home .. "/Pictures"}
+        }, {
+            key = "r",
+            label = "Pictures/I SHOOT RAW",
+            kind = "action",
+            action = {type = "openPath", path = home .. "/Pictures/I SHOOT RAW"}
         }, {
             key = "t",
             label = "tmp",
             kind = "action",
-            action = {type = "openPath", path = "~/tmp"}
+            action = {type = "openPath", path = home .. "/tmp"}
+        }, {
+            key = "s",
+            label = "Sync",
+            kind = "action",
+            action = {type = "openPath", path = home .. "/Sync"}
         }
     }
 }
