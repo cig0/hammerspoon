@@ -11,6 +11,15 @@ return {
 
     items = {
         {
+            key = "r",
+            label = "I SHOOT RAW",
+            kind = "action",
+            action = {
+                type = "openPath",
+                path = home ..
+                    "/Library/Mobile Documents/com~apple~CloudDocs/I SHOOT RAW"
+            }
+        }, {
             key = "w",
             label = "codedir",
             kind = "action",
@@ -48,11 +57,6 @@ return {
             label = "Pictures",
             kind = "action",
             action = {type = "openPath", path = home .. "/Pictures"}
-        }, {
-            key = "r",
-            label = "Pictures/I SHOOT RAW",
-            kind = "action",
-            action = {type = "openPath", path = home .. "/Pictures/I SHOOT RAW"}
         }, {
             key = "t",
             label = "tmp",
