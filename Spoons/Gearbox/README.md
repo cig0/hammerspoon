@@ -101,16 +101,17 @@ Hammerspoon releases those assertions when its configuration reloads.
 | [`hud.lua`](./hud.lua) | Canvas geometry, text, checks, selection, and loupe rendering |
 | [`scratchpad.lua`](./scratchpad.lua) | Editable webview, keyboard handling, persistence, and focus |
 | [`theme.lua`](./theme.lua) | Theme loading, persistence, fonts, appearance, and colors |
+| [`validation.lua`](./validation.lua) | Configuration, color, and hotkey validation |
 | [`init.lua`](./init.lua) | Public `start()` and `stop()` boundary |
 | [`tests/`](../../tests/README.md) | Mocked-Hammerspoon smoke and regression coverage |
 
 ```text
 config.lua + menus/*.lua + themes/*.lua
-  → init.lua validation
-  → loader.lua + theme.lua
-  → runtime.lua + actions.lua
-    → hud.lua
-    → scratchpad.lua
+  → init.lua
+    → validation.lua + loader.lua + theme.lua
+    → runtime.lua + actions.lua
+      → hud.lua
+      → scratchpad.lua
 ```
 
 ## Configuration (`config.lua`)
@@ -218,10 +219,12 @@ loader to omit the entry when `scratchpad.enable` is false.
 
 The scratchpad inherits `menu.screen`, `menu.position`, the active semantic
 palette, and the resolved Gearbox font family. Its borderless webview is created
-during Gearbox startup, kept hidden, and reused so invocation does not pay
-WebKit's initialization cost. The non-editable footer derives the configured
-Gearbox hotkey using the same modifier and key order as the main-menu Exit row.
-That hotkey closes the scratchpad; no second global hotkey is created.
+on first use and reused afterward, avoiding WebKit allocation when the
+scratchpad is never opened. A failed first construction releases partial native
+objects and leaves the Gearbox menu active for another attempt. The non-editable
+footer derives the configured Gearbox hotkey using the same modifier and key
+order as the main-menu Exit row. That hotkey closes the scratchpad; no second
+global hotkey is created.
 
 With persistence enabled, content is stored under
 `hs.settings["Gearbox.scratchpad.content"]`. The backing Hammerspoon preferences

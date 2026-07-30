@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 
@@ -13,6 +14,18 @@ in
   config = lib.mkIf cfg.enable (
     let
       gb = cfg.spoons.gearbox;
+      configuredGearbox =
+        pkgs.runCommand "gearbox-configured"
+          {
+            timeout = builtins.toJSON gb.menu.timeout;
+          }
+          ''
+            mkdir -p "$out"
+            cp -R ${../Spoons/Gearbox}/. "$out/"
+            chmod u+w "$out/config.lua"
+            substituteInPlace "$out/config.lua" \
+              --replace-fail "        timeout = 0," "        timeout = $timeout,"
+          '';
 
       spoonLoader = ''
         -- Nix-generated loader for enabled Hammerspoon Spoons.
@@ -30,7 +43,7 @@ in
         }
 
         (lib.mkIf gb.enable {
-          ".hammerspoon/Spoons/Gearbox".source = ../Spoons/Gearbox;
+          ".hammerspoon/Spoons/Gearbox".source = configuredGearbox;
         })
 
         (lib.mkIf cfg.manageInit {

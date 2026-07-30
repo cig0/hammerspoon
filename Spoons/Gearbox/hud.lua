@@ -22,6 +22,35 @@ local keyDisplayNames = {escape = "esc", ["return"] = "↩"}
 ---@return integer
 local function round(value) return math.floor(value + 0.5) end
 
+--- Return a font table sized for the loupe animation.
+---@param font table
+---@param size number
+---@return table
+local function resizedFont(font, size)
+    local result = {size = size}
+
+    if font.name then result.name = font.name end
+
+    return result
+end
+
+--- Build styled text for a canvas element.
+---@param text string
+---@param font table
+---@param color table
+---@param alignment? string
+---@return any
+local function styledText(text, font, color, alignment)
+    return hs.styledtext.new(text, {
+        font = font,
+        color = color,
+        paragraphStyle = {
+            alignment = alignment or "left",
+            lineBreak = "truncateTail"
+        }
+    })
+end
+
 --- Append a canvas element and return its 1-based index.
 --
 -- The index is later used to update element attributes during the loupe
@@ -194,8 +223,7 @@ function HUD:appendMenuRow(elements, menu, row, rowIndex, y, navigationPosition,
             w = layout.keyWidth,
             h = layout.textHeight
         },
-        text = self.theme.styledText(self:displayKey(row), font, keyColor,
-                                     "center")
+        text = styledText(self:displayKey(row), font, keyColor, "center")
     })
 
     local checkTextIndex
@@ -210,8 +238,8 @@ function HUD:appendMenuRow(elements, menu, row, rowIndex, y, navigationPosition,
                 w = layout.checkWidth,
                 h = layout.textHeight
             },
-            text = self.theme.styledText(isChecked and "✓" or "", font,
-                                         colors.accent, "center")
+            text = styledText(isChecked and "✓" or "", font, colors.accent,
+                              "center")
         })
 
         labelX = labelX + layout.checkWidth
@@ -225,7 +253,7 @@ function HUD:appendMenuRow(elements, menu, row, rowIndex, y, navigationPosition,
             w = self.config.menu.width - labelX - layout.horizontalPadding,
             h = layout.textHeight
         },
-        text = self.theme.styledText(row.label, font, labelColor, "left")
+        text = styledText(row.label, font, labelColor, "left")
     })
 
     menu.rowVisuals[rowIndex] = {
@@ -314,9 +342,8 @@ function HUD:show(menu, checkedRows)
             w = self.config.menu.width - (layout.horizontalPadding * 2),
             h = layout.headerHeight
         },
-        text = self.theme.styledText(self:displayTitle(menu),
-                                     self.theme.fonts.title, colors.primary,
-                                     "left")
+        text = styledText(self:displayTitle(menu), self.theme.fonts.title,
+                          colors.primary, "left")
     })
 
     local y = layout.contentTop
@@ -376,7 +403,7 @@ function HUD:renderRowScale(menu, rowIndex, scale)
     local backgroundWidth = layout.keyWidth * scale
     local backgroundHeight = layout.keyBackgroundHeight * scale
     local fontSize = self.config.font.size * scale
-    local resizedFont = self.theme.resizedFont(visual.font, fontSize)
+    local scaledFont = resizedFont(visual.font, fontSize)
 
     local keyX = layout.horizontalPadding - (keyWidth - layout.keyWidth) / 2
 
@@ -399,11 +426,9 @@ function HUD:renderRowScale(menu, rowIndex, scale)
         h = textHeight
     })
 
-    self.canvas:elementAttribute(visual.keyTextIndex, "text",
-                                 self.theme
-                                     .styledText(self:displayKey(row),
-                                                 resizedFont, visual.keyColor,
-                                                 "center"))
+    self.canvas:elementAttribute(
+        visual.keyTextIndex, "text",
+        styledText(self:displayKey(row), scaledFont, visual.keyColor, "center"))
 
     if visual.checkTextIndex then
         self.canvas:elementAttribute(visual.checkTextIndex, "frame", {
@@ -413,12 +438,10 @@ function HUD:renderRowScale(menu, rowIndex, scale)
             h = textHeight
         })
 
-        self.canvas:elementAttribute(visual.checkTextIndex, "text",
-                                     self.theme
-                                         .styledText(
-                                         visual.isChecked and "✓" or "",
-                                         resizedFont, self.theme.colors.accent,
-                                         "center"))
+        self.canvas:elementAttribute(
+            visual.checkTextIndex, "text",
+            styledText(visual.isChecked and "✓" or "", scaledFont,
+                       self.theme.colors.accent, "center"))
     end
 
     self.canvas:elementAttribute(visual.labelTextIndex, "frame", {
@@ -428,9 +451,9 @@ function HUD:renderRowScale(menu, rowIndex, scale)
         h = textHeight
     })
 
-    self.canvas:elementAttribute(visual.labelTextIndex, "text", self.theme
-                                     .styledText(row.label, resizedFont,
-                                                 visual.labelColor, "left"))
+    self.canvas:elementAttribute(
+        visual.labelTextIndex, "text",
+        styledText(row.label, scaledFont, visual.labelColor, "left"))
 end
 
 --- Determine the target scale for a row based on its distance from selection.

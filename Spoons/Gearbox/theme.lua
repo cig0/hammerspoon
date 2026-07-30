@@ -4,6 +4,12 @@
 -- color, persists the user's selection, and exposes the generated theme picker
 -- menu.
 local Theme = {}
+local Validation = require("Spoons.Gearbox.validation")
+
+local isHotkeyKey = Validation.isHotkeyKey
+local keyIdentity = Validation.keyIdentity
+local validateColor = Validation.validateColor
+
 ---@class Theme
 ---@field config table
 ---@field themes table
@@ -97,24 +103,6 @@ local function migrateLegacySelection(stored)
     return migrated
 end
 
---- Classify a color table as "grayscale", "rgb", "mixed", or nil.
----@param value any
----@return "grayscale"|"rgb"|"mixed"|nil
-local function colorModel(value)
-    if type(value) ~= "table" then return nil end
-
-    local hasWhite = value.white ~= nil
-    local hasRGB = value.red ~= nil or value.green ~= nil or value.blue ~= nil
-
-    if hasWhite and hasRGB then return "mixed" end
-
-    if hasWhite then return "grayscale" end
-
-    if hasRGB then return "rgb" end
-
-    return nil
-end
-
 --- Validate that `value` is a number in [0, 1].
 ---@param value any
 ---@param name string
@@ -122,56 +110,6 @@ local function validateUnit(value, name)
     if type(value) ~= "number" or value < 0 or value > 1 then
         fail(name .. " must be a number from 0 to 1", 2)
     end
-end
-
---- Validate a color table.
----@param color table
----@param name string
----@param requireAlpha boolean
-local function validateColor(color, name, requireAlpha)
-    if type(color) ~= "table" then fail(name .. " must be a color table", 2) end
-
-    local model = colorModel(color)
-
-    if model == "mixed" then
-        fail(name .. " cannot mix white with RGB components", 2)
-    end
-
-    if model ~= "grayscale" and model ~= "rgb" then
-        fail(name .. " must define white or red, green, and blue", 2)
-    end
-
-    if model == "grayscale" then
-        validateUnit(color.white, name .. ".white")
-    else
-        for _, component in ipairs({"red", "green", "blue"}) do
-            validateUnit(color[component], name .. "." .. component)
-        end
-    end
-
-    if requireAlpha and color.alpha == nil then
-        fail(name .. ".alpha is required", 2)
-    end
-
-    if color.alpha ~= nil then validateUnit(color.alpha, name .. ".alpha") end
-end
-
---- Return true when `key` is a valid Hammerspoon key name.
----@param key string
----@return boolean
-local function validHotkeyKey(key)
-    if key:match("^#%d+$") then return true end
-
-    return hs.keycodes.map[key:lower()] ~= nil
-end
-
---- Normalize a key string for duplicate-key detection.
----@param key string
----@return string
-local function keyIdentity(key)
-    if key:match("^#%d+$") then return "#" .. tonumber(key:sub(2)) end
-
-    return key:lower()
 end
 
 --- List non-hidden `.lua` theme files in `directory`.
@@ -209,7 +147,7 @@ local function validateDefinition(definition, source)
     end
 
     if type(definition.key) ~= "string" or definition.key == "" or
-        not validHotkeyKey(definition.key) then
+        not isHotkeyKey(definition.key) then
         fail(definition.id .. " has an invalid or missing menu key", 2)
     end
 
@@ -220,7 +158,8 @@ local function validateDefinition(definition, source)
     validateUnit(definition.selectionAlpha, definition.id .. ".selectionAlpha")
 
     for field in pairs(colorFields) do
-        validateColor(definition[field], definition.id .. "." .. field, true)
+        validateColor(definition[field], definition.id .. "." .. field,
+                      {requireAlpha = true})
     end
 end
 
@@ -300,8 +239,8 @@ local function applyOverrides(themes, overrides)
                 validateUnit(value, "theme.overrides." .. id .. "." .. field)
                 definition[field] = value
             else
-                validateColor(value, "theme.overrides." .. id .. "." .. field,
-                              false)
+                validateColor(value,
+                              "theme.overrides." .. id .. "." .. field)
 
                 local color = copyTable(value)
                 color.alpha = color.alpha or definition[field].alpha
@@ -602,35 +541,6 @@ function Theme:menuDefinition()
 
         items = items
     }
-end
-
---- Return a font table sized for the loupe animation.
----@param font table
----@param size number
----@return table
-function Theme.resizedFont(font, size)
-    local result = {size = size}
-
-    if font.name then result.name = font.name end
-
-    return result
-end
-
---- Build styled text for a canvas element.
----@param text string
----@param font table
----@param color table
----@param alignment? string
----@return any
-function Theme.styledText(text, font, color, alignment)
-    return hs.styledtext.new(text, {
-        font = font,
-        color = color,
-        paragraphStyle = {
-            alignment = alignment or "left",
-            lineBreak = "truncateTail"
-        }
-    })
 end
 
 return Theme

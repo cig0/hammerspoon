@@ -4,6 +4,10 @@
 -- menu tables. Output: ordered rows, auto-generated dividers, child-group rows,
 -- and Back/Exit footers bound by `runtime.lua`.
 local Loader = {}
+local Validation = require("Spoons.Gearbox.validation")
+
+local isHotkeyKey = Validation.isHotkeyKey
+local keyIdentity = Validation.keyIdentity
 
 local validKinds = {action = true, application = true}
 
@@ -30,24 +34,6 @@ local function appendDivider(rows)
     if #rows > 0 and not rows[#rows].divider then
         table.insert(rows, {divider = true})
     end
-end
-
---- Return true when `key` is a valid Hammerspoon key name.
----@param key string
----@return boolean
-local function validHotkeyKey(key)
-    if key:match("^#%d+$") then return true end
-
-    return hs.keycodes.map[key:lower()] ~= nil
-end
-
---- Normalize a key string for duplicate and reserved-key detection.
----@param key string
----@return string
-local function keyIdentity(key)
-    if key:match("^#%d+$") then return "#" .. tonumber(key:sub(2)) end
-
-    return key:lower()
 end
 
 --- List non-hidden `.lua` files in `directory`, sorted alphabetically.
@@ -209,7 +195,7 @@ local function validateDefinitions(definitions, config, actions, theme)
                 fail(id .. " parent entry is missing its key")
             end
 
-            if not validHotkeyKey(definition.entry.key) then
+            if not isHotkeyKey(definition.entry.key) then
                 fail(id .. " parent entry has invalid key: " ..
                          definition.entry.key)
             end
@@ -254,7 +240,7 @@ local function validateDefinitions(definitions, config, actions, theme)
                     fail(location .. " is missing its key")
                 end
 
-                if not validHotkeyKey(item.key) then
+                if not isHotkeyKey(item.key) then
                     fail(location .. " has invalid key: " .. item.key)
                 end
 
