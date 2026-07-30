@@ -1,19 +1,19 @@
 # Nix delivery
 
-The repository exports optional Home Manager and nix-darwin modules. They
-reference the same standalone Lua under `Spoons/`; generated Nix configuration
-only supplies the override table passed to `Spoons.Gearbox.start()`.
+The repository exports optional Home Manager and nix-darwin modules. Nix owns
+delivery and activation of the Spoons; each Spoon owns its behavior.
 
 ```text
-Nix options
-  → generated ~/.hammerspoon/nix-spoons.lua
-  → require("Spoons.Gearbox").start(overrides)
-  → standalone Gearbox runtime
+Nix enable options
+  → ~/.hammerspoon/Spoons/Gearbox
+  → ~/.hammerspoon/nix-spoons.lua
+  → require("Spoons.Gearbox").start()
+  → Spoons/Gearbox/config.lua
 ```
 
 `nix-spoons.lua` is the Nix-owned loader for enabled Spoons. A managed
 `~/.hammerspoon/init.lua` requires that loader before appending `extraConfig`;
-an externally owned entrypoint requires the same module explicitly.
+an externally owned entrypoint must require the loader itself.
 
 ## Exports
 
@@ -21,106 +21,36 @@ an externally owned entrypoint requires the same module explicitly.
 | --- | --- |
 | `homeModules.hammerspoon-spoons` | Standalone Home Manager or Home Manager embedded elsewhere |
 | `homeModules.default` | Alias of `homeModules.hammerspoon-spoons` |
-| `darwinModules.hammerspoon-spoons` | nix-darwin configuration with the Home Manager nix-darwin module |
+| `darwinModules.hammerspoon-spoons` | nix-darwin configuration routed through Home Manager |
 | `darwinModules.default` | Alias of `darwinModules.hammerspoon-spoons` |
-| `interfaces.homeManagerOptions` | Reusable Home Manager option schema (for wrapping under another namespace) |
+| `interfaces.homeManagerOptions` | Reusable Home Manager delivery-option schema |
 | `interfaces.homeManagerOptionDocs` | Markdown-ready option documentation metadata |
 
 ## Home Manager
 
-A standalone Home Manager flake can expose the repository as an input:
+The Home Manager module exposes only delivery controls:
 
 ```nix
 {
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-
-    home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    hammerspoon.url =
-      "github:cig0/hammerspoon";
-  };
-
-  outputs = inputs@{ nixpkgs, home-manager, ... }:
-    let
-      system = "aarch64-darwin";
-    in
-    {
-      homeConfigurations.jane =
-        home-manager.lib.homeManagerConfiguration {
-          pkgs = nixpkgs.legacyPackages.${system};
-          extraSpecialArgs = { inherit inputs; };
-          modules = [ ./home.nix ];
-        };
-    };
-}
-```
-
-The corresponding `home.nix` imports the module and owns the user-facing
-settings:
-
-```nix
-{ inputs, ... }:
-
-{
-  home.username = "jane";
-  home.homeDirectory = "/Users/jane";
-  home.stateVersion = "26.05";
-
-  imports = [
-    inputs.hammerspoon.homeModules.default
-  ];
+  imports = [ inputs.hammerspoon.homeModules.default ];
 
   programs.hammerspoon-spoons = {
     enable = true;
-
-    spoons.gearbox = {
-      font.size = 16;
-      font.titleSize = 22;
-      menu.timeout = 5;
-      menu.position = "top";
-
-      theme = {
-        name = "system";
-        accentSource = "system";
-        persistSelection = true;
-      };
-
-      scratchpad = {
-        enable = true;
-        width = 720;
-        height = 480;
-        maxCharacters = 4096;
-        persistContent = true;
-        showInstructions = true;
-      };
-    };
+    manageInit = true;
+    spoons.gearbox.enable = true;
   };
 }
 ```
 
-Apply it with the existing Home Manager configuration name:
-
-```sh
-home-manager switch --flake .#jane
-```
-
-Use the real username, home directory, architecture, and established Home
-Manager `stateVersion`.
-
-The module links Gearbox at `~/.hammerspoon/Spoons/Gearbox` and owns
-`~/.hammerspoon/init.lua`. Hammerspoon itself must be installed separately
-(Homebrew, a manual app bundle, or another mechanism outside this module). When
-another module or a hand-written file already owns the entry point:
+The module links Gearbox at `~/.hammerspoon/Spoons/Gearbox`. Hammerspoon itself
+must be installed separately. When another module or hand-written file owns
+the entrypoint:
 
 ```nix
 programs.hammerspoon-spoons.manageInit = false;
 ```
 
-The existing `init.lua` then routes to the generated loader:
+That entrypoint then loads the generated Spoon loader:
 
 ```lua
 require("nix-spoons")
@@ -128,141 +58,43 @@ require("nix-spoons")
 
 ## nix-darwin
 
-Hammerspoon configuration is user state. The nix-darwin adapter therefore
-routes ownership through Home Manager instead of writing into a home directory
-from a root activation script.
+The nix-darwin adapter identifies one Home Manager user and forwards the same
+delivery options:
 
 ```nix
-{
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-
-    nix-darwin = {
-      url = "github:nix-darwin/nix-darwin";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    hammerspoon.url =
-      "github:cig0/hammerspoon";
-  };
-
-  outputs = inputs@{ nix-darwin, ... }: {
-    darwinConfigurations.my-mac =
-      nix-darwin.lib.darwinSystem {
-        specialArgs = { inherit inputs; };
-        modules = [ ./darwin-configuration.nix ];
-      };
-  };
-}
-```
-
-`darwin-configuration.nix` imports Home Manager and forwards the same Gearbox
-options to one named user:
-
-```nix
-{ inputs, ... }:
-
 {
   imports = [
     inputs.home-manager.darwinModules.home-manager
     inputs.hammerspoon.darwinModules.default
   ];
 
-  users.users.jane.home = "/Users/jane";
-
-  home-manager = {
-    useGlobalPkgs = true;
-    useUserPackages = true;
-    users.jane.home.stateVersion = "26.05";
-  };
-
   programs.hammerspoon-spoons = {
     enable = true;
     user = "jane";
-
-    spoons.gearbox = {
-      menu.timeout = 5;
-      menu.screen = "mouse";
-      menu.width = 460;
-      theme.persistSelection = true;
-    };
+    spoons.gearbox.enable = true;
   };
-
-  system.stateVersion = 7;
 }
 ```
 
-Apply it with the existing nix-darwin configuration name:
+The named account must exist under `users.users`. The adapter does not write
+directly into a home directory.
 
-```sh
-sudo darwin-rebuild switch --flake .#my-mac
-```
+## Configuration ownership
 
-The named account must exist under `users.users`. The adapter imports the Home
-Manager module for that account and forwards every option except its routing
-field, `user`.
-
-## Option documentation
-
-The flake exposes `interfaces.homeManagerOptionDocs` so downstream projects can
-render the option catalog under their own namespace.
-[`assets/docs/ALL-OPTIONS.md`](./ALL-OPTIONS.md) is the repository snapshot of
-that generated interface.
-
-The option schema deliberately accepts its default `menu.timeout = 0`; Nix
-evaluation does not reject it. At runtime, zero disables timeout and makes
-`Gearbox.start()` show a ten-second configuration alert before raising an
-error. Set a positive value in every enabled Gearbox configuration.
-
-## Theme persistence
-
-`programs.hammerspoon-spoons.spoons.gearbox.theme.persistSelection` defaults to
-`true`. Theme choices made in the Gearbox menu are stored by Hammerspoon under
-the `hs.settings` key `Gearbox.theme.selection`, not written into the Nix store
-or generated Lua.
+[`Spoons/Gearbox/config.lua`](../../Spoons/Gearbox/config.lua) is the sole
+source of Gearbox behavior. The Home Manager and nix-darwin modules neither
+redeclare its fields nor render a Lua override table.
 
 ```text
-menu selection
-  → hs.settings["Gearbox.theme.selection"]
-  → ~/Library/Preferences/org.hammerspoon.Hammerspoon.plist
-  → restored on the next Hammerspoon load
+Spoons/Gearbox/config.lua
+  → Gearbox.start()
+  → validation
+  → theme, loader, runtime, HUD, and scratchpad
 ```
 
-The stored record contains the selected theme ID and the configured
-`theme.name`. It is accepted only while that configured default still matches
-and the theme still exists. Changing `theme.name` in Nix clears the older
-interactive choice and makes the new declarative value authoritative.
+This ownership is shared by standalone and Nix-delivered installations. A Nix
+flake input update deploys a changed `config.lua`; host profiles only decide
+whether the Spoon is present and loaded.
 
-Set persistence to `false` when every reload must return to the Nix-selected
-theme:
-
-```nix
-programs.hammerspoon-spoons.spoons.gearbox.theme.persistSelection = false;
-```
-
-## Scratchpad persistence
-
-`programs.hammerspoon-spoons.spoons.gearbox.scratchpad.persistContent`
-defaults to `true`. The generated Lua contains only this policy value; editable
-content remains mutable Hammerspoon state:
-
-```text
-scratchpad textarea
-  → hs.settings["Gearbox.scratchpad.content"]
-  → ~/Library/Preferences/org.hammerspoon.Hammerspoon.plist
-  → restored on the next Hammerspoon load
-```
-
-The preferences file is local and unencrypted. Setting `persistContent = false`
-keeps the text only in the active Gearbox runtime and does not place it in the
-Nix store or generated Lua. `maxCharacters` defaults to 4096 and limits new
-input; existing saved text above a newly lowered limit is preserved until the
-user reduces it.
-
-The complete Gearbox option map and standalone defaults live beside the Spoon in
-[`Spoons/Gearbox/README.md`](../../Spoons/Gearbox/README.md#configuration-configlua).
+The generated option snapshot is
+[`ALL-OPTIONS.md`](./ALL-OPTIONS.md).

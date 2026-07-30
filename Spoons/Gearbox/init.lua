@@ -33,51 +33,88 @@ local hotkeyModifiers = {
 
 local disabledTimeoutAlertDuration = 10
 
-local disabledTimeoutAlertMessage = table.concat({
-    "Gearbox failed to start because `menu.timeout` is set to `0` (disabled).",
-    "Set `menu.timeout` to a positive number of seconds, then reload Hammerspoon.",
-    "This message will close in 10 seconds."
-}, "\n")
+local disabledTimeoutAlertTitle = " Gearbox configuration error "
+
+local disabledTimeoutAlertBody = {
+    "Gearbox cannot start because `menu.timeout` is set to `0` (disabled).",
+    "Set `menu.timeout` to a positive number of seconds, then reload Hammerspoon."
+}
+
+local disabledTimeoutAlertLegend =
+    "This window will be dismissed in 10 seconds."
+
+--- Build a padded DOS-style warning box around the disabled-timeout message.
+---@return string beforeLegend
+---@return string legend
+---@return string afterLegend
+local function disabledTimeoutAlertBox()
+    local horizontalPadding = 2
+    local contentWidth = #disabledTimeoutAlertLegend
+
+    for _, line in ipairs(disabledTimeoutAlertBody) do
+        contentWidth = math.max(contentWidth, #line)
+    end
+
+    local innerWidth = contentWidth + horizontalPadding * 2
+    local title = "═[" .. disabledTimeoutAlertTitle .. "]"
+    local titleWidth = #disabledTimeoutAlertTitle + 3
+    local top = "╔" .. title ..
+                    string.rep("═", innerWidth - titleWidth) .. "╗"
+    local bottom = "╚" .. string.rep("═", innerWidth) .. "╝"
+    local blank = "║" .. string.rep(" ", innerWidth) .. "║"
+
+    local function row(line)
+        return "║" .. string.rep(" ", horizontalPadding) .. line ..
+                   string.rep(" ",
+                              innerWidth - horizontalPadding - #line) .. "║"
+    end
+
+    local beforeLegend = {top, blank}
+
+    for _, line in ipairs(disabledTimeoutAlertBody) do
+        table.insert(beforeLegend, row(line))
+    end
+
+    table.insert(beforeLegend, blank)
+
+    return table.concat(beforeLegend, "\n") .. "\n",
+           row(disabledTimeoutAlertLegend), "\n" .. blank .. "\n" .. bottom
+end
 
 --- Report the intentionally disabled timeout and abort Gearbox startup.
 ---@param config table
 local function failDisabledTimeout(config)
     local textSize = math.max(config.font.titleSize + 2,
                               hs.alert.defaultStyle.textSize)
+    local font = {name = "Menlo", size = textSize}
+    local white = {white = 1, alpha = 1}
+    local paragraphStyle = {alignment = "left", lineBreak = "clip"}
+    local beforeLegend, legend, afterLegend = disabledTimeoutAlertBox()
+    local regularAttributes = {
+        font = font,
+        color = white,
+        paragraphStyle = paragraphStyle
+    }
+    local legendAttributes = {
+        font = hs.styledtext.convertFont(font, true),
+        color = {red = 1, green = 0.9, blue = 0, alpha = 1},
+        paragraphStyle = paragraphStyle
+    }
+    local message = hs.styledtext.new(beforeLegend, regularAttributes) ..
+                        hs.styledtext.new(legend, legendAttributes) ..
+                        hs.styledtext.new(afterLegend, regularAttributes)
     local style = {
-        fillColor = {white = 0.08, alpha = 0.96},
-        strokeColor = {red = 1, green = 0.56, blue = 0.15, alpha = 1},
-        strokeWidth = 3,
-        textColor = {white = 1, alpha = 1},
+        fillColor = {red = 0.72, green = 0, blue = 0, alpha = 0.98},
+        strokeWidth = 0,
+        textColor = white,
         textSize = textSize,
-        radius = 16,
+        radius = 0,
         padding = textSize
     }
 
-    if config.font.family then style.textFont = config.font.family end
-
-    hs.alert.show(disabledTimeoutAlertMessage, style,
-                  disabledTimeoutAlertDuration)
+    hs.alert.show(message, style, disabledTimeoutAlertDuration)
     error("Gearbox: menu.timeout must be greater than zero", 0)
 end
-
---- Deep-copy a table. Non-tables pass through unchanged.
----@param value any
----@return any
-local function copyTable(value)
-    if type(value) ~= "table" then return value end
-
-    local result = {}
-
-    for key, item in pairs(value) do result[key] = copyTable(item) end
-
-    return result
-end
-
---- Return true when `value` is a non-empty array-like table.
----@param value any
----@return boolean
-local function isArray(value) return type(value) == "table" and value[1] ~= nil end
 
 --- Classify a color table as "grayscale", "rgb", "mixed", or nil.
 ---@param value any
@@ -95,38 +132,6 @@ local function colorModel(value)
     if hasRGB then return "rgb" end
 
     return nil
-end
-
---- Merge overrides into a copy of the base config.
---
--- Color tables keep their model (grayscale or RGB) and inherit the base alpha
--- when the override omits it.
----@param base table
----@param overrides table
----@return table
-local function merge(base, overrides)
-    local result = copyTable(base)
-
-    for key, value in pairs(overrides or {}) do
-        local baseColorModel = colorModel(result[key])
-        local overrideColorModel = colorModel(value)
-
-        if baseColorModel and overrideColorModel and baseColorModel ~=
-            overrideColorModel then
-            result[key] = copyTable(value)
-
-            if result[key].alpha == nil then
-                result[key].alpha = base[key].alpha
-            end
-        elseif type(value) == "table" and type(result[key]) == "table" and
-            not isArray(value) and not isArray(result[key]) then
-            result[key] = merge(result[key], value)
-        else
-            result[key] = copyTable(value)
-        end
-    end
-
-    return result
 end
 
 --- Assert that `value` has the expected Lua type.
@@ -320,12 +325,16 @@ local function sourceDirectory()
     return directory
 end
 
---- Start Gearbox with optional config overrides.
----@param overrides? table
+--- Start Gearbox from its authoritative configuration module.
 ---@return table
-function Gearbox.start(overrides)
-    local defaults = require("Spoons.Gearbox.config")
-    local config = merge(defaults, overrides or {})
+function Gearbox.start(...)
+    if select("#", ...) ~= 0 then
+        error(
+            "Gearbox: edit Spoons/Gearbox/config.lua instead of passing overrides",
+            0)
+    end
+
+    local config = require("Spoons.Gearbox.config")
 
     validateConfig(config)
 

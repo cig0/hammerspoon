@@ -15,11 +15,11 @@ mkdir -p ~/.hammerspoon/Spoons/Gearbox
 cp -R Spoons/Gearbox/. ~/.hammerspoon/Spoons/Gearbox/
 ```
 
-Add Gearbox with an explicit positive timeout to your
-`~/.hammerspoon/init.lua` file:
+Set `menu.timeout` to a positive value in [`config.lua`](./config.lua), then
+load Gearbox from `~/.hammerspoon/init.lua`:
 
 ```lua
-require("Spoons.Gearbox").start({menu = {timeout = 5}})
+require("Spoons.Gearbox").start()
 ```
 
 Reload Hammerspoon and press `alt+cmd+space`. A full clone at
@@ -92,7 +92,7 @@ Hammerspoon releases those assertions when its configuration reloads.
 
 | Path | Owns |
 | --- | --- |
-| [`config.lua`](./config.lua) | Passive standalone defaults |
+| [`config.lua`](./config.lua) | Authoritative Gearbox behavior |
 | [`menus/`](./menus/README.md) | Passive menu graph and action descriptors |
 | [`themes/`](./themes/README.md) | Passive palettes and Themes-menu metadata |
 | [`loader.lua`](./loader.lua) | Discovery, validation, ordering, dividers, and footers |
@@ -115,11 +115,10 @@ config.lua + menus/*.lua + themes/*.lua
 
 ## Configuration (`config.lua`)
 
-[`config.lua`](./config.lua) is the standalone source of user-facing defaults.
-It contains no Hammerspoon calls. Nix users receive the same shape as an
-override table generated beneath
-`programs.hammerspoon-spoons.spoons.gearbox`; see the
-[Nix document](../../assets/docs/NIX.md).
+[`config.lua`](./config.lua) is the sole source of Gearbox behavior. It
+contains no Hammerspoon calls, and `Gearbox.start()` accepts no configuration
+overrides. Nix delivery installs this file with the rest of the Spoon and does
+not duplicate its values; see the [Nix document](../../assets/docs/NIX.md).
 
 ### Hotkey and menu
 
@@ -266,16 +265,10 @@ hs.settings.get("Gearbox.theme.selection")
 hs.settings.clear("Gearbox.theme.selection")
 ```
 
-Nix exposes the same switch:
-
-```nix
-programs.hammerspoon-spoons.spoons.gearbox.theme.persistSelection = true;
-```
-
-Setting it to `false` clears any stored choice after successful startup and
-returns every reload to the configured `theme.name`. The complete Nix ownership
-flow is documented in
-[`assets/docs/NIX.md`](../../assets/docs/NIX.md#theme-persistence).
+Setting `theme.persistSelection = false` in `config.lua` clears any stored
+choice after successful startup and returns every reload to the configured
+`theme.name`. The Nix delivery boundary is documented in
+[`assets/docs/NIX.md`](../../assets/docs/NIX.md#configuration-ownership).
 
 ## Appearance lifecycle
 

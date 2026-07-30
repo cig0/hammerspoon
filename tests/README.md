@@ -30,7 +30,6 @@ The harness runs with a command-line Lua interpreter:
 lua tests/gearbox.lua "$(pwd)"
 ```
 
-Lua parsing, Nix module evaluation, and generated-Lua parsing remain separate
-repository checks. `nix flake check` verifies the exported Home Manager and
-nix-darwin module shapes; a live Hammerspoon run remains the visual and native
-API boundary.
+Lua parsing and Nix module evaluation remain separate repository checks.
+`nix flake check` verifies the exported Home Manager and nix-darwin module
+shapes; a live Hammerspoon run remains the visual and native API boundary.
