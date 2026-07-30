@@ -35,7 +35,7 @@ For an existing configuration, copy the desired Spoon beneath
 `~/.hammerspoon/Spoons/` and load it from `~/.hammerspoon/init.lua`:
 
 ```lua
-require("Spoons.Gearbox").start({menu = {timeout = 5}})
+require("Spoons.Gearbox").start()
 ```
 
 The [Gearbox guide](./Spoons/Gearbox/README.md) contains the exact copy command,
@@ -48,17 +48,12 @@ key `Gearbox.theme.selection`. The value is backed by
 `~/Library/Preferences/org.hammerspoon.Hammerspoon.plist`; Gearbox never rewrites
 `config.lua`.
 
-The standalone default is `theme.persistSelection = true`. Nix exposes the
-same behavior as:
-
-```nix
-programs.hammerspoon-spoons.spoons.gearbox.theme.persistSelection = true;
-```
-
-Changing the configured default invalidates an older interactive selection, so
-declarative configuration remains authoritative. See
+The configured value is `theme.persistSelection = true`. Changing it in
+[`config.lua`](./Spoons/Gearbox/config.lua) invalidates an older interactive
+selection, so the Gearbox configuration remains authoritative. Nix deploys
+that file without maintaining a second behavioral option tree. See
 [Gearbox configuration](./Spoons/Gearbox/README.md#configuration-configlua) and
-[Nix delivery](./assets/docs/NIX.md#theme-persistence).
+[Nix delivery](./assets/docs/NIX.md#configuration-ownership).
 
 ## Repository map
 

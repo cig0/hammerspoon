@@ -72,7 +72,6 @@ function Runtime:resetTimeout(menu)
     self.timeoutTimer = hs.timer.doAfter(self.config.menu.timeout, function()
         if self.activeMenu == menu then
             menu.modal:exit()
-            hs.alert.show("Gearbox Cleared", 0.5)
         end
     end)
 end
