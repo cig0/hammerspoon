@@ -20,11 +20,6 @@ return {
                     "/Library/Mobile Documents/com~apple~CloudDocs/I SHOOT RAW"
             }
         }, {
-            key = "w",
-            label = "codedir",
-            kind = "action",
-            action = {type = "openPath", path = home .. "/codedir"}
-        }, {
             key = "e",
             label = "Desktop",
             kind = "action",
@@ -57,6 +52,11 @@ return {
             label = "Pictures",
             kind = "action",
             action = {type = "openPath", path = home .. "/Pictures"}
+        }, {
+            key = "w",
+            label = "Projects",
+            kind = "action",
+            action = {type = "openPath", path = home .. "/Projects"}
         }, {
             key = "t",
             label = "tmp",
