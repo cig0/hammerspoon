@@ -77,8 +77,16 @@ local function disabledTimeoutAlertBox()
 
     table.insert(beforeLegend, blank)
 
-    return table.concat(beforeLegend, "\n") .. "\n",
-           row(disabledTimeoutAlertLegend), "\n" .. blank .. "\n" .. bottom
+    local legendPrefix =
+        "║" .. string.rep(" ", horizontalPadding)
+    local legendSuffix =
+        string.rep(" ",
+                   innerWidth - horizontalPadding -
+                       #disabledTimeoutAlertLegend) .. "║"
+
+    return table.concat(beforeLegend, "\n") .. "\n" .. legendPrefix,
+           disabledTimeoutAlertLegend,
+           legendSuffix .. "\n" .. blank .. "\n" .. bottom
 end
 
 --- Report the intentionally disabled timeout and abort Gearbox startup.

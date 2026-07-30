@@ -639,14 +639,19 @@ local disabledTimeoutSegments = disabledTimeoutAlert.message.segments
 local disabledTimeoutLegendSegment = disabledTimeoutSegments[2]
 
 assert(#disabledTimeoutSegments == 3 and
-           disabledTimeoutLegendSegment.text:find(
-               "This window will be dismissed in 10 seconds.", 1, true),
+           disabledTimeoutLegendSegment.text ==
+           "This window will be dismissed in 10 seconds.",
        "zero-timeout alert must style the dismissal legend separately")
 assert(disabledTimeoutLegendSegment.attributes.font.bold and
            disabledTimeoutLegendSegment.attributes.color.red == 1 and
            disabledTimeoutLegendSegment.attributes.color.green == 0.9 and
            disabledTimeoutLegendSegment.attributes.color.blue == 0,
        "zero-timeout dismissal legend must be bold yellow")
+assert(disabledTimeoutSegments[1].attributes.color.white == 1 and
+           disabledTimeoutSegments[3].attributes.color.white == 1 and
+           not disabledTimeoutSegments[1].attributes.font.bold and
+           not disabledTimeoutSegments[3].attributes.font.bold,
+       "zero-timeout box characters must remain regular white")
 assert(#createdCanvases == canvasesBeforeDisabledTimeout and #createdModals ==
            modalsBeforeDisabledTimeout and #createdTimers ==
            timersBeforeDisabledTimeout and #createdWebviews ==
