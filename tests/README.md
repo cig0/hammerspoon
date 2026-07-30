@@ -33,3 +33,10 @@ lua tests/gearbox.lua "$(pwd)"
 Lua parsing and Nix module evaluation remain separate repository checks.
 `nix flake check` verifies the exported Home Manager and nix-darwin module
 shapes; a live Hammerspoon run remains the visual and native API boundary.
+
+## Where to look next
+
+- [`../Spoons/Gearbox/README.md`](../Spoons/Gearbox/README.md) — public
+  behavior and configuration contract.
+- [`../assets/docs/NIX.md`](../assets/docs/NIX.md) — module outputs and delivery
+  boundaries validated by the Nix checks.

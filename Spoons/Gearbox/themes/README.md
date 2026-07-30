@@ -1,7 +1,8 @@
 # Gearbox themes
 
 `themes/` contains passive visual definitions. Every visible `.lua` file is
-loaded, validated, and added to the generated Themes menu.
+loaded, validated, and added to the generated Themes menu. Files beginning with
+`.` or `_` are ignored.
 
 ```text
 themes/*.lua
@@ -29,7 +30,8 @@ Each theme owns:
 
 Colors use one complete model: `{ white, alpha }` or
 `{ red, green, blue, alpha }`. Partial user overrides may omit `alpha`; the
-theme's existing alpha is retained.
+theme's existing alpha is retained. Color components and `selectionAlpha` stay
+within `0...1`; IDs and menu keys must be unique.
 
 ## Bundled themes
 
@@ -71,3 +73,12 @@ surfaces:
 | Nord | [Nord palette](https://www.nordtheme.com/docs/colors-and-palettes) | [MIT](https://github.com/nordtheme/nord/blob/develop/license) |
 | Dracula | [dracula/dracula-theme](https://github.com/dracula/dracula-theme) | [MIT](https://github.com/dracula/dracula-theme/blob/main/LICENSE) |
 | Tokyo Night | [tokyo-night/tokyo-night-vscode-theme](https://github.com/tokyo-night/tokyo-night-vscode-theme) | [MIT](https://github.com/tokyo-night/tokyo-night-vscode-theme/blob/master/LICENSE.txt) |
+
+## Where to look next
+
+- [`../README.md`](../README.md) — theme configuration, overrides, persistence,
+  and appearance lifecycle.
+- [`../menus/README.md`](../menus/README.md) — the surrounding declarative menu
+  graph.
+- [`../theme.lua`](../theme.lua) — discovery, validation, persistence, and
+  semantic-color resolution.

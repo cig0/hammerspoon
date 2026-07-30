@@ -5,7 +5,17 @@ shortcuts, arrow navigation, an editable scratchpad, loupe scaling, macOS power
 controls, and auto-discovered themes. It uses the macOS system font by default
 and can follow the current appearance and accent.
 
-## Enable Gearbox
+## Requirements
+
+- macOS with [Hammerspoon](https://www.hammerspoon.org/) installed and running.
+- A positive menu timeout, set in `config.lua` for a standalone installation or
+  through the Nix delivery option.
+
+Gearbox has no third-party Lua dependencies and does not require Nix.
+
+## Install and enable
+
+### Standalone
 
 From a checkout of this repository, copy the Spoon into Hammerspoon's standard
 configuration tree:
@@ -25,6 +35,22 @@ require("Spoons.Gearbox").start()
 Reload Hammerspoon and press `alt+cmd+space`. A full clone at
 `~/.hammerspoon` already has the expected directory layout; only the import in
 the repository's root [`init.lua`](../../init.lua) needs to be enabled.
+
+### Nix
+
+The Home Manager and nix-darwin modules install the same Spoon and generate its
+loader. A working Home Manager configuration includes an explicit positive
+timeout:
+
+```nix
+programs.hammerspoon-spoons = {
+  enable = true;
+  spoons.gearbox.menu.timeout = 5;
+};
+```
+
+See [Nix delivery](../../assets/docs/NIX.md) for module imports, managed and
+external `init.lua` ownership, and the nix-darwin user boundary.
 
 ## Controls
 
@@ -49,19 +75,48 @@ Gearbox
 ├── Calculator
 ├── ForkLift
 ├── KeePassXC
+├── Obsidian
 ├── Passwords
 ├── Scratchpad
 ├── Agenda
 │   ├── Calendar
 │   ├── Mail
 │   └── Reminders
+├── AI
+│   ├── ChatGPT
+│   └── Gemini
 ├── Applications
 │   ├── Communications
+│   │   ├── Discord
+│   │   └── WhatsApp
 │   ├── Omni Software Suite
+│   │   ├── OmniFocus
+│   │   └── OmniOutliner
 │   └── Photo & Video
+│       ├── Affinity
+│       ├── Photos
+│       └── PowerPhotos
 ├── Developer Tools
+│   ├── Codex
+│   ├── Sublime Merge
+│   ├── VirtualBuddy
+│   └── Zed
 ├── Finder Folders
+│   ├── I SHOOT RAW
+│   ├── Desktop
+│   ├── Documents
+│   ├── Downloads
+│   ├── Home
+│   ├── iCloud
+│   ├── Pictures
+│   ├── Projects
+│   ├── tmp
+│   └── Sync
 ├── Web Browsers
+│   ├── Brave Origin
+│   ├── ChatGPT Atlas
+│   ├── Comet Browser
+│   └── Safari
 ├── macOS Utilities
 │   ├── System Settings
 │   ├── Reload Hammerspoon
@@ -92,7 +147,7 @@ Hammerspoon releases those assertions when its configuration reloads.
 
 | Path | Owns |
 | --- | --- |
-| [`config.lua`](./config.lua) | Authoritative Gearbox behavior |
+| [`config.lua`](./config.lua) | Runtime configuration contract; Nix derives only `menu.timeout` |
 | [`menus/`](./menus/README.md) | Passive menu graph and action descriptors |
 | [`themes/`](./themes/README.md) | Passive palettes and Themes-menu metadata |
 | [`loader.lua`](./loader.lua) | Discovery, validation, ordering, dividers, and footers |
@@ -116,10 +171,15 @@ config.lua + menus/*.lua + themes/*.lua
 
 ## Configuration (`config.lua`)
 
-[`config.lua`](./config.lua) is the sole source of Gearbox behavior. It
-contains no Hammerspoon calls, and `Gearbox.start()` accepts no configuration
-overrides. Nix delivery installs this file with the rest of the Spoon and does
-not duplicate its values; see the [Nix document](../../assets/docs/NIX.md).
+[`config.lua`](./config.lua) is the runtime configuration contract. It contains
+no Hammerspoon calls, and `Gearbox.start()` accepts no configuration arguments.
+A standalone installation reads the file as shipped or edited locally.
+
+Nix delivery creates a derived copy of the Spoon and substitutes only
+`menu.timeout` from
+`programs.hammerspoon-spoons.spoons.gearbox.menu.timeout`. Every other setting
+still comes directly from `config.lua`; no Lua override table is passed at
+startup. See [configuration ownership](../../assets/docs/NIX.md#configuration-ownership).
 
 ### Hotkey and menu
 
@@ -137,7 +197,8 @@ not duplicate its values; see the [Nix document](../../assets/docs/NIX.md).
 The zero timeout is a deliberate disabled sentinel, not a usable runtime
 setting. `Gearbox.start()` displays a ten-second configuration alert and raises
 an error before allocating menus, hotkeys, the HUD, or the scratchpad. Set a
-positive timeout to start Gearbox normally.
+positive timeout in `config.lua`, or in the Nix option that derives the deployed
+copy, to start Gearbox normally.
 
 ### Fonts and loupe
 
@@ -284,3 +345,26 @@ starts.
 HUD-only refreshes reuse those resolved host values. Canvas geometry, padding,
 indices, and animation frame rate remain internal implementation state rather
 than public configuration.
+
+## Verification
+
+The deterministic Lua harness exercises the real Gearbox modules against a
+mocked Hammerspoon boundary:
+
+```sh
+lua tests/gearbox.lua "$(pwd)"
+```
+
+Run it from the repository root. `nix flake check` separately validates the
+Home Manager and nix-darwin module shapes. Native rendering and application
+launches remain the live Hammerspoon boundary.
+
+## Where to look next
+
+- [`menus/README.md`](./menus/README.md) — menu graph, definition fields, and
+  action descriptors.
+- [`themes/README.md`](./themes/README.md) — palette schema, bundled themes,
+  selection flow, and upstream provenance.
+- [`assets/docs/NIX.md`](../../assets/docs/NIX.md) — Home Manager and nix-darwin
+  delivery.
+- [`tests/README.md`](../../tests/README.md) — regression-harness scope.
