@@ -4,6 +4,7 @@
 -- actions through the Actions module. Input: assembled menus from `loader.lua`.
 -- Output: modal lifecycle and HUD updates.
 local Runtime = {}
+local keyIdentity = require("Spoons.Gearbox.validation").keyIdentity
 
 ---@class Runtime
 ---@field config table
@@ -17,15 +18,6 @@ local Runtime = {}
 ---@field globalHotkey any
 ---@field started boolean
 Runtime.__index = Runtime
-
---- Normalize a key string for duplicate and reserved-key detection.
----@param key string
----@return string
-local function keyIdentity(key)
-    if key:match("^#%d+$") then return "#" .. tonumber(key:sub(2)) end
-
-    return key:lower()
-end
 
 --- Create a new runtime instance.
 ---@param config table
@@ -152,8 +144,8 @@ function Runtime:runAction(menu, row)
         setTheme = function(selection) self.theme:select(selection) end,
         openScratchpad = function()
             assert(self.scratchpad, "Gearbox: scratchpad is disabled")
-            menu.modal:exit()
             self.scratchpad:show()
+            menu.modal:exit()
         end
     })
 
@@ -295,8 +287,6 @@ function Runtime:start()
         end
 
         self.theme:activate()
-
-        if self.scratchpad then self.scratchpad:prepare() end
     end, debug.traceback)
 
     if not started then

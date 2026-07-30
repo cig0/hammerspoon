@@ -381,29 +381,45 @@ function Scratchpad:ensureView()
         end):html(document)
 end
 
-function Scratchpad:prepare()
-    self.theme:refreshAppearance()
-    self:ensureView()
-end
-
 function Scratchpad:isVisible()
     return self.webview ~= nil and self.webview:isVisible()
 end
 
 function Scratchpad:show()
-    self.theme:refreshAppearance()
-    self:ensureView()
-    self.webview:frame(self:frame())
-    self.webview:show()
+    local shown, showError = xpcall(function()
+        self.theme:refreshAppearance()
+        self:ensureView()
+        self.webview:frame(self:frame())
+        self.webview:show()
 
-    if self.ready then
-        self:focusWindow()
+        if self.ready then
+            self:focusWindow()
 
-        if self.appliedThemeId == self.theme.activeThemeId then
-            self.webview:evaluateJavaScript("window.GearboxScratchpad.focus();")
-        else
-            self:applyState(false, true)
+            if self.appliedThemeId == self.theme.activeThemeId then
+                self.webview:evaluateJavaScript(
+                    "window.GearboxScratchpad.focus();")
+            else
+                self:applyState(false, true)
+            end
         end
+    end, debug.traceback)
+
+    if not shown then
+        local webview = self.webview
+        local controller = self.controller
+
+        self.webview = nil
+        self.controller = nil
+        self.ready = false
+        self.appliedThemeId = nil
+
+        if controller then
+            pcall(function() controller:setCallback(nil) end)
+        end
+
+        if webview then pcall(function() webview:delete() end) end
+
+        error(showError, 0)
     end
 end
 

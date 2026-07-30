@@ -16,6 +16,7 @@ local launchedApplication
 local defaultTextStyleCalls = 0
 local failNextModalBind = false
 local failNextGlobalHotkey = false
+local failNextWebviewSetup = false
 local interfaceStyle = "Dark"
 local interfaceStyleCalls = 0
 local osascriptCalls = 0
@@ -136,6 +137,11 @@ local function newWebview(frame, controller)
 
     local function chain(name)
         webview[name] = function(self, value)
+            if name == "windowStyle" and failNextWebviewSetup then
+                failNextWebviewSetup = false
+                error("simulated webview setup failure")
+            end
+
             self[name .. "Value"] = value
             return self
         end
@@ -389,6 +395,7 @@ hs = {
 local Actions = require("Spoons.Gearbox.actions")
 local Loader = require("Spoons.Gearbox.loader")
 local Theme = require("Spoons.Gearbox.theme")
+local Validation = require("Spoons.Gearbox.validation")
 local config = require("Spoons.Gearbox.config")
 
 assert(config.menu.timeout == 0,
@@ -398,6 +405,40 @@ assert(config.loupe.selectedScale == 1.18 and config.loupe.duration == 0,
 assert(config.scratchpad.enable and config.scratchpad.width == 720 and
            config.scratchpad.height == 480 and config.scratchpad.maxCharacters ==
            4096, "standalone scratchpad defaults changed")
+
+assert(Validation.keyIdentity("Down") == "down" and
+           Validation.keyIdentity("#01") == "#1" and
+           Validation.isHotkeyKey("space") and
+           not Validation.isHotkeyKey("not-a-real-key"),
+       "shared hotkey validation must preserve key semantics")
+
+local configColorAccepted, configColorError = pcall(function()
+    Validation.validateColor({
+        red = 2,
+        green = 0,
+        blue = 0,
+        alpha = 1
+    }, "theme.fallbackAccent", {configMessages = true})
+end)
+
+assert(not configColorAccepted and
+           tostring(configColorError):match(
+               "theme%.fallbackAccent%.red must be 0%.%.1$"),
+       "config color validation diagnostics must remain compatible")
+
+local themeColorAccepted, themeColorError = pcall(function()
+    Validation.validateColor({
+        red = 2,
+        green = 0,
+        blue = 0,
+        alpha = 1
+    }, "theme.overrides.dracula.background")
+end)
+
+assert(not themeColorAccepted and
+           tostring(themeColorError):match(
+               "Gearbox: theme%.overrides%.dracula%.background%.red must be a number from 0 to 1$"),
+       "theme color validation diagnostics must remain compatible")
 
 local discoveredTheme = Theme.new(config, root .. "/Spoons/Gearbox")
 
@@ -748,8 +789,8 @@ assert(runtime.theme.activeThemeId == "gearbox-dark",
        "migrated dark selection must resolve the Gearbox dark theme")
 assert(runtime.scratchpad.content == "restored draft",
        "scratchpad must restore persisted content")
-assert(#createdWebviews == 1 and not createdWebviews[1].visible,
-       "scratchpad webview must be prewarmed before its first invocation")
+assert(#createdWebviews == 0 and #createdWebviewControllers == 0,
+       "scratchpad must not allocate WebKit objects during startup")
 assert(runtime.hud.canvas.elements[1].roundedRectRadii.xRadius ==
            runtime.theme.metrics.windowCornerRadius,
        "menu HUD and scratchpad must share the outer corner radius")
@@ -810,26 +851,48 @@ assert(launchedApplication == "Calculator",
 assert(runtime.activeMenu == nil, "application launch must close Gearbox")
 
 globalHotkeyPressed()
+
+failNextWebviewSetup = true
+
+local failedScratchpadAccepted = pcall(function()
+    runtime.menus.leader.modal.bindings.s()
+end)
+
+assert(not failedScratchpadAccepted,
+       "a first-use scratchpad construction failure must surface")
+assert(runtime.activeMenu.id == "leader",
+       "a first-use scratchpad failure must leave the menu active")
+assert(#createdWebviews == 1 and createdWebviews[1].deleted and
+           runtime.scratchpad.webview == nil,
+       "a first-use scratchpad failure must delete its partial webview")
+assert(#createdWebviewControllers == 1 and
+           createdWebviewControllers[1].callback == nil and
+           runtime.scratchpad.controller == nil,
+       "a first-use scratchpad failure must release its controller")
+
 runtime.menus.leader.modal.bindings.s()
 
+local scratchpadWebview = createdWebviews[2]
+local scratchpadController = createdWebviewControllers[2]
+
 assert(runtime.activeMenu == nil, "scratchpad must replace the menu HUD")
-assert(#createdWebviews == 1, "scratchpad must reuse its prewarmed webview")
-assert(createdWebviewControllers[1].name == "gearboxScratchpad",
+assert(#createdWebviews == 2 and scratchpadWebview.visible,
+       "scratchpad must create one usable webview on a successful retry")
+assert(scratchpadController.name == "gearboxScratchpad",
        "scratchpad must use its private message bridge")
-assert(createdWebviews[1].visible, "scratchpad action must show the webview")
-assert(createdWebviews[1].allowTextEntryValue == true and
-           createdWebviews[1].transparentValue == true and
-           createdWebviews[1].shadowValue == true and
-           #createdWebviews[1].windowStyleValue == 0,
+assert(scratchpadWebview.allowTextEntryValue == true and
+           scratchpadWebview.transparentValue == true and
+           scratchpadWebview.shadowValue == true and
+           #scratchpadWebview.windowStyleValue == 0,
        "scratchpad must be an editable, transparent, borderless panel")
-assert(createdWebviews[1].currentFrame.w == 720 and
-           createdWebviews[1].currentFrame.h == 480 and
-           createdWebviews[1].currentFrame.x == 600 and
-           createdWebviews[1].currentFrame.y == 150,
+assert(scratchpadWebview.currentFrame.w == 720 and
+           scratchpadWebview.currentFrame.h == 480 and
+           scratchpadWebview.currentFrame.x == 600 and
+           scratchpadWebview.currentFrame.y == 150,
        "scratchpad must use configured size and Gearbox placement")
-assert(createdWebviews[1].document:match("Tab inserts tabs"),
+assert(scratchpadWebview.document:match("Tab inserts tabs"),
        "scratchpad must include the non-editable instructions")
-assert(not createdWebviews[1].document:match('event.key === "Escape"'),
+assert(not scratchpadWebview.document:match('event.key === "Escape"'),
        "scratchpad must not bind Escape")
 
 local scratchpadState = runtime.scratchpad:state(false)
@@ -840,11 +903,11 @@ assert(scratchpadState.instructions ==
 assert(scratchpadState.footerSize == 13,
        "scratchpad instructions must remain subtle but legible")
 assert(scratchpadState.maxCharacters == 4096 and
-           createdWebviews[1].document:match(
+           scratchpadWebview.document:match(
                "editor.maxLength = state.maxCharacters"),
        "scratchpad must expose its configured capacity to the native editor")
 
-createdWebviewControllers[1].callback({
+scratchpadController.callback({
     action = "save",
     content = "persistent draft"
 })
@@ -852,21 +915,21 @@ createdWebviewControllers[1].callback({
 assert(settings["Gearbox.scratchpad.content"] == "persistent draft",
        "scratchpad content must persist through hs.settings")
 
-createdWebviews[1].contentResult = "persistent draft"
+scratchpadWebview.contentResult = "persistent draft"
 globalHotkeyPressed()
-assert(not createdWebviews[1].visible,
+assert(not scratchpadWebview.visible,
        "global Gearbox hotkey must hide the scratchpad")
 
 globalHotkeyPressed()
 runtime.menus.leader.modal.bindings.s()
-assert(#createdWebviews == 1 and createdWebviews[1].visible,
+assert(#createdWebviews == 2 and scratchpadWebview.visible,
        "scratchpad must reuse its existing webview")
 
-createdWebviews[1].contentResult = "reopened draft"
+scratchpadWebview.contentResult = "reopened draft"
 globalHotkeyPressed()
 
 assert(
-    not createdWebviews[1].visible and settings["Gearbox.scratchpad.content"] ==
+    not scratchpadWebview.visible and settings["Gearbox.scratchpad.content"] ==
         "reopened draft",
     "Gearbox hotkey must save and hide the reopened scratchpad")
 
