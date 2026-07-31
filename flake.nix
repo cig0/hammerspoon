@@ -1,5 +1,5 @@
 {
-  description = "Independent Hammerspoon Spoons with Home Manager and nix-darwin modules";
+  description = "Independent Hammerspoon Spoons with an optional Home Manager module";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -42,11 +42,6 @@
       homeModules = {
         default = self.homeModules.hammerspoon-spoons;
         hammerspoon-spoons = import ./nix/home-manager.nix;
-      };
-
-      darwinModules = {
-        default = self.darwinModules.hammerspoon-spoons;
-        hammerspoon-spoons = import ./nix/darwin.nix;
       };
     };
 }

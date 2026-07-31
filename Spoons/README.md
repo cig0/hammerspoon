@@ -26,5 +26,5 @@ left commented until selected.
 
 - [`Gearbox/README.md`](./Gearbox/README.md) — installation, controls,
   configuration, and runtime boundaries.
-- [`../assets/docs/NIX.md`](../assets/docs/NIX.md) — optional Home Manager and
-  nix-darwin delivery.
+- [`../assets/docs/NIX.md`](../assets/docs/NIX.md) — optional Home Manager
+  delivery.

@@ -1,8 +1,8 @@
 # Nix delivery
 
-The repository exports optional Home Manager and nix-darwin modules. Nix owns
-delivery, loader wiring, Gearbox's required timeout and shared placement, and
-Scratchpad settings; the Spoon owns every other runtime setting.
+The repository exports one optional Home Manager module. Nix owns delivery,
+loader wiring, Gearbox's required timeout and shared placement, and Scratchpad
+settings; the Spoon owns every other runtime setting.
 
 ```text
 Spoons/Gearbox
@@ -25,10 +25,8 @@ an externally owned entrypoint must require the loader itself.
 
 | Flake output | Destination |
 | --- | --- |
-| `homeModules.hammerspoon-spoons` | Standalone Home Manager or Home Manager embedded elsewhere |
+| `homeModules.hammerspoon-spoons` | A Home Manager configuration, standalone or embedded |
 | `homeModules.default` | Alias of `homeModules.hammerspoon-spoons` |
-| `darwinModules.hammerspoon-spoons` | nix-darwin configuration routed through Home Manager |
-| `darwinModules.default` | Alias of `darwinModules.hammerspoon-spoons` |
 | `interfaces.homeManagerOptions` | Reusable Home Manager delivery, Gearbox placement and timeout, and Scratchpad schema |
 | `interfaces.homeManagerOptionDocs` | Markdown-ready option documentation metadata |
 
@@ -83,35 +81,34 @@ That entrypoint then loads the generated Spoon loader:
 require("nix-spoons")
 ```
 
-## nix-darwin
+## Integration boundary
 
-The nix-darwin adapter identifies one Home Manager user and forwards the same
-delivery options:
+The module is user-scoped and does not accept a username. A standalone Home
+Manager configuration imports it directly. When Home Manager is embedded in
+another module system, the parent configuration selects the user and that
+user's Home Manager configuration imports the same module:
 
 ```nix
 {
-  imports = [
-    inputs.home-manager.darwinModules.home-manager
-    inputs.hammerspoon.darwinModules.default
-  ];
+  home-manager.users.jane = {
+    imports = [ inputs.hammerspoon.homeModules.default ];
 
-  programs.hammerspoon-spoons = {
-    enable = true;
-    user = "jane";
-    spoons.gearbox = {
+    programs.hammerspoon-spoons = {
       enable = true;
-      menu.position = "bottom";
-      menu.timeout = 5;
-      scratchpad.fontSize = 18;
-      scratchpad.width = 800;
-      scratchpad.height = 600;
+      spoons.gearbox.menu.timeout = 5;
     };
   };
 }
 ```
 
-The named account must exist under `users.users`. The adapter does not write
-directly into a home directory.
+The surrounding NixOS or nix-darwin configuration owns
+`home-manager.users.<name>`; this repository does not duplicate that selection
+through a second `user` option. Hammerspoon itself is macOS-only, so NixOS is
+not a runtime target.
+
+Without Home Manager, use the standalone installation documented in the
+[Gearbox README](../../Spoons/Gearbox/README.md#standalone). The flake does not
+export a system-level module that writes directly into a user's home directory.
 
 ## Configuration ownership
 

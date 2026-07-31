@@ -38,9 +38,8 @@ the repository's root [`init.lua`](../../init.lua) needs to be enabled.
 
 ### Nix
 
-The Home Manager and nix-darwin modules install the same Spoon and generate its
-loader. A working Home Manager configuration includes an explicit positive
-timeout:
+The Home Manager module installs the Spoon and generates its loader. A working
+configuration includes an explicit positive timeout:
 
 ```nix
 programs.hammerspoon-spoons = {
@@ -50,7 +49,7 @@ programs.hammerspoon-spoons = {
 ```
 
 See [Nix delivery](../../assets/docs/NIX.md) for module imports, managed and
-external `init.lua` ownership, and the nix-darwin user boundary.
+external `init.lua` ownership, and the Home Manager integration boundary.
 
 ## Controls
 
@@ -358,8 +357,8 @@ lua tests/gearbox.lua "$(pwd)"
 ```
 
 Run it from the repository root. `nix flake check` separately validates the
-Home Manager and nix-darwin module shapes. Native rendering and application
-launches remain the live Hammerspoon boundary.
+flake outputs; focused evaluation validates the Home Manager module. Native
+rendering and application launches remain the live Hammerspoon boundary.
 
 ## Where to look next
 
@@ -367,6 +366,5 @@ launches remain the live Hammerspoon boundary.
   action descriptors.
 - [`themes/README.md`](./themes/README.md) — palette schema, bundled themes,
   selection flow, and upstream provenance.
-- [`assets/docs/NIX.md`](../../assets/docs/NIX.md) — Home Manager and nix-darwin
-  delivery.
+- [`assets/docs/NIX.md`](../../assets/docs/NIX.md) — Home Manager delivery.
 - [`tests/README.md`](../../tests/README.md) — regression-harness scope.
