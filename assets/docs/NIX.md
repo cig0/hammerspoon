@@ -1,14 +1,18 @@
 # Nix delivery
 
 The repository exports optional Home Manager and nix-darwin modules. Nix owns
-delivery and activation of the Spoons; each Spoon owns its behavior.
+delivery, loader wiring, and Gearbox's required timeout value; the Spoon owns
+every other runtime setting.
 
 ```text
-Nix enable options
+Spoons/Gearbox + programs.hammerspoon-spoons.spoons.gearbox.menu.timeout
+  → Nix-derived Gearbox copy
   → ~/.hammerspoon/Spoons/Gearbox
+
+enabled Spoon set
   → ~/.hammerspoon/nix-spoons.lua
   → require("Spoons.Gearbox").start()
-  → Spoons/Gearbox/config.lua
+  → deployed Spoons/Gearbox/config.lua
 ```
 
 `nix-spoons.lua` is the Nix-owned loader for enabled Spoons. A managed
@@ -23,12 +27,13 @@ an externally owned entrypoint must require the loader itself.
 | `homeModules.default` | Alias of `homeModules.hammerspoon-spoons` |
 | `darwinModules.hammerspoon-spoons` | nix-darwin configuration routed through Home Manager |
 | `darwinModules.default` | Alias of `darwinModules.hammerspoon-spoons` |
-| `interfaces.homeManagerOptions` | Reusable Home Manager delivery-option schema |
+| `interfaces.homeManagerOptions` | Reusable Home Manager delivery and Gearbox-timeout schema |
 | `interfaces.homeManagerOptionDocs` | Markdown-ready option documentation metadata |
 
 ## Home Manager
 
-The Home Manager module exposes only delivery controls:
+The Home Manager module exposes delivery controls and the required Gearbox
+timeout:
 
 ```nix
 {
@@ -37,14 +42,20 @@ The Home Manager module exposes only delivery controls:
   programs.hammerspoon-spoons = {
     enable = true;
     manageInit = true;
-    spoons.gearbox.enable = true;
+    spoons.gearbox = {
+      enable = true;
+      menu.timeout = 5;
+    };
   };
 }
 ```
 
-The module links Gearbox at `~/.hammerspoon/Spoons/Gearbox`. Hammerspoon itself
-must be installed separately. When another module or hand-written file owns
-the entrypoint:
+The module copies Gearbox into the Nix store, substitutes `menu.timeout` in that
+copy, and links it at `~/.hammerspoon/Spoons/Gearbox`. The default timeout is
+the disabled sentinel `0`; normal use requires an explicit positive value.
+Hammerspoon itself must be installed separately.
+
+When another module or hand-written file owns the entrypoint:
 
 ```nix
 programs.hammerspoon-spoons.manageInit = false;
@@ -71,7 +82,10 @@ delivery options:
   programs.hammerspoon-spoons = {
     enable = true;
     user = "jane";
-    spoons.gearbox.enable = true;
+    spoons.gearbox = {
+      enable = true;
+      menu.timeout = 5;
+    };
   };
 }
 ```
@@ -81,20 +95,34 @@ directly into a home directory.
 
 ## Configuration ownership
 
-[`Spoons/Gearbox/config.lua`](../../Spoons/Gearbox/config.lua) is the sole
-source of Gearbox behavior. The Home Manager and nix-darwin modules neither
-redeclare its fields nor render a Lua override table.
+[`Spoons/Gearbox/config.lua`](../../Spoons/Gearbox/config.lua) is Gearbox's
+runtime configuration contract. Standalone installations read it directly.
+Nix delivery derives a store copy and replaces only its `menu.timeout` sentinel
+with
+`programs.hammerspoon-spoons.spoons.gearbox.menu.timeout`.
 
 ```text
-Spoons/Gearbox/config.lua
+repository Spoons/Gearbox/config.lua
+  + Nix menu.timeout
+  → deployed Spoons/Gearbox/config.lua
   → Gearbox.start()
   → validation
   → theme, loader, runtime, HUD, and scratchpad
 ```
 
-This ownership is shared by standalone and Nix-delivered installations. A Nix
-flake input update deploys a changed `config.lua`; host profiles only decide
-whether the Spoon is present and loaded.
+No runtime override table is generated or passed to `Gearbox.start()`. All
+other Gearbox values remain owned by the repository file, so a flake input
+update deploys their changes. The timeout option is a deployment-time exception
+because the shipped `0` intentionally prevents startup until an installation
+chooses a positive duration.
 
 The generated option snapshot is
 [`ALL-OPTIONS.md`](./ALL-OPTIONS.md).
+
+## Where to look next
+
+- [`../../README.md`](../../README.md) — repository entry point and Spoon
+  catalogue.
+- [`../../Spoons/Gearbox/README.md`](../../Spoons/Gearbox/README.md) — Gearbox
+  installation, controls, and complete runtime configuration.
+- [`ALL-OPTIONS.md`](./ALL-OPTIONS.md) — generated Home Manager option surface.

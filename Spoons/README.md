@@ -21,3 +21,10 @@ the others.
 
 The root [`init.lua`](../init.lua) is a clone-friendly loader with Spoon imports
 left commented until selected.
+
+## Where to look next
+
+- [`Gearbox/README.md`](./Gearbox/README.md) — installation, controls,
+  configuration, and runtime boundaries.
+- [`../assets/docs/NIX.md`](../assets/docs/NIX.md) — optional Home Manager and
+  nix-darwin delivery.

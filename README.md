@@ -7,82 +7,32 @@
   </tr>
 </table>
 
-This repository collects independent Hammerspoon libraries under
-[`Spoons/`](./Spoons/). Each Spoon brings its own Lua runtime, defaults, data,
-tests, and adjacent documentation. Copy one into an existing Hammerspoon
-configuration or deliver it through the optional Nix modules; the Lua code
-does not depend on Nix.
+This repository contains independent Hammerspoon Spoons. Each Spoon owns its
+Lua runtime, configuration, data, tests, and detailed documentation; optional
+Nix modules deliver and load those files and provide Gearbox's required timeout.
 
-## Table of contents
+## Spoons
 
-| Entry | Kind | Purpose |
-| --- | --- | --- |
-| [Gearbox](./Spoons/Gearbox/README.md) | Spoon | Native keyboard launcher with nested menus, an editable scratchpad, arrow navigation, themes, and macOS power controls, inspired by [LeaderKey](https://github.com/mikker/LeaderKey) <3 |
-| [Nix delivery](./assets/docs/NIX.md) | Integration | Home Manager and nix-darwin modules for deploying Hammerspoon configuration and enabled Spoons |
+| Spoon | Purpose |
+| --- | --- |
+| [Gearbox](./Spoons/Gearbox/README.md) | Native keyboard launcher with nested menus, an editable scratchpad, arrow navigation, themes, and macOS power controls; inspired by [LeaderKey](https://github.com/mikker/LeaderKey) |
 
-## Quick start
+## Example
 
-For a dedicated Hammerspoon configuration:
-
-```sh
-git clone https://github.com/cig0/hammerspoon.git ~/.hammerspoon
-```
-
-Uncomment the Spoon in [`init.lua`](./init.lua), reload Hammerspoon, and press
-`alt+cmd+space`.
-
-For an existing configuration, copy the desired Spoon beneath
-`~/.hammerspoon/Spoons/` and load it from `~/.hammerspoon/init.lua`:
+Copy a Spoon beneath `~/.hammerspoon/Spoons/`, then load it from
+`~/.hammerspoon/init.lua`:
 
 ```lua
 require("Spoons.Gearbox").start()
 ```
 
-The [Gearbox guide](./Spoons/Gearbox/README.md) contains the exact copy command,
-configuration map, and runtime behavior.
-
-## Theme persistence
-
-Gearbox stores an interactive theme selection with Hammerspoon's `hs.settings`
-key `Gearbox.theme.selection`. The value is backed by
-`~/Library/Preferences/org.hammerspoon.Hammerspoon.plist`; Gearbox never rewrites
-`config.lua`.
-
-The configured value is `theme.persistSelection = true`. Changing it in
-[`config.lua`](./Spoons/Gearbox/config.lua) invalidates an older interactive
-selection, so the Gearbox configuration remains authoritative. Nix deploys
-that file without maintaining a second behavioral option tree. See
-[Gearbox configuration](./Spoons/Gearbox/README.md#configuration-configlua) and
-[Nix delivery](./assets/docs/NIX.md#configuration-ownership).
-
-## Repository map
-
-```text
-init.lua
-  → Spoons/<name>/init.lua
-    → local configuration, data, runtime, and documentation
-
-flake.nix
-  → nix/home-manager.nix
-  → nix/darwin.nix
-    → the same independent Spoons
-```
-
-[`Spoons/README.md`](./Spoons/README.md) is the library catalogue. Adding
-another Spoon adds another self-contained directory and, when useful, an
-optional Nix adapter. It does not create a shared runtime between Spoons.
+Gearbox intentionally ships with its timeout disabled, so set a positive
+`menu.timeout` before loading it. The [Gearbox README](./Spoons/Gearbox/README.md)
+contains installation, configuration, controls, and architecture details.
+[Nix delivery](./assets/docs/NIX.md) is available for Home Manager and
+nix-darwin.
 
 ## License
 
-Unless otherwise stated, everything in this repository is covered by:
-
-```text
-Copyright (C) 2025-2026 Martín Cigorraga <cig0.github@gmail.com>
-
-This program is free software: you can redistribute it and/or modify it under
-the terms of the GNU Affero General Public License v3 or later.
-
-This program is distributed without any warranty; without even the implied
-warranty of merchantability or fitness for a particular purpose. See the GNU
-General Public License for details.
-```
+Copyright © 2025–2026 Martín Cigorraga. Released under the
+[GNU Affero General Public License v3 or later](./LICENSE).
