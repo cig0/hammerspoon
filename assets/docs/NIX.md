@@ -1,11 +1,13 @@
 # Nix delivery
 
 The repository exports optional Home Manager and nix-darwin modules. Nix owns
-delivery, loader wiring, and Gearbox's required timeout value; the Spoon owns
-every other runtime setting.
+delivery, loader wiring, Gearbox's required timeout and shared placement, and
+Scratchpad settings; the Spoon owns every other runtime setting.
 
 ```text
-Spoons/Gearbox + programs.hammerspoon-spoons.spoons.gearbox.menu.timeout
+Spoons/Gearbox
+  + programs.hammerspoon-spoons.spoons.gearbox.menu.{position,timeout}
+  + programs.hammerspoon-spoons.spoons.gearbox.scratchpad.*
   → Nix-derived Gearbox copy
   → ~/.hammerspoon/Spoons/Gearbox
 
@@ -27,13 +29,13 @@ an externally owned entrypoint must require the loader itself.
 | `homeModules.default` | Alias of `homeModules.hammerspoon-spoons` |
 | `darwinModules.hammerspoon-spoons` | nix-darwin configuration routed through Home Manager |
 | `darwinModules.default` | Alias of `darwinModules.hammerspoon-spoons` |
-| `interfaces.homeManagerOptions` | Reusable Home Manager delivery and Gearbox-timeout schema |
+| `interfaces.homeManagerOptions` | Reusable Home Manager delivery, Gearbox placement and timeout, and Scratchpad schema |
 | `interfaces.homeManagerOptionDocs` | Markdown-ready option documentation metadata |
 
 ## Home Manager
 
-The Home Manager module exposes delivery controls and the required Gearbox
-timeout:
+The Home Manager module exposes delivery controls, shared Gearbox and
+Scratchpad placement, the required timeout, and Scratchpad settings:
 
 ```nix
 {
@@ -44,16 +46,30 @@ timeout:
     manageInit = true;
     spoons.gearbox = {
       enable = true;
-      menu.timeout = 5;
+      menu = {
+        position = "bottom";
+        timeout = 5;
+      };
+      scratchpad = {
+        enable = true;
+        fontSize = 18;
+        width = 800;
+        height = 600;
+        maxCharacters = 4096;
+        persistContent = true;
+        showInstructions = true;
+      };
     };
   };
 }
 ```
 
-The module copies Gearbox into the Nix store, substitutes `menu.timeout` in that
-copy, and links it at `~/.hammerspoon/Spoons/Gearbox`. The default timeout is
-the disabled sentinel `0`; normal use requires an explicit positive value.
-Hammerspoon itself must be installed separately.
+The module copies Gearbox into the Nix store, substitutes `menu.position`,
+`menu.timeout`, and the seven `scratchpad.*` values in that copy, and links it
+at `~/.hammerspoon/Spoons/Gearbox`. `menu.position` is the enum `"top"` or
+`"bottom"` and applies to both windows; bottom placement mirrors the top margin.
+The default timeout is the disabled sentinel `0`; normal use requires an
+explicit positive value. Hammerspoon itself must be installed separately.
 
 When another module or hand-written file owns the entrypoint:
 
@@ -84,7 +100,11 @@ delivery options:
     user = "jane";
     spoons.gearbox = {
       enable = true;
+      menu.position = "bottom";
       menu.timeout = 5;
+      scratchpad.fontSize = 18;
+      scratchpad.width = 800;
+      scratchpad.height = 600;
     };
   };
 }
@@ -97,13 +117,13 @@ directly into a home directory.
 
 [`Spoons/Gearbox/config.lua`](../../Spoons/Gearbox/config.lua) is Gearbox's
 runtime configuration contract. Standalone installations read it directly.
-Nix delivery derives a store copy and replaces only its `menu.timeout` sentinel
-with
-`programs.hammerspoon-spoons.spoons.gearbox.menu.timeout`.
+Nix delivery derives a store copy and replaces its `menu.position`,
+`menu.timeout`, and Scratchpad values with the corresponding
+`programs.hammerspoon-spoons.spoons.gearbox.*` options.
 
 ```text
 repository Spoons/Gearbox/config.lua
-  + Nix menu.timeout
+  + Nix menu.{position,timeout} and scratchpad.*
   → deployed Spoons/Gearbox/config.lua
   → Gearbox.start()
   → validation
@@ -112,9 +132,11 @@ repository Spoons/Gearbox/config.lua
 
 No runtime override table is generated or passed to `Gearbox.start()`. All
 other Gearbox values remain owned by the repository file, so a flake input
-update deploys their changes. The timeout option is a deployment-time exception
-because the shipped `0` intentionally prevents startup until an installation
-chooses a positive duration.
+update deploys their changes. Placement, timeout, and Scratchpad options are
+deployment-time exceptions: the shipped timeout `0` intentionally prevents
+startup until an installation chooses a positive duration, while shared
+placement and Scratchpad policy, sizing, and editor font size remain
+host-configurable.
 
 The generated option snapshot is
 [`ALL-OPTIONS.md`](./ALL-OPTIONS.md).

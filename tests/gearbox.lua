@@ -101,8 +101,8 @@ local function newModal()
     return modal
 end
 
-local function newCanvas()
-    local canvas = {elements = {}}
+local function newCanvas(frame)
+    local canvas = {elements = {}, currentFrame = frame}
 
     function canvas:appendElements(elements)
         self.elements = elements
@@ -237,7 +237,7 @@ hs = {
 
             return {font = {name = "System", size = 14}}
         end,
-        new = function() return newCanvas() end
+        new = function(frame) return newCanvas(frame) end
     },
 
     caffeinate = {
@@ -400,11 +400,14 @@ local config = require("Spoons.Gearbox.config")
 
 assert(config.menu.timeout == 0,
        "zero must remain the standalone disabled-timeout sentinel")
+assert(config.menu.position == "top",
+       "top must remain the standalone menu-position default")
 assert(config.loupe.selectedScale == 1.18 and config.loupe.duration == 0,
        "standalone loupe defaults must retain immediate navigation")
 assert(config.scratchpad.enable and config.scratchpad.width == 720 and
            config.scratchpad.height == 480 and config.scratchpad.maxCharacters ==
-           4096, "standalone scratchpad defaults changed")
+           4096 and config.scratchpad.fontSize == 14,
+       "standalone scratchpad defaults changed")
 
 assert(Validation.keyIdentity("Down") == "down" and
            Validation.keyIdentity("#01") == "#1" and
@@ -900,8 +903,8 @@ local scratchpadState = runtime.scratchpad:state(false)
 assert(scratchpadState.instructions ==
            "Cursor keys move · Tab inserts tabs · alt+cmd+space closes scratchpad",
        "scratchpad instructions must include the configured Gearbox hotkey")
-assert(scratchpadState.footerSize == 13,
-       "scratchpad instructions must remain subtle but legible")
+assert(scratchpadState.bodySize == 14 and scratchpadState.footerSize == 13,
+       "scratchpad font sizing must remain configurable and legible")
 assert(scratchpadState.maxCharacters == 4096 and
            scratchpadWebview.document:match(
                "editor.maxLength = state.maxCharacters"),
@@ -1114,6 +1117,15 @@ assert(not invalidScratchpadCapacityAccepted,
 assert(validRuntime.activeMenu.id == "themes",
        "scratchpad capacity failures must preserve the active menu")
 
+local invalidScratchpadFontSizeAccepted = pcall(function()
+    startGearbox({menu = {timeout = 5}, scratchpad = {fontSize = 0}})
+end)
+
+assert(not invalidScratchpadFontSizeAccepted,
+       "scratchpad font size must be positive")
+assert(validRuntime.activeMenu.id == "themes",
+       "scratchpad font-size failures must preserve the active menu")
+
 local fontCallsBeforePartialStart = defaultTextStyleCalls
 local partialStartModalIndex = #createdModals + 1
 failNextModalBind = true
@@ -1241,6 +1253,33 @@ globalHotkeyPressed()
 
 assert(systemAccentRuntime.theme.colors.accent.red == 0.2,
        "system accent source must use the resolved macOS accent")
+
+local bottomRuntime = startGearbox({
+    menu = {timeout = 5, position = "bottom"},
+    scratchpad = {fontSize = 18},
+    theme = {accentSource = "theme"}
+})
+
+globalHotkeyPressed()
+
+local bottomMenuFrame = bottomRuntime.hud.canvas.currentFrame
+local bottomMenuMargin = 1080 - bottomMenuFrame.y - bottomMenuFrame.h
+
+assert(bottomMenuMargin == (1080 - bottomMenuFrame.h) * 0.25,
+       "bottom HUD placement must mirror the top margin")
+
+bottomRuntime.menus.leader.modal.bindings.s()
+
+local bottomScratchpad = createdWebviews[#createdWebviews]
+local bottomScratchpadFrame = bottomScratchpad.currentFrame
+local bottomScratchpadState = bottomRuntime.scratchpad:state(false)
+
+assert(bottomScratchpadFrame.y == 450 and
+           1080 - bottomScratchpadFrame.y - bottomScratchpadFrame.h == 150,
+       "bottom scratchpad placement must mirror the top margin")
+assert(bottomScratchpadState.bodySize == 18 and
+           bottomScratchpadState.footerSize == 17,
+       "scratchpad font size must reach the webview state")
 
 local noScratchpadRuntime = startGearbox({
     menu = {timeout = 5},

@@ -257,6 +257,9 @@ function Validation.validateConfig(config)
                "navigation.resetTimeoutOnInput")
 
     assertType(config.scratchpad.enable, "boolean", "scratchpad.enable")
+    assertType(config.scratchpad.fontSize, "number", "scratchpad.fontSize")
+    assert(config.scratchpad.fontSize > 0,
+           "Gearbox: scratchpad.fontSize must be positive")
     assertType(config.scratchpad.width, "number", "scratchpad.width")
     assert(config.scratchpad.width >= 360,
            "Gearbox: scratchpad.width must be at least 360")

@@ -18,13 +18,29 @@ in
         pkgs.runCommand "gearbox-configured"
           {
             timeout = builtins.toJSON gb.menu.timeout;
+            menuPosition = builtins.toJSON gb.menu.position;
+            scratchpadEnable = builtins.toJSON gb.scratchpad.enable;
+            scratchpadFontSize = builtins.toJSON gb.scratchpad.fontSize;
+            scratchpadWidth = builtins.toJSON gb.scratchpad.width;
+            scratchpadHeight = builtins.toJSON gb.scratchpad.height;
+            scratchpadMaxCharacters = builtins.toJSON gb.scratchpad.maxCharacters;
+            scratchpadPersistContent = builtins.toJSON gb.scratchpad.persistContent;
+            scratchpadShowInstructions = builtins.toJSON gb.scratchpad.showInstructions;
           }
           ''
             mkdir -p "$out"
             cp -R ${../Spoons/Gearbox}/. "$out/"
             chmod u+w "$out/config.lua"
             substituteInPlace "$out/config.lua" \
-              --replace-fail "        timeout = 0," "        timeout = $timeout,"
+              --replace-fail "        timeout = 0," "        timeout = $timeout," \
+              --replace-fail '        position = "top",' "        position = $menuPosition," \
+              --replace-fail "        enable = true," "        enable = $scratchpadEnable," \
+              --replace-fail "        fontSize = 14," "        fontSize = $scratchpadFontSize," \
+              --replace-fail "        width = 720," "        width = $scratchpadWidth," \
+              --replace-fail "        height = 480," "        height = $scratchpadHeight," \
+              --replace-fail "        maxCharacters = 4096," "        maxCharacters = $scratchpadMaxCharacters," \
+              --replace-fail "        persistContent = true," "        persistContent = $scratchpadPersistContent," \
+              --replace-fail "        showInstructions = true" "        showInstructions = $scratchpadShowInstructions"
           '';
 
       spoonLoader = ''

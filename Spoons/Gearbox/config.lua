@@ -57,6 +57,7 @@ return {
 
     scratchpad = {
         enable = true,
+        fontSize = 14,
         width = 720,
         height = 480,
         maxCharacters = 4096,
