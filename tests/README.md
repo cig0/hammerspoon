@@ -21,7 +21,7 @@ tests/gearbox.lua
 | Persistence | Restoration, changed-default invalidation, missing-theme cleanup, disabled persistence |
 | Runtime | Zero-timeout startup rejection, hotkey replacement, partial-start rollback, modal cleanup, direct and arrow-key activation |
 | HUD boundary | Checked rows, immediate theme refresh, lazy appearance resolution |
-| Scratchpad | Lazy Webview construction, failed-first-use cleanup, sizing, capacity, persistence, toggle, and reuse |
+| Scratchpad | Lazy Webview construction, failed-first-use cleanup, sizing, font size, symmetric placement, capacity, persistence, toggle, and reuse |
 | Host resolution | System fonts and macOS accent are resolved only at their documented lifecycle points |
 
 The harness runs with a command-line Lua interpreter:

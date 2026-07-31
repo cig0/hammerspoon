@@ -9,7 +9,8 @@
 
 This repository contains independent Hammerspoon Spoons. Each Spoon owns its
 Lua runtime, configuration, data, tests, and detailed documentation; optional
-Nix modules deliver and load those files and provide Gearbox's required timeout.
+Nix modules deliver and load those files and provide Gearbox's required
+timeout, shared placement, and Scratchpad settings.
 
 ## Spoons
 

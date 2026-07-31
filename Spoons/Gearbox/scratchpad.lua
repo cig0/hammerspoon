@@ -288,9 +288,9 @@ function Scratchpad:state(includeContent)
         title = self.config.menu.showEmojis and "📝  Scratchpad" or
             "Scratchpad",
         fontFamily = bodyFont.name or "-apple-system",
-        bodySize = bodyFont.size or self.config.font.size,
+        bodySize = self.config.scratchpad.fontSize,
         titleSize = titleFont.size or self.config.font.titleSize,
-        footerSize = math.max(11, (bodyFont.size or self.config.font.size) - 1),
+        footerSize = math.max(11, self.config.scratchpad.fontSize - 1),
         bodyWeight = self.config.font.bodyWeight == "bold" and 700 or 400,
         titleWeight = self.config.font.titleWeight == "bold" and 700 or 400,
         cornerRadius = self.theme.metrics.windowCornerRadius,
