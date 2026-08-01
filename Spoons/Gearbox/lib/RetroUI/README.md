@@ -23,9 +23,9 @@ consumers should pin or record that version when they bundle the library.
 - `Dialog.show(spec)` binds the model to `hs.canvas`, keyboard input, mouse
   input, and an optional dismissal timer.
 
-The dialog canvas is non-activating. Keyboard input belongs to its temporary
-modal; mouse input is handled through canvas tracking rectangles. A button
-face shifts down-right while it is pressed, covering its fixed shadow.
+The floating dialog canvas is non-activating. Keyboard input belongs to its
+temporary modal; mouse input is handled through canvas tracking rectangles. A
+button face shifts down-right while it is pressed, covering its fixed shadow.
 
 Theme precedence is structural defaults, named preset, then `themeOverrides`;
 the dialog's `frameStyle`, `titleAlignment`, and `padding` can make local layout

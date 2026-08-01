@@ -42,7 +42,8 @@ in
       default = 0;
       description = ''
         Seconds before the menu closes. Zero disables timeout and intentionally
-        causes Gearbox startup to fail; normal use requires a positive value.
+        leaves Gearbox stopped while showing its configuration dialog; normal
+        use requires a positive value.
       '';
     };
 
