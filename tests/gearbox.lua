@@ -22,6 +22,7 @@ local interfaceStyleCalls = 0
 local osascriptCalls = 0
 local reloadCalls = 0
 local settings = {}
+local mouseButtons = {}
 
 local styledTextMetatable = {}
 
@@ -109,12 +110,34 @@ local function newCanvas(frame)
         return self
     end
 
+    function canvas:replaceElements(elements)
+        self.elements = elements
+        return self
+    end
+
     function canvas:elementAttribute(index, attribute, value)
         self.elements[index][attribute] = value
         return self
     end
 
     function canvas:wantsLayer() return self end
+
+    function canvas:level(value)
+        self.levelValue = value
+        return self
+    end
+
+    function canvas:clickActivating(value)
+        self.clickActivatingValue = value
+        return self
+    end
+
+    function canvas:mouseCallback(callback)
+        self.mouseCallbackValue = callback
+        return self
+    end
+
+    function canvas:canvasMouseEvents() return self end
 
     function canvas:show()
         self.visible = true
@@ -125,6 +148,12 @@ local function newCanvas(frame)
 
     table.insert(createdCanvases, canvas)
     return canvas
+end
+
+local function elementById(canvas, id)
+    for _, element in ipairs(canvas.elements) do
+        if element.id == id then return element end
+    end
 end
 
 local function newWebview(frame, controller)
@@ -232,6 +261,7 @@ hs = {
     },
 
     canvas = {
+        windowLevels = {desktopIcon = 10},
         defaultTextStyle = function()
             defaultTextStyleCalls = defaultTextStyleCalls + 1
 
@@ -245,6 +275,8 @@ hs = {
         set = function(kind, value) caffeinateState[kind] = value end,
         systemSleep = function() end
     },
+
+    eventtap = {checkMouseButtons = function() return mouseButtons end},
 
     fs = {
         dir = function(path)
@@ -306,6 +338,7 @@ hs = {
     keycodes = {
         map = setmetatable({
             down = 125,
+            tab = 48,
             escape = 53,
             ["return"] = 36,
             space = 49,
@@ -355,6 +388,15 @@ hs = {
             converted.bold = bold or nil
             return converted
         end,
+        fontInfo = function()
+            return {
+                fixedPitch = true,
+                maximumAdvancement = {w = 11},
+                ascender = 14,
+                descender = -4,
+                leading = 2
+            }
+        end,
         new = styledText,
         validFont = function() return true end
     },
@@ -365,6 +407,13 @@ hs = {
             local timer = {duration = duration, callback = callback}
 
             function timer:stop() self.stopped = true end
+
+            function timer:fire()
+                if not self.stopped and not self.fired then
+                    self.fired = true
+                    self.callback()
+                end
+            end
 
             table.insert(createdTimers, timer)
             return timer
@@ -619,19 +668,6 @@ settings["Shift7.theme.selection"] = {
 settings["Gearbox.scratchpad.content"] = "restored draft"
 
 local Gearbox = require("Spoons.Gearbox")
-local expectedDisabledTimeoutMessage = table.concat({
-    "╔═[ Gearbox configuration error ]" .. string.rep("═", 48) .. "╗",
-    "║" .. string.rep(" ", 80) .. "║",
-    "║  Gearbox cannot start because `menu.timeout` is set to `0` (disabled)." ..
-        string.rep(" ", 9) .. "║",
-    "║  Set `menu.timeout` to a positive number of seconds, then reload Hammerspoon." ..
-        string.rep(" ", 2) .. "║",
-    "║" .. string.rep(" ", 80) .. "║",
-    "║  This window will be dismissed in 10 seconds." ..
-        string.rep(" ", 34) .. "║",
-    "║" .. string.rep(" ", 80) .. "║",
-    "╚" .. string.rep("═", 80) .. "╝"
-}, "\n")
 local canvasesBeforeDisabledTimeout = #createdCanvases
 local modalsBeforeDisabledTimeout = #createdModals
 local timersBeforeDisabledTimeout = #createdTimers
@@ -650,62 +686,100 @@ assert(not disabledTimeoutAccepted,
 assert(
     disabledTimeoutError == "Gearbox: menu.timeout must be greater than zero",
     "zero timeout must raise the dedicated configuration error")
-assert(#shownAlerts == 1, "zero timeout must show one configuration alert")
+local disabledTimeoutCanvas = createdCanvases[#createdCanvases]
+local disabledTimeoutModal = createdModals[#createdModals]
+local disabledTimeoutTimer = createdTimers[#createdTimers]
 
-local disabledTimeoutAlert = shownAlerts[1]
-local disabledTimeoutStyle = disabledTimeoutAlert.style
+assert(#createdCanvases == canvasesBeforeDisabledTimeout + 1 and
+           #createdModals == modalsBeforeDisabledTimeout + 1 and
+           #createdTimers == timersBeforeDisabledTimeout + 1,
+       "zero timeout must create one interactive RetroUI dialog")
+assert(disabledTimeoutCanvas.visible and disabledTimeoutCanvas.levelValue ==
+           hs.canvas.windowLevels.desktopIcon + 1 and
+           disabledTimeoutCanvas.clickActivatingValue == false and
+           type(disabledTimeoutCanvas.mouseCallbackValue) == "function",
+       "zero-timeout dialog must be a non-activating mouse-aware canvas")
+assert(disabledTimeoutTimer.duration == 30,
+       "zero-timeout dialog must own a thirty-second lifetime")
+local disabledFooter = assert(elementById(disabledTimeoutCanvas,
+                                         "retro-ui:footer:text"))
+local disabledFace = assert(elementById(disabledTimeoutCanvas,
+                                       "retro-ui:button:accept:face"))
+local disabledShadow = assert(elementById(disabledTimeoutCanvas,
+                                         "retro-ui:button:accept:shadow"))
+assert(disabledTimeoutCanvas.elements[1].fillColor.green == 0.53 and
+           disabledFooter.text.text == "This dialog will be dismissed in 30 seconds." and
+           disabledFace.frame.x > disabledFooter.frame.x,
+       "zero timeout must use the Borland footer action layout")
+assert(#createdWebviews == webviewsBeforeDisabledTimeout and
+           #createdWebviewControllers == controllersBeforeDisabledTimeout and
+           globalHotkeyBindCalls == hotkeysBeforeDisabledTimeout and
+           defaultTextStyleCalls == fontCallsBeforeDisabledTimeout and
+           interfaceStyleCalls == appearanceCallsBeforeDisabledTimeout and
+           osascriptCalls == accentCallsBeforeDisabledTimeout,
+       "zero timeout must not allocate a Gearbox runtime")
 
-assert(styledTextValue(disabledTimeoutAlert.message) ==
-           expectedDisabledTimeoutMessage,
-       "zero-timeout alert message changed")
-assert(disabledTimeoutAlert.duration == 10,
-       "zero-timeout alert must own a ten-second lifetime")
-assert(disabledTimeoutStyle.textSize ==
-           math.max(config.font.titleSize + 2, hs.alert.defaultStyle.textSize) and
-           disabledTimeoutStyle.textSize > config.font.titleSize,
-       "zero-timeout alert font must be larger than the menu header")
-assert(disabledTimeoutStyle.fillColor.red == 0.72 and
-           disabledTimeoutStyle.fillColor.green == 0 and
-           disabledTimeoutStyle.fillColor.blue == 0 and
-           disabledTimeoutStyle.fillColor.alpha == 0.98,
-       "zero-timeout alert must use a red background")
-assert(disabledTimeoutStyle.strokeWidth == 0,
-       "the ASCII box must own the warning border")
-assert(disabledTimeoutStyle.textColor.white == 1 and
-           disabledTimeoutStyle.textColor.alpha == 1,
-       "zero-timeout alert must use white text")
-assert(disabledTimeoutStyle.radius == 0,
-       "zero-timeout alert must use square corners")
-assert(disabledTimeoutStyle.padding == disabledTimeoutStyle.textSize,
-       "zero-timeout alert must have padding on every side")
+local function bareBinding(modal, key)
+    for _, binding in ipairs(modal.bindingCalls) do
+        if binding.key == key and #binding.modifiers == 0 then return binding end
+    end
+end
 
-local disabledTimeoutSegments = disabledTimeoutAlert.message.segments
-local disabledTimeoutLegendSegment = disabledTimeoutSegments[2]
+local returnBinding = assert(bareBinding(disabledTimeoutModal, "return"))
+assert(bareBinding(disabledTimeoutModal, "a"),
+       "Accept must bind its mnemonic")
+returnBinding.pressed()
+assert(disabledFace.frame.y == disabledShadow.frame.y,
+       "Return down must move the button face over its shadow")
+returnBinding.released()
+assert(disabledFace.frame.y == disabledShadow.frame.y,
+       "Return release must retain the pressed visual until dismissal")
+createdTimers[#createdTimers]:fire()
+assert(disabledTimeoutCanvas.visible == false and disabledTimeoutModal.deleted,
+       "Return release must dismiss and clean the warning dialog")
 
-assert(#disabledTimeoutSegments == 3 and
-           disabledTimeoutLegendSegment.text ==
-           "This window will be dismissed in 10 seconds.",
-       "zero-timeout alert must style the dismissal legend separately")
-assert(disabledTimeoutLegendSegment.attributes.font.bold and
-           disabledTimeoutLegendSegment.attributes.color.red == 1 and
-           disabledTimeoutLegendSegment.attributes.color.green == 0.9 and
-           disabledTimeoutLegendSegment.attributes.color.blue == 0,
-       "zero-timeout dismissal legend must be bold yellow")
-assert(disabledTimeoutSegments[1].attributes.color.white == 1 and
-           disabledTimeoutSegments[3].attributes.color.white == 1 and
-           not disabledTimeoutSegments[1].attributes.font.bold and
-           not disabledTimeoutSegments[3].attributes.font.bold,
-       "zero-timeout box characters must remain regular white")
-assert(#createdCanvases == canvasesBeforeDisabledTimeout and #createdModals ==
-           modalsBeforeDisabledTimeout and #createdTimers ==
-           timersBeforeDisabledTimeout and #createdWebviews ==
-           webviewsBeforeDisabledTimeout and #createdWebviewControllers ==
-           controllersBeforeDisabledTimeout and globalHotkeyBindCalls ==
-           hotkeysBeforeDisabledTimeout and defaultTextStyleCalls ==
-           fontCallsBeforeDisabledTimeout and interfaceStyleCalls ==
-           appearanceCallsBeforeDisabledTimeout and osascriptCalls ==
-           accentCallsBeforeDisabledTimeout,
-       "zero timeout must fail before allocating the Gearbox runtime")
+local function startWarning()
+    local accepted, failure = pcall(function() Gearbox.start() end)
+    assert(not accepted and failure == "Gearbox: menu.timeout must be greater than zero",
+           "each disabled configuration attempt must raise the stable error")
+    return createdCanvases[#createdCanvases], createdModals[#createdModals],
+           createdTimers[#createdTimers]
+end
+
+local mouseWarningCanvas, mouseWarningModal = startWarning()
+mouseButtons = {left = true}
+mouseWarningCanvas.mouseCallbackValue(mouseWarningCanvas, "mouseDown",
+                                      "retro-ui:button:accept:hit")
+mouseButtons = {}
+mouseWarningCanvas.mouseCallbackValue(mouseWarningCanvas, "mouseUp",
+                                      "retro-ui:button:accept:hit")
+local mouseFace = assert(elementById(mouseWarningCanvas,
+                                    "retro-ui:button:accept:face"))
+local mouseShadow = assert(elementById(mouseWarningCanvas,
+                                      "retro-ui:button:accept:shadow"))
+assert(mouseFace.frame.y == mouseShadow.frame.y,
+       "mouse release must retain the pressed visual until dismissal")
+createdTimers[#createdTimers]:fire()
+assert(mouseWarningCanvas.visible == false and mouseWarningModal.deleted,
+       "left mouse down/up must dismiss the warning through RetroUI")
+
+local rightWarningCanvas, rightWarningModal, rightWarningTimer = startWarning()
+mouseButtons = {right = true}
+rightWarningCanvas.mouseCallbackValue(rightWarningCanvas, "mouseDown",
+                                      "retro-ui:button:accept:hit")
+mouseButtons = {}
+rightWarningCanvas.mouseCallbackValue(rightWarningCanvas, "mouseUp",
+                                      "retro-ui:button:accept:hit")
+assert(rightWarningCanvas.visible and not rightWarningModal.deleted,
+       "right clicks must not dismiss the warning")
+rightWarningTimer:fire()
+assert(rightWarningCanvas.visible == false and rightWarningModal.deleted,
+       "the warning timeout must dismiss and clean the dialog")
+
+local stopWarningCanvas, stopWarningModal = startWarning()
+Gearbox.stop()
+assert(stopWarningCanvas.visible == false and stopWarningModal.deleted,
+       "Gearbox.stop must clean warning-only state")
 
 local configModule = "Spoons.Gearbox.config"
 
@@ -737,6 +811,7 @@ local function startGearbox(values)
     return Gearbox.start()
 end
 
+local staleWarningCanvas, staleWarningModal = startWarning()
 local overridesAccepted, overridesError = pcall(function()
     Gearbox.start({})
 end)
@@ -744,6 +819,8 @@ end)
 assert(not overridesAccepted and overridesError ==
            "Gearbox: edit Spoons/Gearbox/config.lua instead of passing overrides",
        "Gearbox.start must reject external configuration overrides")
+assert(not staleWarningCanvas.visible and staleWarningModal.deleted,
+       "every start attempt must clean a stale configuration dialog first")
 
 local runtime = startGearbox({
     menu = {timeout = 5},
@@ -843,7 +920,7 @@ assert(menuEntryTimer.stopped and runtime.timeoutTimer ~= menuEntryTimer and
 runtime.timeoutTimer.callback()
 assert(runtime.activeMenu == nil and runtime.timeoutTimer == nil,
        "an elapsed positive timeout must exit the active modal")
-assert(#shownAlerts == 1,
+assert(#shownAlerts == 0,
        "an elapsed positive timeout must not show a dismissal message")
 
 globalHotkeyPressed()
@@ -1005,7 +1082,6 @@ assert(runtime.theme.selection == "dracula",
        "manual selection must switch away from system mode")
 
 local validRuntime = runtime
-local alertsBeforeFailedReplacement = #shownAlerts
 local canvasesBeforeFailedReplacement = #createdCanvases
 local modalsBeforeFailedReplacement = #createdModals
 local timersBeforeFailedReplacement = #createdTimers
@@ -1020,22 +1096,17 @@ end)
 assert(not failedReplacementAccepted and failedReplacementError ==
            "Gearbox: menu.timeout must be greater than zero",
        "zero-timeout replacement must fail with the dedicated error")
-assert(#shownAlerts == alertsBeforeFailedReplacement + 1 and
-           styledTextValue(shownAlerts[#shownAlerts].message) ==
-           expectedDisabledTimeoutMessage and
-           shownAlerts[#shownAlerts].duration == 10,
-       "zero-timeout replacement must show the configuration alert")
 assert(
-    #createdCanvases == canvasesBeforeFailedReplacement and #createdModals ==
-        modalsBeforeFailedReplacement and #createdTimers ==
-        timersBeforeFailedReplacement and #createdWebviews ==
+    #createdCanvases == canvasesBeforeFailedReplacement + 1 and
+        #createdModals == modalsBeforeFailedReplacement + 1 and #createdTimers ==
+        timersBeforeFailedReplacement + 1 and #createdWebviews ==
         webviewsBeforeFailedReplacement and #createdWebviewControllers ==
         controllersBeforeFailedReplacement and globalHotkeyBindCalls ==
         hotkeysBeforeFailedReplacement and defaultTextStyleCalls ==
         fontCallsBeforeFailedReplacement,
-    "zero-timeout replacement must not allocate a candidate runtime")
-assert(validRuntime.started and validRuntime.activeMenu.id == "themes",
-       "zero-timeout replacement must preserve the active runtime")
+    "zero-timeout replacement must only allocate its configuration dialog")
+assert(validRuntime.started and validRuntime.activeMenu == nil,
+       "zero-timeout replacement must preserve the runtime while closing its visible menu")
 
 local mixedColorAccepted = pcall(function()
     startGearbox({
@@ -1058,8 +1129,8 @@ end)
 assert(not mixedColorAccepted, "mixed grayscale and RGB colors must fail")
 assert(validRuntime.started,
        "invalid overrides must not stop the active runtime")
-assert(validRuntime.activeMenu.id == "themes",
-       "invalid overrides must preserve the active menu")
+assert(validRuntime.activeMenu == nil,
+       "invalid overrides must preserve the closed runtime state")
 
 local unknownThemeAccepted = pcall(function()
     startGearbox({
@@ -1087,8 +1158,8 @@ end)
 
 assert(not invalidKeyAccepted, "invalid Hammerspoon keys must fail early")
 assert(validRuntime.started, "invalid keys must not stop the active runtime")
-assert(validRuntime.activeMenu.id == "themes",
-       "invalid keys must preserve the active menu")
+assert(validRuntime.activeMenu == nil,
+       "invalid keys must preserve the closed runtime state")
 
 local reservedCaseAccepted = pcall(function()
     startGearbox({menu = {timeout = 5}, navigation = {activateKey = "Down"}})
@@ -1096,8 +1167,8 @@ end)
 
 assert(not reservedCaseAccepted,
        "reserved navigation keys must be compared case-insensitively")
-assert(validRuntime.activeMenu.id == "themes",
-       "reserved key failures must preserve the active menu")
+assert(validRuntime.activeMenu == nil,
+       "reserved key failures must preserve the closed runtime state")
 
 local smallScratchpadAccepted = pcall(function()
     startGearbox({menu = {timeout = 5}, scratchpad = {width = 359}})
@@ -1105,8 +1176,8 @@ end)
 
 assert(not smallScratchpadAccepted,
        "undersized scratchpad dimensions must fail early")
-assert(validRuntime.activeMenu.id == "themes",
-       "scratchpad validation failures must preserve the active menu")
+assert(validRuntime.activeMenu == nil,
+       "scratchpad validation failures must preserve the closed runtime state")
 
 local invalidScratchpadCapacityAccepted = pcall(function()
     startGearbox({menu = {timeout = 5}, scratchpad = {maxCharacters = 0}})
@@ -1114,8 +1185,8 @@ end)
 
 assert(not invalidScratchpadCapacityAccepted,
        "scratchpad capacity must be a positive integer")
-assert(validRuntime.activeMenu.id == "themes",
-       "scratchpad capacity failures must preserve the active menu")
+assert(validRuntime.activeMenu == nil,
+       "scratchpad capacity failures must preserve the closed runtime state")
 
 local invalidScratchpadFontSizeAccepted = pcall(function()
     startGearbox({menu = {timeout = 5}, scratchpad = {fontSize = 0}})
@@ -1123,8 +1194,8 @@ end)
 
 assert(not invalidScratchpadFontSizeAccepted,
        "scratchpad font size must be positive")
-assert(validRuntime.activeMenu.id == "themes",
-       "scratchpad font-size failures must preserve the active menu")
+assert(validRuntime.activeMenu == nil,
+       "scratchpad font-size failures must preserve the closed runtime state")
 
 local fontCallsBeforePartialStart = defaultTextStyleCalls
 local partialStartModalIndex = #createdModals + 1
@@ -1144,8 +1215,8 @@ end
 assert(validRuntime.started, "partial startup must preserve the active runtime")
 assert(defaultTextStyleCalls == fontCallsBeforePartialStart + 1,
        "a failed candidate must resolve fonts only once")
-assert(validRuntime.activeMenu.id == "themes",
-       "partial startup must preserve the active menu")
+assert(validRuntime.activeMenu == nil,
+       "partial startup must preserve the closed runtime state")
 
 local fontCallsBeforeGlobalFailure = defaultTextStyleCalls
 local globalFailureModalIndex = #createdModals + 1
@@ -1162,8 +1233,8 @@ assert(not unavailableHotkeyAccepted,
        "unavailable global hotkeys must fail startup")
 assert(validRuntime.started,
        "failed hotkey registration must not stop the active runtime")
-assert(validRuntime.activeMenu.id == "themes",
-       "failed hotkey registration must preserve the active menu")
+assert(validRuntime.activeMenu == nil,
+       "failed hotkey registration must preserve the closed runtime state")
 assert(defaultTextStyleCalls == fontCallsBeforeGlobalFailure + 1,
        "an unavailable hotkey candidate must resolve fonts only once")
 

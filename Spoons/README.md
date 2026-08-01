@@ -1,6 +1,6 @@
 # Spoons
 
-`Spoons/` is the repository's library boundary. Every child directory is a
+`Spoons/` is the repository's ready-to-use Spoon boundary. Every child directory is a
 ready-to-use Hammerspoon unit with its own entry point, configuration, runtime,
 data, and documentation.
 
@@ -10,8 +10,8 @@ data, and documentation.
     → Spoon-owned modules and data
 ```
 
-No shared registry or runtime is required. Copying one Spoon does not pull in
-the others.
+No shared registry or runtime is required. Reusable source libraries live in
+[`../lib/`](../lib/); a Spoon that depends on one packages a private copy.
 
 ## Catalogue
 
@@ -26,5 +26,7 @@ left commented until selected.
 
 - [`Gearbox/README.md`](./Gearbox/README.md) — installation, controls,
   configuration, and runtime boundaries.
+- [`../lib/RetroUI/README.md`](../lib/RetroUI/README.md) — standalone
+  retro-dialog library and API.
 - [`../assets/docs/NIX.md`](../assets/docs/NIX.md) — optional Home Manager
   delivery.

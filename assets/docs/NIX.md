@@ -6,10 +6,11 @@ settings; the Spoon owns every other runtime setting.
 
 ```text
 Spoons/Gearbox
+  └ lib/RetroUI (private, byte-identical shipped copy)
   + programs.hammerspoon-spoons.spoons.gearbox.menu.{position,timeout}
   + programs.hammerspoon-spoons.spoons.gearbox.scratchpad.*
   → Nix-derived Gearbox copy
-  → ~/.hammerspoon/Spoons/Gearbox
+  → ~/.hammerspoon/Spoons/Gearbox/lib/RetroUI (private bundled copy)
 
 enabled Spoon set
   → ~/.hammerspoon/nix-spoons.lua
@@ -62,7 +63,7 @@ Scratchpad placement, the required timeout, and Scratchpad settings:
 }
 ```
 
-The module copies Gearbox into the Nix store, substitutes `menu.position`,
+The module copies the self-contained Gearbox Spoon into the Nix store, substitutes `menu.position`,
 `menu.timeout`, and the seven `scratchpad.*` values in that copy, and links it
 at `~/.hammerspoon/Spoons/Gearbox`. `menu.position` is the enum `"top"` or
 `"bottom"` and applies to both windows; bottom placement mirrors the top margin.
@@ -120,8 +121,9 @@ Nix delivery derives a store copy and replaces its `menu.position`,
 
 ```text
 repository Spoons/Gearbox/config.lua
+  + Spoons/Gearbox/lib/RetroUI/package.json (shipped version record)
   + Nix menu.{position,timeout} and scratchpad.*
-  → deployed Spoons/Gearbox/config.lua
+  → deployed Spoons/Gearbox/{config.lua,lib/RetroUI}
   → Gearbox.start()
   → validation
   → theme, loader, runtime, HUD, and scratchpad

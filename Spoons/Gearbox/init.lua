@@ -1,4 +1,5 @@
 local Actions = require("Spoons.Gearbox.actions")
+local Dependencies = require("Spoons.Gearbox.dependencies")
 local HUD = require("Spoons.Gearbox.hud")
 local Loader = require("Spoons.Gearbox.loader")
 local Runtime = require("Spoons.Gearbox.runtime")
@@ -12,97 +13,35 @@ local Validation = require("Spoons.Gearbox.validation")
 -- discovery, menu loading, the modal runtime, and the canvas HUD.
 local Gearbox = {}
 local currentRuntime
-
-local disabledTimeoutAlertDuration = 10
-
-local disabledTimeoutAlertTitle = " Gearbox configuration error "
-
-local disabledTimeoutAlertBody = {
-    "Gearbox cannot start because `menu.timeout` is set to `0` (disabled).",
-    "Set `menu.timeout` to a positive number of seconds, then reload Hammerspoon."
-}
-
-local disabledTimeoutAlertLegend =
-    "This window will be dismissed in 10 seconds."
-
---- Build a padded DOS-style warning box around the disabled-timeout message.
----@return string beforeLegend
----@return string legend
----@return string afterLegend
-local function disabledTimeoutAlertBox()
-    local horizontalPadding = 2
-    local contentWidth = #disabledTimeoutAlertLegend
-
-    for _, line in ipairs(disabledTimeoutAlertBody) do
-        contentWidth = math.max(contentWidth, #line)
-    end
-
-    local innerWidth = contentWidth + horizontalPadding * 2
-    local title = "═[" .. disabledTimeoutAlertTitle .. "]"
-    local titleWidth = #disabledTimeoutAlertTitle + 3
-    local top = "╔" .. title ..
-                    string.rep("═", innerWidth - titleWidth) .. "╗"
-    local bottom = "╚" .. string.rep("═", innerWidth) .. "╝"
-    local blank = "║" .. string.rep(" ", innerWidth) .. "║"
-
-    local function row(line)
-        return "║" .. string.rep(" ", horizontalPadding) .. line ..
-                   string.rep(" ",
-                              innerWidth - horizontalPadding - #line) .. "║"
-    end
-
-    local beforeLegend = {top, blank}
-
-    for _, line in ipairs(disabledTimeoutAlertBody) do
-        table.insert(beforeLegend, row(line))
-    end
-
-    table.insert(beforeLegend, blank)
-
-    local legendPrefix =
-        "║" .. string.rep(" ", horizontalPadding)
-    local legendSuffix =
-        string.rep(" ",
-                   innerWidth - horizontalPadding -
-                       #disabledTimeoutAlertLegend) .. "║"
-
-    return table.concat(beforeLegend, "\n") .. "\n" .. legendPrefix,
-           disabledTimeoutAlertLegend,
-           legendSuffix .. "\n" .. blank .. "\n" .. bottom
-end
+local currentConfigurationDialog
 
 --- Report the intentionally disabled timeout and abort Gearbox startup.
----@param config table
-local function failDisabledTimeout(config)
-    local textSize = math.max(config.font.titleSize + 2,
-                              hs.alert.defaultStyle.textSize)
-    local font = {name = "Menlo", size = textSize}
-    local white = {white = 1, alpha = 1}
-    local paragraphStyle = {alignment = "left", lineBreak = "clip"}
-    local beforeLegend, legend, afterLegend = disabledTimeoutAlertBox()
-    local regularAttributes = {
-        font = font,
-        color = white,
-        paragraphStyle = paragraphStyle
-    }
-    local legendAttributes = {
-        font = hs.styledtext.convertFont(font, true),
-        color = {red = 1, green = 0.9, blue = 0, alpha = 1},
-        paragraphStyle = paragraphStyle
-    }
-    local message = hs.styledtext.new(beforeLegend, regularAttributes) ..
-                        hs.styledtext.new(legend, legendAttributes) ..
-                        hs.styledtext.new(afterLegend, regularAttributes)
-    local style = {
-        fillColor = {red = 0.72, green = 0, blue = 0, alpha = 0.98},
-        strokeWidth = 0,
-        textColor = white,
-        textSize = textSize,
-        radius = 0,
-        padding = textSize
-    }
-
-    hs.alert.show(message, style, disabledTimeoutAlertDuration)
+local function failDisabledTimeout()
+    if currentRuntime and currentRuntime.activeMenu then currentRuntime.activeMenu.modal:exit() end
+    local dialog
+    dialog = Dependencies.retroUI().Dialog.show({
+        theme = "borland",
+        themeOverrides = {},
+        title = "Gearbox configuration error",
+        titleAlignment = "left",
+        content = {
+            {text = "Gearbox cannot start because `menu.timeout` is set to `0` (disabled).", role = "body"},
+            {text = "Set `menu.timeout` to a positive number of seconds, then reload Hammerspoon.", role = "body"}
+        },
+        footer = {
+            text = "This dialog will be dismissed in 30 seconds.",
+            role = "notice",
+            buttonId = "accept"
+        },
+        buttons = {{id = "accept", label = "Accept", hotkey = "a", default = true, enabled = true}},
+        dismissAfter = 30,
+        dismissOnEscape = false,
+        dismissOnBackgroundClick = false,
+        onDismiss = function()
+            if currentConfigurationDialog == dialog then currentConfigurationDialog = nil end
+        end
+    })
+    currentConfigurationDialog = dialog
     error("Gearbox: menu.timeout must be greater than zero", 0)
 end
 
@@ -122,6 +61,10 @@ end
 --- Start Gearbox from its authoritative configuration module.
 ---@return table
 function Gearbox.start(...)
+    if currentConfigurationDialog then
+        currentConfigurationDialog:delete()
+        currentConfigurationDialog = nil
+    end
     if select("#", ...) ~= 0 then
         error(
             "Gearbox: edit Spoons/Gearbox/config.lua instead of passing overrides",
@@ -132,7 +75,7 @@ function Gearbox.start(...)
 
     Validation.validateConfig(config)
 
-    if config.menu.timeout == 0 then failDisabledTimeout(config) end
+    if config.menu.timeout == 0 then failDisabledTimeout() end
 
     local directory = sourceDirectory()
     local theme = Theme.new(config, directory)
@@ -157,6 +100,10 @@ end
 
 --- Stop the active Gearbox runtime, if any.
 function Gearbox.stop()
+    if currentConfigurationDialog then
+        currentConfigurationDialog:delete()
+        currentConfigurationDialog = nil
+    end
     if currentRuntime then
         currentRuntime:stop()
         currentRuntime = nil
