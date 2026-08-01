@@ -706,7 +706,11 @@ local disabledShadow = assert(elementById(disabledTimeoutCanvas,
                                          "retro-ui:button:accept:shadow"))
 assert(disabledTimeoutCanvas.elements[1].fillColor.green == 0.53 and
            disabledFooter.text.text == "This dialog will be dismissed in 30 seconds." and
-           disabledFace.frame.x > disabledFooter.frame.x,
+           disabledFace.frame.x > disabledFooter.frame.x and
+           disabledShadow.frame.x - disabledFace.frame.x == 6 and
+           disabledShadow.frame.y - disabledFace.frame.y == 6 and
+           disabledShadow.frame.x + disabledShadow.frame.w ==
+               disabledTimeoutCanvas.currentFrame.w - 22,
        "zero timeout must use the Borland footer action layout")
 assert(#createdWebviews == webviewsBeforeDisabledTimeout and
            #createdWebviewControllers == controllersBeforeDisabledTimeout and
