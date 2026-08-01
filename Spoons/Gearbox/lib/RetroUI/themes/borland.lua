@@ -8,6 +8,8 @@ return {
     },
     frame = {borderColor = {white = 1, alpha = 1}, style = "double", titleAlignment = "center"},
     button = {
+        shadowOffset = {x = 6, y = 6},
+        pressOffset = {x = 6, y = 6},
         normal = {faceColor = {white = 0.75, alpha = 1}, textColor = {white = 0, alpha = 1}, hotkeyColor = {red = 0, green = 0, blue = 0.66, alpha = 1}},
         hovered = {faceColor = {white = 0.9, alpha = 1}, textColor = {white = 0, alpha = 1}, hotkeyColor = {red = 0, green = 0, blue = 0.66, alpha = 1}},
         focused = {faceColor = {white = 1, alpha = 1}, textColor = {white = 0, alpha = 1}, hotkeyColor = {red = 0, green = 0, blue = 0.66, alpha = 1}},

@@ -8,7 +8,7 @@ versions to coexist in Hammerspoon's shared Lua process.
 
 The canonical `lib/RetroUI/package.json` is the version authority. Gearbox
 ships a byte-identical copy beside its private namespace, so an installed Spoon
-also records the exact bundled version. The interactive API is version `0.2.0`;
+also records the exact bundled version. The interactive API is version `0.2.1`;
 consumers should pin or record that version when they bundle the library.
 
 ## Included primitives
@@ -68,9 +68,10 @@ state colors. Per-dialog `frameStyle`, `titleAlignment`, and `padding` override
 the corresponding theme defaults.
 
 An optional `footer` places semantic text and one named button on the same row
-below the frame. Its `buttonId` must identify an entry in `buttons`; that action
-keeps the normal mouse, mnemonic, Return, focus, pressed-state, and dismissal
-behavior. Any remaining buttons keep their ordinary row beneath the footer.
+below the frame, with the action anchored to the right content edge. Its
+`buttonId` must identify an entry in `buttons`; that action keeps the normal
+mouse, mnemonic, Return, focus, pressed-state, and dismissal behavior. Any
+remaining buttons keep their ordinary row beneath the footer.
 
 The optional `dismissOnEscape` and `dismissOnBackgroundClick` flags default to
 `false`. `onDismiss(reason, buttonId)` receives `button`, `timeout`, or

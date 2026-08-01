@@ -68,7 +68,12 @@ assert(not pcall(function() RetroUI.Frame.render({style = "bad"}) end), "invalid
 assert(not pcall(function() RetroUI.Frame.render({style = "single", title = {text = "T", alignment = "left"}, padding = {top = 0, right = 0, bottom = 0, left = 0}, rows = {[2] = {text = "hole", role = "body"}}}) end),
        "frame rows must be a dense array")
 local borland = RetroUI.Theme.resolve("borland")
-assert(borland.id == "borland" and borland.button.pressed.faceColor, "borland theme must resolve")
+assert(borland.id == "borland" and borland.button.pressed.faceColor and
+           borland.button.shadowOffset.x == 6 and
+           borland.button.shadowOffset.y == 6 and
+           borland.button.pressOffset.x == 6 and
+           borland.button.pressOffset.y == 6,
+       "borland theme must resolve with its pronounced button depth")
 local overrides = {dialog = {backgroundColor = {red = 0.2, green = 0.2, blue = 0.2, alpha = 1}}}
 local customized = RetroUI.Theme.resolve("borland", overrides)
 assert(customized.dialog.backgroundColor.red == 0.2 and borland.dialog.backgroundColor.red == 0, "theme overrides must not mutate presets")
@@ -189,16 +194,21 @@ assert(geometryCanvas.elements[4].frame.x == geometryLayout.x + 9 and
 geometry:delete()
 
 local footerDismissed
-local footerDialog = RetroUI.Dialog.show({theme = "borland", title = "Footer", content = {{text = "Test", role = "body"}}, footer = {text = "Dismissed in 30 seconds.", role = "notice", buttonId = "accept"}, buttons = {{id = "accept", label = "Accept", hotkey = "a", default = true, enabled = true}, {id = "cancel", label = "Cancel", hotkey = "c", default = false, enabled = true}}, onDismiss = function(reason, id) footerDismissed = {reason, id} end})
+local footerDialog = RetroUI.Dialog.show({theme = "borland", title = "Footer", content = {{text = "A deliberately wide content row keeps the footer action apart.", role = "body"}}, footer = {text = "Dismissed in 30 seconds.", role = "notice", buttonId = "accept"}, buttons = {{id = "accept", label = "Accept", hotkey = "a", default = true, enabled = true}, {id = "cancel", label = "Cancel", hotkey = "c", default = false, enabled = true}}, onDismiss = function(reason, id) footerDismissed = {reason, id} end})
 local footerCanvas = canvases[#canvases]
 local footerText = assert(elementById(footerCanvas, "retro-ui:footer:text"))
 local footerFace = assert(elementById(footerCanvas, "retro-ui:button:accept:face"))
+local footerShadow = assert(elementById(footerCanvas,
+                                        "retro-ui:button:accept:shadow"))
 local standardFace = assert(elementById(footerCanvas, "retro-ui:button:cancel:face"))
-assert(footerFace.frame.x == footerText.frame.x + footerText.frame.w +
+assert(footerFace.frame.x >= footerText.frame.x + footerText.frame.w +
            footerDialog.theme.button.gap and
+           footerShadow.frame.x + footerShadow.frame.w ==
+               footerCanvas.frameValue.w -
+                   footerDialog.theme.dialog.outerPadding.right and
            footerFace.frame.y <= footerText.frame.y and
            standardFace.frame.y > footerFace.frame.y,
-       "footer text and its action must share a row before ordinary buttons")
+       "footer action must share the row and end at the right content edge")
 mouseButtons = {left = true}
 footerCanvas.mouse(footerCanvas, "mouseDown", "retro-ui:button:accept:hit")
 mouseButtons = {}

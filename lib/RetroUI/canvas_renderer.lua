@@ -32,7 +32,7 @@ function Renderer.new(spec, theme, frame, group)
     if self.charWidth <= 0 or self.lineHeight <= 0 then
         error("RetroUI: configured font has invalid metrics", 2)
     end
-    local vertical, horizontal = pointPadding(theme.dialog.outerPadding)
+    local _, horizontal = pointPadding(theme.dialog.outerPadding)
     self.buttonExtentX = math.max(theme.button.shadowOffset.x,
                                   theme.button.pressOffset.x)
     self.buttonExtentY = math.max(theme.button.shadowOffset.y,
@@ -73,8 +73,8 @@ function Renderer.new(spec, theme, frame, group)
         self.footerTextY = self.footerY +
                                math.floor((self.buttonHeight - self.lineHeight) / 2)
         local layout = self.buttonLayouts[self.footer.buttonId]
-        layout.x = theme.dialog.outerPadding.left + self.footerTextWidth +
-                       theme.button.gap
+        layout.x = theme.dialog.outerPadding.left + self.contentWidth -
+                       layout.w - self.buttonExtentX
         layout.y, layout.h = self.footerY, self.buttonHeight
         nextY = self.footerY + self.buttonHeight + self.buttonExtentY
     end
