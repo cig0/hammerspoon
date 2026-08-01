@@ -12,6 +12,15 @@ tests/gearbox.lua
   → assertions over menus, themes, lifecycle, and persistence
 ```
 
+`tests/retroui.lua` is the focused library suite. It exercises pure frame
+layout, theme validation, button-group state, and mocked canvas, keyboard,
+mouse, and timer behavior.
+
+`tests/retroui-package.lua` assembles a temporary Gearbox artifact and checks
+canonical/private namespace loading, missing and broken bundle failures, and
+byte-identical bundled RetroUI files. It is deterministic delivery coverage,
+not a replacement for a live Hammerspoon hit-testing check.
+
 ## Coverage
 
 | Concern | Assertions |
@@ -19,7 +28,9 @@ tests/gearbox.lua
 | Menu graph | Discovery, ordering, dividers, parent links, reserved and duplicate keys |
 | Themes | All bundled IDs, grouped ordering, overrides, color models, system/manual selection |
 | Persistence | Restoration, changed-default invalidation, missing-theme cleanup, disabled persistence |
-| Runtime | Zero-timeout startup rejection, hotkey replacement, partial-start rollback, modal cleanup, direct and arrow-key activation |
+| Runtime | Zero-timeout RetroUI dialog, hotkey replacement, partial-start rollback, modal cleanup, direct and arrow-key activation |
+| RetroUI | Frame styles and alignment, asymmetric padding, footer actions, box-glyph width, strict themes and mnemonics, targeted redraws, button focus/press state, keyboard and left-mouse activation, background dismissal, and cleanup races |
+| Packaging | Manifest identity, complete private bundle, private preference, canonical fallback, and broken/missing-bundle diagnostics |
 | HUD boundary | Checked rows, immediate theme refresh, lazy appearance resolution |
 | Scratchpad | Lazy Webview construction, failed-first-use cleanup, sizing, font size, symmetric placement, capacity, persistence, toggle, and reuse |
 | Host resolution | System fonts and macOS accent are resolved only at their documented lifecycle points |
@@ -28,6 +39,8 @@ The harness runs with a command-line Lua interpreter:
 
 ```sh
 lua tests/gearbox.lua "$(pwd)"
+lua tests/retroui.lua "$(pwd)"
+lua tests/retroui-package.lua "$(pwd)"
 ```
 
 Lua parsing and Nix module evaluation remain separate repository checks.

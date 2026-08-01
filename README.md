@@ -7,7 +7,8 @@
   </tr>
 </table>
 
-This repository contains independent Hammerspoon Spoons. Each Spoon owns its
+This repository contains independent Hammerspoon Spoons and reusable Lua
+libraries. Each Spoon owns its
 Lua runtime, configuration, data, tests, and detailed documentation; optional
 Home Manager delivery loads those files and provides Gearbox's required
 timeout, shared placement, and Scratchpad settings.
@@ -17,6 +18,12 @@ timeout, shared placement, and Scratchpad settings.
 | Spoon | Purpose |
 | --- | --- |
 | [Gearbox](./Spoons/Gearbox/README.md) | Native keyboard launcher with nested menus, an editable scratchpad, arrow navigation, themes, and macOS power controls; inspired by [LeaderKey](https://github.com/mikker/LeaderKey) |
+
+## Libraries
+
+| Library | Purpose |
+| --- | --- |
+| [RetroUI](./lib/RetroUI/README.md) | Themeable canvas dialogs, text frames, and keyboard- and mouse-driven DOS-style buttons |
 
 ## Example
 

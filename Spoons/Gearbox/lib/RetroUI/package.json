@@ -1,0 +1,9 @@
+{
+  "name": "RetroUI",
+  "version": "0.2.0",
+  "schemaVersion": 1,
+  "themeSchemaVersion": 1,
+  "description": "Retro-styled UI toolkit for Hammerspoon",
+  "license": "AGPL-3.0-or-later",
+  "entrypoint": "init.lua"
+}

@@ -11,7 +11,9 @@ and can follow the current appearance and accent.
 - A positive menu timeout, set in `config.lua` for a standalone installation or
   through the Nix delivery option.
 
-Gearbox has no third-party Lua dependencies and does not require Nix.
+Gearbox has no third-party Lua dependencies and does not require Nix. It
+bundles its first-party RetroUI dependency privately when installed, so a
+standalone Spoon remains self-contained.
 
 ## Install and enable
 
@@ -35,6 +37,11 @@ require("Spoons.Gearbox").start()
 Reload Hammerspoon and press `alt+cmd+space`. A full clone at
 `~/.hammerspoon` already has the expected directory layout; only the import in
 the repository's root [`init.lua`](../../init.lua) needs to be enabled.
+
+The Spoon itself contains `lib/RetroUI/package.json`, whose version is the
+exact bundled library version. Gearbox resolves that private namespace first;
+canonical `lib.RetroUI` is only a development fallback for an incomplete
+checkout.
 
 ### Nix
 
@@ -156,6 +163,7 @@ Hammerspoon releases those assertions when its configuration reloads.
 | [`scratchpad.lua`](./scratchpad.lua) | Editable webview, keyboard handling, persistence, and focus |
 | [`theme.lua`](./theme.lua) | Theme loading, persistence, fonts, appearance, and colors |
 | [`validation.lua`](./validation.lua) | Configuration, color, and hotkey validation |
+| [`dependencies.lua`](./dependencies.lua) | Resolves the packaged RetroUI copy, then a development checkout |
 | [`init.lua`](./init.lua) | Public `start()` and `stop()` boundary |
 | [`tests/`](../../tests/README.md) | Mocked-Hammerspoon smoke and regression coverage |
 
@@ -194,10 +202,19 @@ startup. See [configuration ownership](../../assets/docs/NIX.md#configuration-ow
 | `menu.highlightGroups` | `true` | Uses the active accent behind group shortcuts |
 
 The zero timeout is a deliberate disabled sentinel, not a usable runtime
-setting. `Gearbox.start()` displays a ten-second configuration alert and raises
-an error before allocating menus, hotkeys, the HUD, or the scratchpad. Set a
-positive timeout in `config.lua`, or in the Nix option that derives the deployed
-copy, to start Gearbox normally.
+setting. `Gearbox.start()` opens a Borland-style RetroUI dialog that dismisses
+after 30 seconds or immediately after pressing Return or clicking Accept, then
+raises the configuration error before allocating Gearbox menus, hotkeys, the
+HUD, or the scratchpad. Set a positive timeout in `config.lua`, or in the Nix
+option that derives the deployed copy, to start Gearbox normally.
+
+The warning's 30-second legend and Accept button share a footer row. Return or
+the `A` mnemonic presses and releases Accept; Tab and Shift-Tab move button
+focus; only a left click that begins and ends on Accept activates it. A right
+click, releasing over a different target, or dragging out of the button does
+nothing. The button face shifts down-right over its shadow while held. Each
+dismissal first releases its timer, modal bindings, canvas callback, and canvas;
+repeated reloads or `Gearbox.stop()` cannot leave a warning behind.
 
 ### Fonts and loupe
 
