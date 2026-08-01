@@ -15,8 +15,8 @@ local Gearbox = {}
 local currentRuntime
 local currentConfigurationDialog
 
---- Report the intentionally disabled timeout and abort Gearbox startup.
-local function failDisabledTimeout()
+--- Show the intentionally disabled timeout without failing Hammerspoon setup.
+local function showDisabledTimeoutDialog()
     if currentRuntime and currentRuntime.activeMenu then currentRuntime.activeMenu.modal:exit() end
     local dialog
     dialog = Dependencies.retroUI().Dialog.show({
@@ -42,7 +42,6 @@ local function failDisabledTimeout()
         end
     })
     currentConfigurationDialog = dialog
-    error("Gearbox: menu.timeout must be greater than zero", 0)
 end
 
 --- Locate this Spoon's source directory from `debug.getinfo`.
@@ -59,7 +58,7 @@ local function sourceDirectory()
 end
 
 --- Start Gearbox from its authoritative configuration module.
----@return table
+---@return table|nil
 function Gearbox.start(...)
     if currentConfigurationDialog then
         currentConfigurationDialog:delete()
@@ -75,7 +74,10 @@ function Gearbox.start(...)
 
     Validation.validateConfig(config)
 
-    if config.menu.timeout == 0 then failDisabledTimeout() end
+    if config.menu.timeout == 0 then
+        showDisabledTimeoutDialog()
+        return currentRuntime
+    end
 
     local directory = sourceDirectory()
     local theme = Theme.new(config, directory)

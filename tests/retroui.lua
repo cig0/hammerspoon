@@ -44,7 +44,7 @@ local function modal()
 end
 hs = {
     styledtext = {new = styledText, convertFont = function(font, bold) local out = {}; for key, value in pairs(font) do out[key] = value end; out.bold = bold; return out end, fontInfo = function() return {fixedPitch = true, maximumAdvancement = {w = 11}, ascender = 14, descender = -4, leading = 2} end},
-    canvas = {new = canvas, windowLevels = {desktopIcon = 10}},
+    canvas = {new = canvas, windowLevels = {desktopIcon = 10, floating = 20}},
     screen = {mainScreen = function() return {frame = function() return {x = 0, y = 0, w = 1280, h = 800} end} end},
     hotkey = {modal = {new = modal}},
     eventtap = {checkMouseButtons = function() return mouseButtons end},
@@ -98,7 +98,7 @@ end), "footer actions must reference an existing button")
 local dismissed = {}
 local dialog = RetroUI.Dialog.show({theme = "danger", themeOverrides = {typography = {titleWeight = "regular", bodyWeight = "bold", noticeWeight = "regular"}}, title = "Problem", titleAlignment = "left", frameStyle = "single", padding = {top = 1, right = 3, bottom = 1, left = 3}, content = {{text = "Broken", role = "body"}, {text = "Wait", role = "notice"}, {text = "Key", role = "hotkey"}}, buttons = {{id = "dismiss", label = "OK", hotkey = "o", default = true, enabled = true}}, dismissAfter = 30, dismissOnEscape = false, dismissOnBackgroundClick = false, onDismiss = function(reason, id) table.insert(dismissed, {reason, id}) end})
 assert(dialog.frame.lines[1].runs[1].text:find("^┌"), "dialog must allow a single-line frame override")
-assert(dialog:isVisible() and #canvases == 1 and canvases[1].levelValue == 11 and not canvases[1].activating, "dialog canvas must be interactive at correct level")
+assert(dialog:isVisible() and #canvases == 1 and canvases[1].levelValue == 20 and not canvases[1].activating, "dialog canvas must be interactive at floating level")
 local warningLabel = canvases[1].elements[5].text
 assert(#warningLabel.segments == 2 and warningLabel.segments[1].attributes.color.red == 0.72 and warningLabel.segments[2].attributes.color.white == 0,
        "button mnemonic and ordinary label text must use distinct theme colors")

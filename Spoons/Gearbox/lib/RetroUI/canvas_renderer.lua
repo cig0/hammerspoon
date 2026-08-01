@@ -191,7 +191,7 @@ function Renderer:show(screen)
     self.canvas = assert(hs.canvas.new({x = frame.x + (frame.w - self.width) / 2, y = frame.y + (frame.h - self.height) / 2, w = self.width, h = self.height}), "RetroUI: cannot create dialog canvas")
     self.canvas:replaceElements(self:elements())
     self.canvas:wantsLayer(true)
-    self.canvas:level(hs.canvas.windowLevels.desktopIcon + 1)
+    self.canvas:level(hs.canvas.windowLevels.floating)
     self.canvas:clickActivating(false)
     if self.spec.dismissOnBackgroundClick then
         self.canvas:canvasMouseEvents(true, true, false, false)

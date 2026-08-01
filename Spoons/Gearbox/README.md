@@ -194,7 +194,7 @@ startup. See [configuration ownership](../../assets/docs/NIX.md#configuration-ow
 | --- | --- | --- |
 | `hotkey.modifiers` | `{ "alt", "cmd" }` | Modifiers used to open or close Gearbox |
 | `hotkey.key` | `"space"` | Hammerspoon key name paired with the modifiers |
-| `menu.timeout` | `0` | Seconds before closing; zero disables timeout and intentionally fails startup |
+| `menu.timeout` | `0` | Seconds before closing; zero leaves Gearbox stopped and shows its configuration dialog |
 | `menu.position` | `"top"` | `"top"`, `"center"`, or `"bottom"` screen placement |
 | `menu.screen` | `"main"` | `"main"` or the `"mouse"` pointer screen |
 | `menu.width` | `420` | HUD width in points |
@@ -204,9 +204,10 @@ startup. See [configuration ownership](../../assets/docs/NIX.md#configuration-ow
 The zero timeout is a deliberate disabled sentinel, not a usable runtime
 setting. `Gearbox.start()` opens a Borland-style RetroUI dialog that dismisses
 after 30 seconds or immediately after pressing Return or clicking Accept, then
-raises the configuration error before allocating Gearbox menus, hotkeys, the
-HUD, or the scratchpad. Set a positive timeout in `config.lua`, or in the Nix
-option that derives the deployed copy, to start Gearbox normally.
+returns without failing Hammerspoon configuration loading or allocating
+Gearbox menus, hotkeys, the HUD, or the scratchpad. Set a positive timeout in
+`config.lua`, or in the Nix option that derives the deployed copy, to start
+Gearbox normally.
 
 The warning's 30-second legend and Accept button share a footer row. Return or
 the `A` mnemonic presses and releases Accept; Tab and Shift-Tab move button

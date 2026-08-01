@@ -261,7 +261,7 @@ hs = {
     },
 
     canvas = {
-        windowLevels = {desktopIcon = 10},
+        windowLevels = {desktopIcon = 10, floating = 20},
         defaultTextStyle = function()
             defaultTextStyleCalls = defaultTextStyleCalls + 1
 
@@ -677,15 +677,12 @@ local hotkeysBeforeDisabledTimeout = globalHotkeyBindCalls
 local fontCallsBeforeDisabledTimeout = defaultTextStyleCalls
 local appearanceCallsBeforeDisabledTimeout = interfaceStyleCalls
 local accentCallsBeforeDisabledTimeout = osascriptCalls
-local disabledTimeoutAccepted, disabledTimeoutError = pcall(function()
+local disabledTimeoutAccepted, disabledTimeoutResult = pcall(function()
     Gearbox.start()
 end)
 
-assert(not disabledTimeoutAccepted,
-       "the zero timeout sentinel must fail Gearbox startup")
-assert(
-    disabledTimeoutError == "Gearbox: menu.timeout must be greater than zero",
-    "zero timeout must raise the dedicated configuration error")
+assert(disabledTimeoutAccepted and disabledTimeoutResult == nil,
+       "the zero timeout sentinel must show its warning without failing Hammerspoon setup")
 local disabledTimeoutCanvas = createdCanvases[#createdCanvases]
 local disabledTimeoutModal = createdModals[#createdModals]
 local disabledTimeoutTimer = createdTimers[#createdTimers]
@@ -695,7 +692,7 @@ assert(#createdCanvases == canvasesBeforeDisabledTimeout + 1 and
            #createdTimers == timersBeforeDisabledTimeout + 1,
        "zero timeout must create one interactive RetroUI dialog")
 assert(disabledTimeoutCanvas.visible and disabledTimeoutCanvas.levelValue ==
-           hs.canvas.windowLevels.desktopIcon + 1 and
+           hs.canvas.windowLevels.floating and
            disabledTimeoutCanvas.clickActivatingValue == false and
            type(disabledTimeoutCanvas.mouseCallbackValue) == "function",
        "zero-timeout dialog must be a non-activating mouse-aware canvas")
@@ -739,9 +736,9 @@ assert(disabledTimeoutCanvas.visible == false and disabledTimeoutModal.deleted,
        "Return release must dismiss and clean the warning dialog")
 
 local function startWarning()
-    local accepted, failure = pcall(function() Gearbox.start() end)
-    assert(not accepted and failure == "Gearbox: menu.timeout must be greater than zero",
-           "each disabled configuration attempt must raise the stable error")
+    local accepted, result = pcall(function() return Gearbox.start() end)
+    assert(accepted and result == nil,
+           "each disabled configuration attempt must return after showing its warning")
     return createdCanvases[#createdCanvases], createdModals[#createdModals],
            createdTimers[#createdTimers]
 end
@@ -1089,13 +1086,12 @@ local webviewsBeforeFailedReplacement = #createdWebviews
 local controllersBeforeFailedReplacement = #createdWebviewControllers
 local hotkeysBeforeFailedReplacement = globalHotkeyBindCalls
 local fontCallsBeforeFailedReplacement = defaultTextStyleCalls
-local failedReplacementAccepted, failedReplacementError = pcall(function()
-    startGearbox({menu = {timeout = 0}})
+local failedReplacementAccepted, failedReplacementResult = pcall(function()
+    return startGearbox({menu = {timeout = 0}})
 end)
 
-assert(not failedReplacementAccepted and failedReplacementError ==
-           "Gearbox: menu.timeout must be greater than zero",
-       "zero-timeout replacement must fail with the dedicated error")
+assert(failedReplacementAccepted and failedReplacementResult == validRuntime,
+       "zero-timeout replacement must return the preserved runtime")
 assert(
     #createdCanvases == canvasesBeforeFailedReplacement + 1 and
         #createdModals == modalsBeforeFailedReplacement + 1 and #createdTimers ==
