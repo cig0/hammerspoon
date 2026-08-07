@@ -35,7 +35,7 @@ return {
             kind = "action",
             action = {type = "openPath", path = home .. "/Downloads"}
         }, {
-            key = "h",
+            key = "f",
             label = "Home",
             kind = "action",
             action = {type = "openPath", path = home}
