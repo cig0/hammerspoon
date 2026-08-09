@@ -23,6 +23,8 @@ local document = [[
       --accent: rgba(10, 122, 255, 1);
       --selection: rgba(10, 122, 255, 0.25);
       --corner-radius: 16px;
+      --interface-font: "Avenir Next", -apple-system, BlinkMacSystemFont,
+        sans-serif;
       --body-size: 14px;
       --title-size: 20px;
       --footer-size: 12px;
@@ -58,6 +60,7 @@ local document = [[
       flex: 0 0 auto;
       padding: 22px 26px 12px;
       color: var(--primary);
+      font-family: var(--interface-font);
       font-size: var(--title-size);
       font-weight: var(--title-weight);
       line-height: 1.2;
@@ -91,6 +94,7 @@ local document = [[
       padding: 12px 0 15px;
       color: var(--secondary);
       border-top: 1px solid var(--divider);
+      font-family: var(--interface-font);
       font-size: var(--footer-size);
       line-height: 1.25;
       user-select: none;
@@ -191,9 +195,7 @@ local document = [[
           root.style.setProperty("--body-weight", state.bodyWeight);
           root.style.setProperty("--title-weight", state.titleWeight);
 
-          title.style.fontFamily = state.fontFamily;
-          editor.style.fontFamily = state.fontFamily;
-          instructions.style.fontFamily = state.fontFamily;
+          editor.style.fontFamily = state.editorFontFamily;
           title.textContent = state.title;
           instructions.textContent = state.instructions;
           instructions.hidden = !state.showInstructions;
@@ -287,7 +289,7 @@ function Scratchpad:state(includeContent)
     local state = {
         title = self.config.menu.showEmojis and "📝  Scratchpad" or
             "Scratchpad",
-        fontFamily = bodyFont.name or "-apple-system",
+        editorFontFamily = bodyFont.name or "-apple-system",
         bodySize = self.config.scratchpad.fontSize,
         titleSize = titleFont.size or self.config.font.titleSize,
         footerSize = math.max(11, self.config.scratchpad.fontSize - 1),
