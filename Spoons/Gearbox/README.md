@@ -297,14 +297,15 @@ other root entries. Its generic `requires = "scratchpad"` metadata tells the
 loader to omit the entry when `scratchpad.enable` is false.
 
 The scratchpad inherits `menu.screen`, `menu.position`, the active semantic
-palette, and the resolved Gearbox font family. Its editor size comes from
-`scratchpad.fontSize`. Its borderless webview is created on first use and reused
-afterward, avoiding WebKit allocation when the scratchpad is never opened. A
-failed first construction releases partial native objects and leaves the
-Gearbox menu active for another attempt. The non-editable footer derives the
-configured Gearbox hotkey using the same modifier and key order as the
-main-menu Exit row. That hotkey closes the scratchpad; no second global hotkey
-is created.
+palette, and the resolved Gearbox font family for editable text. Its editor size
+comes from `scratchpad.fontSize`. The title and non-editable footer use Avenir
+Next, which ships with macOS, with the macOS system UI font as a fallback. Its
+borderless webview is created on first use and reused afterward, avoiding WebKit
+allocation when the scratchpad is never opened. A failed first construction
+releases partial native objects and leaves the Gearbox menu active for another
+attempt. The non-editable footer derives the configured Gearbox hotkey using the
+same modifier and key order as the main-menu Exit row. That hotkey closes the
+scratchpad; no second global hotkey is created.
 
 With persistence enabled, content is stored under
 `hs.settings["Gearbox.scratchpad.content"]`. The backing Hammerspoon preferences

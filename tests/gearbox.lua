@@ -973,6 +973,15 @@ assert(scratchpadWebview.currentFrame.w == 720 and
        "scratchpad must use configured size and Gearbox placement")
 assert(scratchpadWebview.document:match("Tab inserts tabs"),
        "scratchpad must include the non-editable instructions")
+assert(scratchpadWebview.document:find('--interface-font: "Avenir Next",', 1,
+                                       true) and
+           scratchpadWebview.document:find(
+               "editor.style.fontFamily = state.editorFontFamily", 1, true) and
+           not scratchpadWebview.document:find("title.style.fontFamily", 1,
+                                                true) and
+           not scratchpadWebview.document:find(
+               "instructions.style.fontFamily", 1, true),
+       "scratchpad title and instructions must use the bundled macOS interface font")
 assert(not scratchpadWebview.document:match('event.key === "Escape"'),
        "scratchpad must not bind Escape")
 
@@ -983,6 +992,8 @@ assert(scratchpadState.instructions ==
        "scratchpad instructions must include the configured Gearbox hotkey")
 assert(scratchpadState.bodySize == 14 and scratchpadState.footerSize == 13,
        "scratchpad font sizing must remain configurable and legible")
+assert(scratchpadState.editorFontFamily == "System",
+       "scratchpad editor must retain the resolved Gearbox font")
 assert(scratchpadState.maxCharacters == 4096 and
            scratchpadWebview.document:match(
                "editor.maxLength = state.maxCharacters"),
