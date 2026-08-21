@@ -16,7 +16,7 @@ return {
             kind = "action",
             action = {
               type = "openPath",
-              path = home .. "/Applications"
+              path = "/Applications"
             }
         }, {
             key = "e",
