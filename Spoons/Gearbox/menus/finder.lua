@@ -11,19 +11,20 @@ return {
 
     items = {
         {
-            key = "r",
-            label = "I SHOOT RAW",
+            key = "a",
+            label = "Applications",
             kind = "action",
             action = {
-                type = "openPath",
-                path = home ..
-                    "/Library/Mobile Documents/com~apple~CloudDocs/I SHOOT RAW"
+              type = "openPath",
+              path = home .. "/Applications"
             }
         }, {
             key = "e",
             label = "Desktop",
             kind = "action",
-            action = {type = "openPath", path = home .. "/Desktop"}
+            action = {
+              type = "openPath",
+              path = home .. "/Desktop"}
         }, {
             key = "o",
             label = "Documents",
