@@ -76,7 +76,7 @@ missing action targets before runtime bindings are created.
 
 Ordinary child definitions are sorted by their displayed label. Explicit
 sections place `macOS Utilities` and the generated `Themes` entry after ordinary
-groups and before the footer.
+groups. The generated `Configuration` entry follows them before the footer.
 
 ## Action descriptors
 
@@ -87,6 +87,7 @@ groups and before the footer.
 | `openMenu` | Runtime menu transition |
 | `setCaffeinateMode` | Mutually exclusive Hammerspoon caffeinate assertions |
 | `setTheme` | Theme selection and HUD refresh |
+| `configure` | Validated preferences, profile operations, and HUD refresh |
 | `openScratchpad` | Scratchpad display and menu dismissal |
 | `reload` | `hs.reload` |
 | `sleep` | `hs.caffeinate.systemSleep` |
@@ -99,5 +100,7 @@ groups and before the footer.
   configuration.
 - [`../themes/README.md`](../themes/README.md) — the generated Themes menu and
   palette contract.
+- [`../preferences.lua`](../preferences.lua) — generated Configuration menus
+  and their profile/local preference state.
 - [`../loader.lua`](../loader.lua) — discovery, validation, sorting, dividers,
   and footer assembly.

@@ -273,6 +273,15 @@ function Validation.validateConfig(config)
            "Gearbox: scratchpad.maxCharacters must be a positive integer")
     assertType(config.scratchpad.persistContent, "boolean",
                "scratchpad.persistContent")
+
+    if config.scratchpad.storagePath ~= nil then
+        assertType(config.scratchpad.storagePath, "string",
+                   "scratchpad.storagePath")
+        assert(config.scratchpad.storagePath:sub(1, 1) == "/" or
+                   config.scratchpad.storagePath:sub(1, 2) == "~/",
+               "Gearbox: scratchpad.storagePath must be absolute or begin with ~/")
+    end
+
     assertType(config.scratchpad.showInstructions, "boolean",
                "scratchpad.showInstructions")
 end

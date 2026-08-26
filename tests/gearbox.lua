@@ -23,6 +23,16 @@ local osascriptCalls = 0
 local reloadCalls = 0
 local settings = {}
 local mouseButtons = {}
+local fileModes = {}
+local jsonFiles = {}
+local chosenPaths = {}
+local promptResponses = {}
+local homeDirectory = assert(os.getenv("HOME"))
+local preferencesPath = homeDirectory ..
+                            "/.config/hammerspoon-gearbox/preferences.json"
+
+fileModes["/"] = "directory"
+fileModes[homeDirectory] = "directory"
 
 local styledTextMetatable = {}
 
@@ -247,10 +257,11 @@ end
 hs = {
     alert = {
         defaultStyle = {textFont = ".AppleSystemUIFont", textSize = 27},
-        show = function(message, style, duration)
+        show = function(message, style, screen, duration)
             table.insert(shownAlerts, {
                 message = message,
                 style = style,
+                screen = screen,
                 duration = duration
             })
         end
@@ -276,9 +287,29 @@ hs = {
         systemSleep = function() end
     },
 
+    dialog = {
+        chooseFileOrFolder = function()
+            return table.remove(chosenPaths, 1)
+        end,
+        textPrompt = function()
+            local response = table.remove(promptResponses, 1)
+            return response and response.button or "Cancel",
+                   response and response.text or ""
+        end
+    },
+
     eventtap = {checkMouseButtons = function() return mouseButtons end},
 
     fs = {
+        attributes = function(path, name)
+            local mode = fileModes[path]
+
+            if mode == nil and jsonFiles[path] ~= nil then mode = "file" end
+
+            if name == "mode" then return mode end
+
+            return mode and {mode = mode} or nil, "missing: " .. path
+        end,
         dir = function(path)
             local process = assert(io.popen(("/bin/ls -a1 %q"):format(path)))
             local closed = false
@@ -293,6 +324,17 @@ hs = {
 
                 return file
             end
+        end,
+        mkdir = function(path)
+            fileModes[path] = "directory"
+            return true
+        end,
+        symlinkAttributes = function(path, name)
+            local mode = fileModes[path] == "link" and "link" or nil
+
+            if name == "mode" then return mode end
+
+            return mode and {mode = mode} or nil, "missing: " .. path
         end
     },
 
@@ -332,7 +374,13 @@ hs = {
 
             return nil
         end,
-        encode = function() return "{}" end
+        encode = function() return "{}" end,
+        read = function(path) return jsonFiles[path] end,
+        write = function(value, path)
+            jsonFiles[path] = value
+            fileModes[path] = "file"
+            return true
+        end
     },
 
     keycodes = {
@@ -443,6 +491,8 @@ hs = {
 
 local Actions = require("Spoons.Gearbox.actions")
 local Loader = require("Spoons.Gearbox.loader")
+local Preferences = require("Spoons.Gearbox.preferences")
+local ScratchpadStorage = require("Spoons.Gearbox.scratchpad_storage")
 local Theme = require("Spoons.Gearbox.theme")
 local Validation = require("Spoons.Gearbox.validation")
 local config = require("Spoons.Gearbox.config")
@@ -455,7 +505,8 @@ assert(config.loupe.selectedScale == 1.18 and config.loupe.duration == 0,
        "standalone loupe defaults must retain immediate navigation")
 assert(config.scratchpad.enable and config.scratchpad.width == 720 and
            config.scratchpad.height == 480 and config.scratchpad.maxCharacters ==
-           4096 and config.scratchpad.fontSize == 14,
+           4096 and config.scratchpad.fontSize == 14 and
+           config.scratchpad.storagePath == nil,
        "standalone scratchpad defaults changed")
 
 assert(Validation.keyIdentity("Down") == "down" and
@@ -478,6 +529,15 @@ assert(not configColorAccepted and
                "theme%.fallbackAccent%.red must be 0%.%.1$"),
        "config color validation diagnostics must remain compatible")
 
+local relativeStorageAccepted = pcall(function()
+    local invalidConfig = dofile(root .. "/Spoons/Gearbox/config.lua")
+    invalidConfig.scratchpad.storagePath = "relative/scratchpad.txt"
+    Validation.validateConfig(invalidConfig)
+end)
+
+assert(not relativeStorageAccepted,
+       "relative scratchpad storage paths must fail configuration validation")
+
 local themeColorAccepted, themeColorError = pcall(function()
     Validation.validateColor({
         red = 2,
@@ -493,10 +553,15 @@ assert(not themeColorAccepted and
        "theme color validation diagnostics must remain compatible")
 
 local discoveredTheme = Theme.new(config, root .. "/Spoons/Gearbox")
+local discoveredPreferences = Preferences.new(config)
+local supplementalMenus = {discoveredTheme:menuDefinition()}
+
+for _, definition in ipairs(discoveredPreferences:menuDefinitions()) do
+    table.insert(supplementalMenus, definition)
+end
 
 local menus, rootId = Loader.load(root .. "/Spoons/Gearbox", config, Actions,
-                                  {discoveredTheme:menuDefinition()},
-                                  discoveredTheme)
+                                  supplementalMenus, discoveredTheme)
 
 assert(rootId == "leader", "leader must be the root menu")
 assert(menus.leader.title == "Gearbox", "leader title changed")
@@ -513,7 +578,7 @@ end
 
 local leaderShape = rowShape(menus.leader)
 
-assert(leaderShape == "c,l,k,o,p,s,|,n,i,a,d,f,w,|,m,t,|,escape",
+assert(leaderShape == "c,l,k,o,p,s,|,n,i,a,d,f,w,|,m,t,g,|,escape",
        "leader ordering or divider placement changed: " .. leaderShape)
 
 local scratchpadRow
@@ -529,14 +594,23 @@ assert(scratchpadRow and scratchpadRow.key == "s" and scratchpadRow.requires ==
            nil,
        "declarative feature requirements must resolve before runtime assembly")
 
-assert(rowShape(menus.browsers) == "o,a,c,s,|,escape",
+assert(rowShape(menus.browsers) == "o,a,c,f,s,|,escape",
        "browser menu shape changed")
+
+assert(menus.browsers.rows[4].action.name == "Firefox",
+       "Firefox must launch Firefox")
 
 assert(rowShape(menus.macos) == "h,e,|,a,i,x,|,s,|,escape",
        "macOS Utilities menu shape changed")
 
 assert(rowShape(menus.themes) == "s,|,a,l,g,|,c,r,d,h,m,n,t,|,escape",
        "Themes menu shape changed")
+assert(rowShape(menus.configuration) == "p,r,x,|,m,s,|,escape",
+       "Configuration menu shape changed")
+assert(rowShape(menus["menu-position"]) == "t,b,|,escape",
+       "Menu Position menu shape changed")
+assert(rowShape(menus["scratchpad-settings"]) ==
+           "p,h,f,n,|,w,e,|,escape", "Scratchpad settings menu shape changed")
 
 local themeLabels = {}
 
@@ -1092,6 +1166,172 @@ runtime.menus.themes.modal.bindings.r()
 
 assert(runtime.theme.selection == "dracula",
        "manual selection must switch away from system mode")
+
+runtime.menus.themes.modal.bindings.escape()
+runtime.menus.leader.modal.bindings.g()
+
+assert(runtime.activeMenu.id == "configuration",
+       "g must open the generated Configuration menu")
+
+runtime.menus.configuration.modal.bindings.m()
+runtime.menus["menu-position"].modal.bindings.b()
+
+assert(runtime.config.menu.position == "bottom" and
+           settings["Gearbox.preferences.local.v1"].menu.position == "bottom",
+       "menu position changes must apply immediately and persist locally")
+assert(package.loaded[configModule].menu.position == "top",
+       "runtime preferences must not mutate the cached config.lua table")
+
+local positionChecks = runtime:checkedRows(runtime.menus["menu-position"])
+
+assert(positionChecks[2] and not positionChecks[1],
+       "only the effective menu position must be checked")
+
+runtime.menus["menu-position"].modal.bindings.escape()
+runtime.menus.configuration.modal.bindings.s()
+
+runtime.menus["scratchpad-settings"].modal.bindings.p()
+assert(runtime.config.scratchpad.persistContent == false,
+       "Scratchpad persistence must toggle off")
+runtime.menus["scratchpad-settings"].modal.bindings.p()
+assert(runtime.config.scratchpad.persistContent == true,
+       "Scratchpad persistence must toggle back on")
+
+local sharedDirectory = homeDirectory .. "/Shared Gearbox"
+fileModes[sharedDirectory] = "directory"
+table.insert(chosenPaths, {sharedDirectory})
+runtime.menus["scratchpad-settings"].modal.bindings.f()
+
+assert(runtime.config.scratchpad.storagePath ==
+           "~/Shared Gearbox/scratchpad.txt",
+       "folder selection must store a portable external path")
+
+table.insert(promptResponses, {button = "Save", text = "notes.txt"})
+runtime.menus["scratchpad-settings"].modal.bindings.n()
+table.insert(promptResponses, {button = "Save", text = "900"})
+runtime.menus["scratchpad-settings"].modal.bindings.w()
+table.insert(promptResponses, {button = "Save", text = "640"})
+runtime.menus["scratchpad-settings"].modal.bindings.e()
+
+assert(runtime.config.scratchpad.storagePath == "~/Shared Gearbox/notes.txt" and
+           runtime.config.scratchpad.width == 900 and
+           runtime.config.scratchpad.height == 640,
+       "Scratchpad filename and dimensions must update the effective config")
+assert(runtime.menus["scratchpad-settings"].rows[4].label ==
+           "Filename: notes.txt" and
+           runtime.menus["scratchpad-settings"].rows[6].label ==
+           "Width: 900 pt" and
+           runtime.menus["scratchpad-settings"].rows[7].label ==
+           "Height: 640 pt",
+       "value-bearing Scratchpad rows must refresh their labels")
+
+runtime.menus["scratchpad-settings"].modal.bindings.escape()
+runtime.menus.configuration.modal.bindings.p()
+
+local savedProfile = assert(jsonFiles[preferencesPath])
+
+assert(savedProfile.schemaVersion == 1 and
+           savedProfile.menu.position == "bottom" and
+           savedProfile.scratchpad.storage.backend == "file" and
+           savedProfile.scratchpad.storage.path ==
+           "~/Shared Gearbox/notes.txt" and savedProfile.scratchpad.width == 900 and
+           savedProfile.scratchpad.height == 640,
+       "Save Versioned Profile must write the complete portable state")
+assert(settings["Gearbox.preferences.local.v1"] == nil,
+       "saving the profile must clear redundant local overrides")
+
+runtime.menus.configuration.modal.bindings.m()
+runtime.menus["menu-position"].modal.bindings.t()
+runtime.menus["menu-position"].modal.bindings.escape()
+runtime.menus.configuration.modal.bindings.x()
+
+assert(runtime.config.menu.position == "bottom",
+       "resetting local overrides must restore the versioned profile")
+
+savedProfile.menu.position = "top"
+runtime.menus.configuration.modal.bindings.r()
+
+assert(runtime.config.menu.position == "top",
+       "Reload Versioned Profile must apply external profile changes")
+
+local storagePath = os.tmpname() .. "-gearbox-scratchpad.txt"
+local storageDirectory = storagePath:match("^(.*)/[^/]+$")
+local storageConfig = {scratchpad = {storagePath = storagePath}}
+local storage = ScratchpadStorage.new(storageConfig)
+
+fileModes[storageDirectory] = "directory"
+os.remove(storagePath)
+
+local missingContent, missingError = storage:load()
+
+assert(missingContent == "" and missingError == nil,
+       "a missing external Scratchpad file must begin empty")
+assert(storage:save("shared draft"),
+       "external Scratchpad content must save successfully")
+
+fileModes[storagePath] = "file"
+
+local storedContent = assert(storage:load())
+
+assert(storedContent == "shared draft",
+       "external Scratchpad content must round-trip as UTF-8 text")
+assert(io.open(storagePath .. ".gearbox.tmp", "rb") == nil,
+       "successful external writes must not leave a temporary file")
+
+runtime.preferences:setStorage({backend = "file", path = storagePath})
+runtime.menus.configuration.modal.bindings.escape()
+runtime.menus.leader.modal.bindings.s()
+
+assert(runtime.scratchpad.content == "shared draft",
+       "opening Scratchpad must load the selected external file")
+
+scratchpadWebview.contentResult = "shared draft"
+globalHotkeyPressed()
+
+local externalFile = assert(io.open(storagePath, "wb"))
+assert(externalFile:write("remote update"))
+assert(externalFile:close())
+
+globalHotkeyPressed()
+runtime.menus.leader.modal.bindings.s()
+
+assert(runtime.scratchpad.content == "remote update",
+       "reopening Scratchpad must load changes written by another host")
+
+local unwritablePath = "/mock-only-directory/notes.txt"
+fileModes["/mock-only-directory"] = "directory"
+runtime.preferences:setStorage({backend = "file", path = unwritablePath})
+scratchpadWebview.contentResult = "unsaved update"
+local alertsBeforeWriteFailure = #shownAlerts
+globalHotkeyPressed()
+
+assert(scratchpadWebview.visible and
+           #shownAlerts == alertsBeforeWriteFailure + 1,
+       "external write failures must keep the Scratchpad visible")
+
+globalHotkeyPressed()
+assert(#shownAlerts == alertsBeforeWriteFailure + 1,
+       "repeated identical storage failures must not repeat alerts")
+
+runtime.preferences:setStorage({backend = "file", path = storagePath})
+globalHotkeyPressed()
+
+runtime.preferences:setStorage({backend = "file", path = "/missing/notes.txt"})
+globalHotkeyPressed()
+local alertsBeforeReadFailure = #shownAlerts
+runtime.menus.leader.modal.bindings.s()
+
+assert(runtime.activeMenu.id == "leader" and
+           #shownAlerts == alertsBeforeReadFailure + 1,
+       "external read failures must remain visible without closing Gearbox")
+assert(settings["Gearbox.scratchpad.content"] == "reopened draft",
+       "external storage failures must never fall back to hs.settings")
+
+os.remove(storagePath)
+fileModes[storagePath] = nil
+jsonFiles[preferencesPath] = nil
+fileModes[preferencesPath] = nil
+settings["Gearbox.preferences.local.v1"] = nil
 
 local validRuntime = runtime
 local canvasesBeforeFailedReplacement = #createdCanvases

@@ -1,7 +1,12 @@
+--- Lazy editable Scratchpad lifecycle and storage coordination.
+--
+-- The WebView owns editing and posts debounced content. `Scratchpad` owns the
+-- in-memory/last-persisted distinction and delegates backend I/O to
+-- `scratchpad_storage.lua`.
 local Scratchpad = {}
 Scratchpad.__index = Scratchpad
 
-local settingsKey = "Gearbox.scratchpad.content"
+local Storage = require("Spoons.Gearbox.scratchpad_storage")
 
 local verticalPositions = {top = 0.25, center = 0.50, bottom = 0.75}
 
@@ -246,11 +251,18 @@ function Scratchpad.new(config, theme)
     self.controller = nil
     self.ready = false
     self.appliedThemeId = nil
+    self.storage = Storage.new(config)
+    self.lastStorageError = nil
+    self.persistedContent = nil
 
-    local stored = config.scratchpad.persistContent and
-                       hs.settings.get(settingsKey) or nil
+    local stored
+
+    if config.scratchpad.persistContent and self.storage:isSettings() then
+        stored = self.storage:load()
+    end
 
     self.content = type(stored) == "string" and stored or ""
+    self.persistedContent = stored
 
     return self
 end
@@ -316,14 +328,54 @@ function Scratchpad:state(includeContent)
     return state
 end
 
+--- Report one alert per storage failure episode while retaining console detail.
+---@param message string
+function Scratchpad:reportStorageError(message)
+    if message == self.lastStorageError then return end
+
+    self.lastStorageError = message
+    print("Gearbox Scratchpad storage: " .. message)
+    hs.alert.show("Gearbox Scratchpad storage failed; see the console", nil,
+                  nil, 5)
+end
+
+--- Load the selected persistent backend before presenting the editor.
+---@return boolean
+function Scratchpad:loadContent()
+    if not self.config.scratchpad.persistContent then return true end
+
+    local content, loadError = self.storage:load()
+
+    if content == nil then
+        self:reportStorageError(loadError or "unknown read error")
+        return false
+    end
+
+    self.lastStorageError = nil
+    self.content = content
+    self.persistedContent = content
+    return true
+end
+
 function Scratchpad:save(content)
-    if type(content) ~= "string" then return end
+    if type(content) ~= "string" then return false end
 
     self.content = content
 
-    if self.config.scratchpad.persistContent then
-        hs.settings.set(settingsKey, content)
+    if not self.config.scratchpad.persistContent then return true end
+
+    if content == self.persistedContent then return true end
+
+    local saved, saveError = self.storage:save(content)
+
+    if not saved then
+        self:reportStorageError(saveError or "unknown write error")
+        return false
     end
+
+    self.lastStorageError = nil
+    self.persistedContent = content
+    return true
 end
 
 function Scratchpad:handleMessage(message)
@@ -388,6 +440,8 @@ function Scratchpad:isVisible()
 end
 
 function Scratchpad:show()
+    if not self:loadContent() then return false end
+
     local shown, showError = xpcall(function()
         self.theme:refreshAppearance()
         self:ensureView()
@@ -396,13 +450,7 @@ function Scratchpad:show()
 
         if self.ready then
             self:focusWindow()
-
-            if self.appliedThemeId == self.theme.activeThemeId then
-                self.webview:evaluateJavaScript(
-                    "window.GearboxScratchpad.focus();")
-            else
-                self:applyState(false, true)
-            end
+            self:applyState(true, true)
         end
     end, debug.traceback)
 
@@ -423,24 +471,32 @@ function Scratchpad:show()
 
         error(showError, 0)
     end
+
+    return true
 end
 
 function Scratchpad:hide()
     if not self.webview then return end
 
-    if self.ready and self.config.scratchpad.persistContent then
+    if self.ready then
         self.webview:evaluateJavaScript("window.GearboxScratchpad.content();",
                                         function(content)
-            self:save(content)
+            if self:save(content) then self.webview:hide() end
         end)
+    else
+        self.webview:hide()
     end
-
-    self.webview:hide()
 end
 
 function Scratchpad:delete()
     if self.webview then
-        self:hide()
+        if self.ready and self.config.scratchpad.persistContent then
+            self.webview:evaluateJavaScript(
+                "window.GearboxScratchpad.content();", function(content)
+                    self:save(content)
+                end)
+        end
+
         self.webview:delete()
         self.webview = nil
     end

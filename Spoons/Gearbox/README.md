@@ -67,6 +67,7 @@ letter key    → run or open the displayed entry
 Return        → activate the selection
 Esc           → return to the parent or exit
 s             → open the scratchpad from the root menu
+g             → open Gearbox configuration from the root menu
 Tab           → insert a tab while editing the scratchpad
 ```
 
@@ -122,6 +123,7 @@ Gearbox
 │   ├── Brave Origin
 │   ├── ChatGPT Atlas
 │   ├── Comet Browser
+│   ├── Firefox
 │   └── Safari
 ├── macOS Utilities
 │   ├── System Settings
@@ -130,15 +132,29 @@ Gearbox
 │   ├── Prevent Idle Sleep
 │   ├── Allow Normal Sleep
 │   └── Sleep
-└── Themes
-    ├── Follow macOS
-    ├── Light: Catppuccin, Gearbox, Gruvbox
-    └── Dark: Catppuccin, Dracula, Gearbox, Gruvbox, Monokai, Nord, Tokyo Night
+├── Themes
+│   ├── Follow macOS
+│   ├── Light: Catppuccin, Gearbox, Gruvbox
+│   └── Dark: Catppuccin, Dracula, Gearbox, Gruvbox, Monokai, Nord, Tokyo Night
+└── Configuration
+    ├── Save Versioned Profile
+    ├── Reload Versioned Profile
+    ├── Reset Local Overrides
+    ├── Menu Position
+    │   ├── Top
+    │   └── Bottom
+    └── Scratchpad
+        ├── Persist Content
+        ├── Hammerspoon Settings
+        ├── External File
+        ├── Filename
+        ├── Width
+        └── Height
 ```
 
-Ordinary child menus are sorted by displayed label. `macOS Utilities` and
-`Themes` occupy the utilities section immediately before the final Exit
-divider. Themes retain separate Light and Dark sections and sort
+Ordinary child menus are sorted by displayed label. `macOS Utilities`, `Themes`,
+and `Configuration` occupy the utilities section immediately before the final
+Exit divider. Themes retain separate Light and Dark sections and sort
 alphabetically within each.
 
 The macOS power modes behave as one checked selection:
@@ -161,6 +177,8 @@ Hammerspoon releases those assertions when its configuration reloads.
 | [`runtime.lua`](./runtime.lua) | Modal lifecycle, hotkeys, timeout, selection, and rollback |
 | [`hud.lua`](./hud.lua) | Canvas geometry, text, checks, selection, and loupe rendering |
 | [`scratchpad.lua`](./scratchpad.lua) | Editable webview, keyboard handling, persistence, and focus |
+| [`scratchpad_storage.lua`](./scratchpad_storage.lua) | Scratchpad settings/file persistence and atomic file replacement |
+| [`preferences.lua`](./preferences.lua) | Profile/local preference layering and generated configuration menus |
 | [`theme.lua`](./theme.lua) | Theme loading, persistence, fonts, appearance, and colors |
 | [`validation.lua`](./validation.lua) | Configuration, color, and hotkey validation |
 | [`dependencies.lua`](./dependencies.lua) | Resolves the packaged RetroUI copy, then a development checkout |
@@ -168,19 +186,21 @@ Hammerspoon releases those assertions when its configuration reloads.
 | [`tests/`](../../tests/README.md) | Mocked-Hammerspoon smoke and regression coverage |
 
 ```text
-config.lua + menus/*.lua + themes/*.lua
+config.lua + preferences.json + local hs.settings + menus/*.lua + themes/*.lua
   → init.lua
-    → validation.lua + loader.lua + theme.lua
+    → validation.lua + preferences.lua + loader.lua + theme.lua
     → runtime.lua + actions.lua
       → hud.lua
-      → scratchpad.lua
+      → scratchpad.lua → scratchpad_storage.lua
 ```
 
 ## Configuration (`config.lua`)
 
 [`config.lua`](./config.lua) is the runtime configuration contract. It contains
 no Hammerspoon calls, and `Gearbox.start()` accepts no configuration arguments.
-A standalone installation reads the file as shipped or edited locally.
+A standalone installation reads the file as shipped or edited locally. The
+versioned profile and local preferences then override only menu position and the
+documented Scratchpad fields.
 
 Nix delivery creates a derived copy of the Spoon and substitutes only
 `menu.timeout` from
@@ -289,6 +309,7 @@ remain bare controls, preserving modified macOS shortcuts such as
 | `scratchpad.height` | `480` | Height in points, clamped to the selected screen |
 | `scratchpad.maxCharacters` | `4096` | Maximum editable text capacity; existing longer content is preserved |
 | `scratchpad.persistContent` | `true` | Restores content through local `hs.settings` storage |
+| `scratchpad.storagePath` | `nil` | Local `hs.settings`; an absolute or `~/` path selects one regular text file |
 | `scratchpad.showInstructions` | `true` | Displays the non-editable keyboard reference footer |
 
 The `s` shortcut and `openScratchpad` action are declared directly in
@@ -307,12 +328,69 @@ attempt. The non-editable footer derives the configured Gearbox hotkey using the
 same modifier and key order as the main-menu Exit row. That hotkey closes the
 scratchpad; no second global hotkey is created.
 
-With persistence enabled, content is stored under
-`hs.settings["Gearbox.scratchpad.content"]`. The backing Hammerspoon preferences
-file is local and unencrypted, so scratchpad content should not be treated as a
-secret store. Disabling persistence keeps content only for the lifetime of the
-current Hammerspoon runtime. `maxCharacters` limits new input without silently
-truncating content that was already saved above the configured limit.
+With persistence enabled and `storagePath = nil`, content is stored under
+`hs.settings["Gearbox.scratchpad.content"]`. An absolute path or a path beginning
+with `~/` selects one regular UTF-8 file instead. The parent directory must
+already exist; missing files begin empty and are created on the first save.
+Writes atomically replace the destination, reject symbolic links, and never
+fall back to `hs.settings` after an error.
+
+File content is reloaded whenever the Scratchpad opens, so a closed editor sees
+changes synchronized from another host. There is no watcher or merge engine;
+simultaneous editors remain last-writer-wins. Disabling persistence keeps
+content only for the current Hammerspoon runtime. Neither backend is encrypted,
+and selecting a file does not implicitly copy or clear content in the other
+backend. `maxCharacters` limits new input without silently truncating content
+that was already saved above the configured limit.
+
+## Runtime preferences
+
+The generated Configuration menus update a strict subset of the effective
+configuration:
+
+| Menu | Values |
+| --- | --- |
+| Menu Position | `top`, `bottom` |
+| Scratchpad | persistence, storage folder/filename, width, height |
+| Profile | save, reload, clear local overrides |
+
+Every selection applies immediately and is stored as a local override under
+`hs.settings["Gearbox.preferences.local.v1"]`. The effective value flow is:
+
+```text
+config.lua defaults
+  → ~/.config/hammerspoon-gearbox/preferences.json
+  → local hs.settings overrides
+  → HUD and Scratchpad
+```
+
+`Save Versioned Profile` atomically writes the complete portable subset and
+clears redundant local overrides. `Reload Versioned Profile` re-reads the file
+while retaining local overrides. `Reset Local Overrides` clears only the local
+layer; Git remains responsible for reviewing, reverting, and distributing the
+profile file.
+
+```json
+{
+  "schemaVersion": 1,
+  "menu": {
+    "position": "bottom"
+  },
+  "scratchpad": {
+    "persistContent": true,
+    "storage": {
+      "backend": "file",
+      "path": "~/Library/Mobile Documents/com~apple~CloudDocs/Hammerspoon/scratchpad.txt"
+    },
+    "width": 800,
+    "height": 600
+  }
+}
+```
+
+The profile is passive JSON, contains no executable Lua, and is read only at
+startup or after the explicit reload action. Gearbox creates its parent
+directory when saving but does not watch the file or commit changes.
 
 ## Theme persistence
 
