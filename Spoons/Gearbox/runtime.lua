@@ -12,6 +12,7 @@ local keyIdentity = require("Spoons.Gearbox.validation").keyIdentity
 ---@field rootId string
 ---@field actions table
 ---@field theme table
+---@field preferences table
 ---@field hud table
 ---@field activeMenu table|nil
 ---@field timeoutTimer any
@@ -25,9 +26,11 @@ Runtime.__index = Runtime
 ---@param rootId string
 ---@param actions table
 ---@param theme table
+---@param preferences table
 ---@param hud table
 ---@return Runtime
-function Runtime.new(config, menus, rootId, actions, theme, hud, scratchpad)
+function Runtime.new(config, menus, rootId, actions, theme, preferences, hud,
+                     scratchpad)
     local self = setmetatable({}, Runtime)
 
     self.config = config
@@ -35,6 +38,7 @@ function Runtime.new(config, menus, rootId, actions, theme, hud, scratchpad)
     self.rootId = rootId
     self.actions = actions
     self.theme = theme
+    self.preferences = preferences
     self.hud = hud
     self.scratchpad = scratchpad
 
@@ -115,6 +119,8 @@ function Runtime:checkedRows(menu)
                 checked[index] = row.action.mode == caffeinateMode
             elseif row.action.type == "setTheme" then
                 checked[index] = self.theme:isSelected(row.action.theme)
+            elseif row.action.type == "configure" then
+                checked[index] = self.preferences:isSelected(row.action)
             end
         end
     end
@@ -142,16 +148,18 @@ function Runtime:runAction(menu, row)
         openMenu = function(targetId) self:openMenu(menu, targetId) end,
         exit = function() menu.modal:exit() end,
         setTheme = function(selection) self.theme:select(selection) end,
+        configure = function(action) self.preferences:execute(action) end,
         openScratchpad = function()
             assert(self.scratchpad, "Gearbox: scratchpad is disabled")
-            self.scratchpad:show()
-            menu.modal:exit()
+
+            if self.scratchpad:show() then menu.modal:exit() end
         end
     })
 
     if result.handled then return end
 
     if result.refresh then
+        self.preferences:refreshMenu(menu)
         self.hud:refresh(menu, self:checkedRows(menu))
 
         if self.config.navigation.resetTimeoutOnInput then
@@ -238,6 +246,7 @@ function Runtime:registerMenu(menu)
         menu.selectedPosition = nil
 
         self.theme:refreshAppearance()
+        self.preferences:refreshMenu(menu)
         self.hud:show(menu, self:checkedRows(menu))
         self:resetTimeout(menu)
     end

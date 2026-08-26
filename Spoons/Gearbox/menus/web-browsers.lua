@@ -1,4 +1,4 @@
---- Web browsers submenu: Brave Origin, ChatGPT Atlas, Comet Browser, Safari.
+--- Web browsers submenu: Brave Origin, ChatGPT Atlas, Comet, Firefox, Safari.
 return {
     id = "browsers",
     title = "Web Browsers",
@@ -27,7 +27,7 @@ return {
             key = "f",
             label = "Firefox",
             kind = "application",
-            action = {type = "launchApp", name = "Comet"}
+            action = {type = "launchApp", name = "Firefox"}
         }, {
             key = "s",
             label = "Safari",

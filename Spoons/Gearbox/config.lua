@@ -62,6 +62,8 @@ return {
         height = 480,
         maxCharacters = 4096,
         persistContent = true,
+        -- nil uses local hs.settings; /path or ~/path uses a regular text file.
+        storagePath = nil,
         showInstructions = true
     }
 }

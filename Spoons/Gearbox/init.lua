@@ -2,6 +2,7 @@ local Actions = require("Spoons.Gearbox.actions")
 local Dependencies = require("Spoons.Gearbox.dependencies")
 local HUD = require("Spoons.Gearbox.hud")
 local Loader = require("Spoons.Gearbox.loader")
+local Preferences = require("Spoons.Gearbox.preferences")
 local Runtime = require("Spoons.Gearbox.runtime")
 local Scratchpad = require("Spoons.Gearbox.scratchpad")
 local Theme = require("Spoons.Gearbox.theme")
@@ -70,26 +71,37 @@ function Gearbox.start(...)
             0)
     end
 
-    local config = require("Spoons.Gearbox.config")
+    local sourceConfig = require("Spoons.Gearbox.config")
 
-    Validation.validateConfig(config)
+    Validation.validateConfig(sourceConfig)
 
-    if config.menu.timeout == 0 then
+    if sourceConfig.menu.timeout == 0 then
         showDisabledTimeoutDialog()
         return currentRuntime
     end
 
     local directory = sourceDirectory()
+    local preferences = Preferences.new(sourceConfig)
+    local config = preferences.config
+
+    Validation.validateConfig(config)
+
     local theme = Theme.new(config, directory)
     local scratchpad = config.scratchpad.enable and
                            Scratchpad.new(config, theme) or nil
 
+    local menuDefinitions = {theme:menuDefinition()}
+
+    for _, definition in ipairs(preferences:menuDefinitions()) do
+        table.insert(menuDefinitions, definition)
+    end
+
     local menus, rootId = Loader.load(directory, config, Actions,
-                                      {theme:menuDefinition()}, theme)
+                                      menuDefinitions, theme)
     local hud = HUD.new(config, theme)
 
     local candidateRuntime = Runtime.new(config, menus, rootId, Actions, theme,
-                                         hud, scratchpad)
+                                         preferences, hud, scratchpad)
 
     candidateRuntime:start()
 

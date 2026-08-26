@@ -4,6 +4,7 @@
 -- tables at load time and dispatches them when an item is triggered. Return
 -- flags tell the runtime whether to close, refresh, or leave the menu as-is.
 local M = {}
+local Preferences = require("Spoons.Gearbox.preferences")
 
 ---@type fun(path: string): any
 local hsOpen = hs.open
@@ -48,6 +49,9 @@ function M.validate(action, location)
         if action.theme == "" then
             error(location .. " setTheme action requires a non-empty theme", 2)
         end
+    elseif action.type == "configure" then
+        Preferences.validateAction(action, location)
+        return
     elseif action.type == "openScratchpad" then
         return
     elseif action.type == "custom" then
@@ -63,7 +67,8 @@ end
 ---@return boolean
 function M.isCheckable(action)
     return action and
-               (action.type == "setCaffeinateMode" or action.type == "setTheme")
+               (action.type == "setCaffeinateMode" or action.type == "setTheme" or
+                   Preferences.isCheckableAction(action))
 end
 
 --- Detect the current caffeinate assertion level.
@@ -131,6 +136,11 @@ function M.execute(action, context)
 
     if action.type == "setTheme" then
         context.setTheme(action.theme)
+        return {refresh = true}
+    end
+
+    if action.type == "configure" then
+        context.configure(action)
         return {refresh = true}
     end
 
