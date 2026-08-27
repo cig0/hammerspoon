@@ -9,12 +9,12 @@ return {
 
     items = {
         {
-            key = "f",
+            key = "F",
             label = "OmniFocus",
             kind = "application",
             action = {type = "launchApp", name = "OmniFocus"}
         }, {
-            key = "o",
+            key = "O",
             label = "OmniOutliner",
             kind = "application",
             action = {type = "launchApp", name = "OmniOutliner"}

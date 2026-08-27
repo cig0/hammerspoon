@@ -21,6 +21,25 @@ local hotkeyModifiers = {
     shift = true
 }
 
+local printableKeypadKeys = {
+    pad0 = true,
+    pad1 = true,
+    pad2 = true,
+    pad3 = true,
+    pad4 = true,
+    pad5 = true,
+    pad6 = true,
+    pad7 = true,
+    pad8 = true,
+    pad9 = true,
+    ["pad."] = true,
+    ["pad*"] = true,
+    ["pad+"] = true,
+    ["pad/"] = true,
+    ["pad-"] = true,
+    ["pad="] = true
+}
+
 --- Classify a color table as "grayscale", "rgb", "mixed", or nil.
 ---@param value any
 ---@return "grayscale"|"rgb"|"mixed"|nil
@@ -123,7 +142,20 @@ function Validation.validateColor(color, name, options)
     return model
 end
 
---- Return true when `key` is a valid Hammerspoon key name.
+--- Return true when `key` is a printable ASCII character owned by the event tap.
+---
+--- Space remains the named Hammerspoon key `space`. See `menus/README.md` for
+--- the character and modal key ownership contract.
+---@param key any
+---@return boolean
+function Validation.isCharacterActivationKey(key)
+    if type(key) ~= "string" or #key ~= 1 then return false end
+
+    local byte = key:byte()
+    return byte >= 0x21 and byte <= 0x7e
+end
+
+--- Return true when `key` can be bound by `hs.hotkey`.
 ---@param key any
 ---@return boolean
 function Validation.isHotkeyKey(key)
@@ -134,13 +166,55 @@ function Validation.isHotkeyKey(key)
     return hs.keycodes.map[key:lower()] ~= nil
 end
 
---- Normalize a key string for duplicate and reserved-key detection.
+--- Return true when a physical key can ambiguously overlap character input.
+---
+--- Raw keycodes can alias any character; printable keypad keys produce the
+--- same characters as main-keyboard rows while remaining separate hotkeys.
+---@param key any
+---@return boolean
+local function isAmbiguousPhysicalCharacterKey(key)
+    if type(key) ~= "string" then return false end
+
+    return key:match("^#%d+$") ~= nil or
+               printableKeypadKeys[key:lower()] == true
+end
+
+--- Return true when `key` is valid for a declarative menu row.
+---@param key any
+---@return boolean
+function Validation.isMenuActivationKey(key)
+    return Validation.isCharacterActivationKey(key) or
+               (Validation.isHotkeyKey(key) and
+                   not isAmbiguousPhysicalCharacterKey(key))
+end
+
+--- Return true when `key` can safely remain modal-owned during a menu session.
+---@param key any
+---@return boolean
+function Validation.isMenuNavigationKey(key)
+    return Validation.isHotkeyKey(key) and
+               not isAmbiguousPhysicalCharacterKey(key)
+end
+
+--- Normalize a physical Hammerspoon key for comparison.
 ---@param key string
 ---@return string
-function Validation.keyIdentity(key)
+function Validation.hotkeyIdentity(key)
     if key:match("^#%d+$") then return "#" .. tonumber(key:sub(2)) end
 
     return key:lower()
+end
+
+--- Normalize a menu key for duplicate and reserved-key detection.
+---
+--- Character identity is exact; named Hammerspoon keys remain
+--- case-insensitive; raw keycodes remain numerically canonical.
+---@param key string
+---@return string
+function Validation.menuActivationIdentity(key)
+    if Validation.isCharacterActivationKey(key) then return key end
+
+    return Validation.hotkeyIdentity(key)
 end
 
 --- Validate the authoritative Gearbox configuration.
@@ -232,21 +306,21 @@ function Validation.validateConfig(config)
     assertType(config.navigation.cancelKey, "string", "navigation.cancelKey")
     assert(config.navigation.cancelKey ~= "",
            "Gearbox: navigation.cancelKey cannot be empty")
-    assert(Validation.isHotkeyKey(config.navigation.cancelKey),
+    assert(Validation.isMenuNavigationKey(config.navigation.cancelKey),
            "Gearbox: invalid navigation.cancelKey: " ..
                config.navigation.cancelKey)
 
     if config.navigation.enabled then
         assert(config.navigation.activateKey ~= "",
                "Gearbox: navigation.activateKey cannot be empty")
-        assert(Validation.isHotkeyKey(config.navigation.activateKey),
+        assert(Validation.isMenuNavigationKey(config.navigation.activateKey),
                "Gearbox: invalid navigation.activateKey: " ..
                    config.navigation.activateKey)
-        assert(Validation.keyIdentity(config.navigation.activateKey) ~=
-                   Validation.keyIdentity(config.navigation.cancelKey),
+        assert(Validation.hotkeyIdentity(config.navigation.activateKey) ~=
+                   Validation.hotkeyIdentity(config.navigation.cancelKey),
                "Gearbox: navigation activate and cancel keys must differ")
-        assert(Validation.keyIdentity(config.navigation.activateKey) ~= "up" and
-                   Validation.keyIdentity(config.navigation.activateKey) ~=
+        assert(Validation.hotkeyIdentity(config.navigation.activateKey) ~= "up" and
+                   Validation.hotkeyIdentity(config.navigation.activateKey) ~=
                    "down",
                "Gearbox: navigation.activateKey cannot be up or down")
     end

@@ -30,10 +30,10 @@ not a replacement for a live Hammerspoon hit-testing check.
 | Themes | All bundled IDs, grouped ordering, overrides, color models, system/manual selection |
 | Preferences | Config/profile/local precedence, generated configuration menus, prompts, save/reload/reset, validation |
 | Persistence | Theme restoration, Scratchpad settings/file backends, atomic replacement, cross-open reload, visible failures |
-| Runtime | Zero-timeout RetroUI dialog, hotkey replacement, partial-start rollback, modal cleanup, direct and arrow-key activation |
+| Runtime | Zero-timeout RetroUI dialog, hotkey replacement, partial-start rollback, session-scoped character capture, exact case and symbol dispatch, the documented native Caps Lock/Shift matrix, Secure Input refusal, repeat suppression, modal cleanup, and arrow-key activation |
 | RetroUI | Frame styles and alignment, asymmetric padding, footer actions, box-glyph width, strict themes and mnemonics, targeted redraws, button focus/press state, keyboard and left-mouse activation, background dismissal, and cleanup races |
 | Packaging | Manifest identity, complete private bundle, private preference, canonical fallback, and broken/missing-bundle diagnostics |
-| HUD boundary | Checked rows, immediate theme refresh, lazy appearance resolution |
+| HUD boundary | Checked rows, root and nested group key-cap backgrounds, immediate theme refresh, lazy appearance resolution |
 | Scratchpad | Lazy Webview construction, failed-first-use cleanup, sizing, font size, symmetric placement, capacity, persistence, storage switching, and reuse |
 | Host resolution | System fonts and macOS accent are resolved only at their documented lifecycle points |
 
@@ -45,14 +45,10 @@ lua tests/retroui.lua "$(pwd)"
 lua tests/retroui-package.lua "$(pwd)"
 ```
 
-Lua parsing and Nix module evaluation remain separate repository checks.
-`nix flake check` validates the flake outputs; focused evaluation validates the
-Home Manager module. A live Hammerspoon run remains the visual and native API
-boundary.
+Parse changed Lua files separately. A live Hammerspoon run remains the visual
+and native API boundary.
 
 ## Where to look next
 
 - [`../Spoons/Gearbox/README.md`](../Spoons/Gearbox/README.md) — public
   behavior and configuration contract.
-- [`../assets/docs/NIX.md`](../assets/docs/NIX.md) — module outputs and delivery
-  boundaries validated by the Nix checks.

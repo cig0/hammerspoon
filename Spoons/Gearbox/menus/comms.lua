@@ -9,12 +9,12 @@ return {
 
     items = {
         {
-            key = "d",
+            key = "D",
             label = "Discord",
             kind = "application",
             action = {type = "launchApp", name = "Discord"}
         }, {
-            key = "w",
+            key = "W",
             label = "WhatsApp",
             kind = "application",
             action = {type = "launchApp", name = "WhatsApp"}

@@ -9,27 +9,27 @@ return {
 
     items = {
         {
-            key = "o",
+            key = "O",
             label = "Brave Origin",
             kind = "application",
             action = {type = "launchApp", name = "Brave Origin"}
         }, {
-            key = "a",
+            key = "A",
             label = "ChatGPT Atlas",
             kind = "application",
             action = {type = "launchApp", name = "ChatGPT Atlas"}
         }, {
-            key = "c",
+            key = "C",
             label = "Comet Browser",
             kind = "application",
             action = {type = "launchApp", name = "Comet"}
         }, {
-            key = "f",
+            key = "F",
             label = "Firefox",
             kind = "application",
             action = {type = "launchApp", name = "Firefox"}
         }, {
-            key = "s",
+            key = "S",
             label = "Safari",
             kind = "application",
             action = {type = "launchApp", name = "Safari"}

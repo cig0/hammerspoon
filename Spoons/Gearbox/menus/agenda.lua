@@ -9,17 +9,17 @@ return {
 
     items = {
         {
-            key = "c",
+            key = "C",
             label = "Calendar",
             kind = "application",
             action = {type = "launchApp", name = "Calendar"}
         }, {
-            key = "m",
+            key = "M",
             label = "Mail",
             kind = "application",
             action = {type = "launchApp", name = "Mail"}
         }, {
-            key = "r",
+            key = "R",
             label = "Reminders",
             kind = "application",
             action = {type = "launchApp", name = "Reminders"}

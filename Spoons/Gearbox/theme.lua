@@ -6,8 +6,8 @@
 local Theme = {}
 local Validation = require("Spoons.Gearbox.validation")
 
-local isHotkeyKey = Validation.isHotkeyKey
-local keyIdentity = Validation.keyIdentity
+local isMenuActivationKey = Validation.isMenuActivationKey
+local menuActivationIdentity = Validation.menuActivationIdentity
 local validateColor = Validation.validateColor
 
 ---@class Theme
@@ -147,7 +147,7 @@ local function validateDefinition(definition, source)
     end
 
     if type(definition.key) ~= "string" or definition.key == "" or
-        not isHotkeyKey(definition.key) then
+        not isMenuActivationKey(definition.key) then
         fail(definition.id .. " has an invalid or missing menu key", 2)
     end
 
@@ -193,7 +193,7 @@ local function loadThemes(directory)
             fail("duplicate theme id: " .. definition.id, 2)
         end
 
-        local key = keyIdentity(definition.key)
+        local key = menuActivationIdentity(definition.key)
 
         if menuKeys[key] then
             fail(("duplicate theme menu key %s in %s and %s"):format(

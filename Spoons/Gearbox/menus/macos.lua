@@ -21,7 +21,7 @@ return {
             kind = "action",
             action = {type = "reload"}
         }, {
-            key = "e",
+            key = "E",
             label = "System Settings",
             kind = "application",
             action = {type = "launchApp", name = "System Settings"}

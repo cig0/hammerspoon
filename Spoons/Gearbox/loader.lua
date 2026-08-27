@@ -6,8 +6,9 @@
 local Loader = {}
 local Validation = require("Spoons.Gearbox.validation")
 
-local isHotkeyKey = Validation.isHotkeyKey
-local keyIdentity = Validation.keyIdentity
+local isCharacterActivationKey = Validation.isCharacterActivationKey
+local isMenuActivationKey = Validation.isMenuActivationKey
+local menuActivationIdentity = Validation.menuActivationIdentity
 
 local validKinds = {action = true, application = true}
 
@@ -34,6 +35,40 @@ local function appendDivider(rows)
     if #rows > 0 and not rows[#rows].divider then
         table.insert(rows, {divider = true})
     end
+end
+
+--- Reserve a modal-owned navigation key against character-row collisions.
+---
+--- Caps Lock can produce either case without changing the modal modifier chord,
+--- so a modal-owned ASCII letter reserves both cases.
+---@param reservedKeys table
+---@param key string
+local function reserveModalNavigationKey(reservedKeys, key)
+    reservedKeys[menuActivationIdentity(key)] = true
+
+    local resolvedKey = key
+
+    if key:match("^#%d+$") then
+        resolvedKey = hs.keycodes.map[tonumber(key:sub(2))]
+    end
+
+    if type(resolvedKey) == "string" and resolvedKey:match("^[A-Za-z]$") then
+        reservedKeys[resolvedKey:lower()] = true
+        reservedKeys[resolvedKey:upper()] = true
+    end
+end
+
+--- Index a character-owned row for exact runtime lookup.
+---@param menu table
+---@param row table
+local function registerCharacterActivationRow(menu, row)
+    if row.kind == "footer" or not isCharacterActivationKey(row.key) then
+        return
+    end
+
+    assert(menu.activationRowsByCharacter[row.key] == nil,
+           "Gearbox: validated character key was overwritten: " .. row.key)
+    menu.activationRowsByCharacter[row.key] = row
 end
 
 --- List non-hidden `.lua` files in `directory`, sorted alphabetically.
@@ -160,12 +195,14 @@ end
 ---@return string
 local function validateDefinitions(definitions, config, actions, theme)
     local rootIds = {}
-    local reservedKeys = {[keyIdentity(config.navigation.cancelKey)] = true}
+    local reservedKeys = {}
+
+    reserveModalNavigationKey(reservedKeys, config.navigation.cancelKey)
 
     if config.navigation.enabled then
         reservedKeys.up = true
         reservedKeys.down = true
-        reservedKeys[keyIdentity(config.navigation.activateKey)] = true
+        reserveModalNavigationKey(reservedKeys, config.navigation.activateKey)
     end
 
     for id, definition in pairs(definitions) do
@@ -195,12 +232,12 @@ local function validateDefinitions(definitions, config, actions, theme)
                 fail(id .. " parent entry is missing its key")
             end
 
-            if not isHotkeyKey(definition.entry.key) then
+            if not isMenuActivationKey(definition.entry.key) then
                 fail(id .. " parent entry has invalid key: " ..
                          definition.entry.key)
             end
 
-            if reservedKeys[keyIdentity(definition.entry.key)] then
+            if reservedKeys[menuActivationIdentity(definition.entry.key)] then
                 fail(id .. " parent entry uses reserved key: " ..
                          definition.entry.key)
             end
@@ -240,11 +277,11 @@ local function validateDefinitions(definitions, config, actions, theme)
                     fail(location .. " is missing its key")
                 end
 
-                if not isHotkeyKey(item.key) then
+                if not isMenuActivationKey(item.key) then
                     fail(location .. " has invalid key: " .. item.key)
                 end
 
-                local identity = keyIdentity(item.key)
+                local identity = menuActivationIdentity(item.key)
 
                 if reservedKeys[identity] then
                     fail(location .. " uses reserved key: " .. item.key)
@@ -356,8 +393,8 @@ local function assembleMenus(definitions, rootId, config, actions)
             title = definition.title,
             emoji = definition.emoji or "",
             parentId = definition.parent,
-            highlightGroups = definition.highlightGroups == true,
-            rows = {}
+            rows = {},
+            activationRowsByCharacter = {}
         }
 
         if definition.parent then
@@ -393,9 +430,13 @@ local function assembleMenus(definitions, rootId, config, actions)
                 appendDivider(menu.rows)
             else
                 table.insert(menu.rows, row)
-                seenKeys[keyIdentity(row.key)] = true
+                local identity = menuActivationIdentity(row.key)
+
+                seenKeys[identity] = true
                 row.checkable = actions.isCheckable(row.action)
                 menu.hasChecks = menu.hasChecks or row.checkable
+
+                registerCharacterActivationRow(menu, row)
             end
         end
 
@@ -404,19 +445,23 @@ local function assembleMenus(definitions, rootId, config, actions)
 
             for _, child in ipairs(section.children) do
                 local key = child.entry.key
-                local identity = keyIdentity(key)
+                local identity = menuActivationIdentity(key)
 
                 if seenKeys[identity] then
                     fail(("%s has duplicate item or child key: %s"):format(id,
                                                                            key))
                 end
 
-                table.insert(menu.rows, {
+                local row = {
                     key = key,
                     label = child.entry.label or child.title,
                     kind = "group",
                     action = {type = "openMenu", menu = child.id}
-                })
+                }
+
+                table.insert(menu.rows, row)
+
+                registerCharacterActivationRow(menu, row)
 
                 seenKeys[identity] = true
             end
