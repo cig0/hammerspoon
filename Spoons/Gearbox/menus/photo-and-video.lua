@@ -9,17 +9,17 @@ return {
 
     items = {
         {
-            key = "a",
+            key = "A",
             label = "Affinity",
             kind = "application",
             action = {type = "launchApp", name = "Affinity"}
         }, {
-            key = "p",
+            key = "P",
             label = "Photos",
             kind = "application",
             action = {type = "launchApp", name = "Photos"}
         }, {
-            key = "o",
+            key = "O",
             label = "PowerPhotos",
             kind = "application",
             action = {type = "launchApp", name = "PowerPhotos"}

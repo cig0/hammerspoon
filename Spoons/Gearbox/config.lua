@@ -12,7 +12,7 @@ return {
         width = 420,
 
         showEmojis = true,
-        highlightGroups = true
+        highlightGroups = true -- Applies at every submenu depth.
     },
 
     font = {

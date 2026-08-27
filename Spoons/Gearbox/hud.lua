@@ -180,8 +180,7 @@ function HUD:appendMenuRow(elements, menu, row, rowIndex, y, navigationPosition,
     local isGroup = row.kind == "group"
     local isFooter = row.kind == "footer"
 
-    local highlightGroup = self.config.menu.highlightGroups and
-                               menu.highlightGroups and isGroup
+    local shouldHighlightGroupKey = self.config.menu.highlightGroups and isGroup
 
     local font = isGroup and self.theme.fonts.group or self.theme.fonts.body
 
@@ -190,7 +189,7 @@ function HUD:appendMenuRow(elements, menu, row, rowIndex, y, navigationPosition,
     local keyColor = colors.secondary
 
     if isGroup then
-        keyColor = highlightGroup and colors.accentText or colors.accent
+        keyColor = shouldHighlightGroupKey and colors.accentText or colors.accent
     end
 
     local keyBackgroundY = y + (layout.rowHeight - layout.keyBackgroundHeight) /
@@ -200,7 +199,7 @@ function HUD:appendMenuRow(elements, menu, row, rowIndex, y, navigationPosition,
 
     local keyBackgroundIndex
 
-    if highlightGroup then
+    if shouldHighlightGroupKey then
         keyBackgroundIndex = appendElement(elements, {
             type = "rectangle",
             action = "fill",

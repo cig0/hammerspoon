@@ -9,22 +9,22 @@ return {
 
     items = {
         {
-            key = "c",
+            key = "C",
             label = "Codex",
             kind = "application",
             action = {type = "launchApp", name = "Codex"}
         }, {
-            key = "s",
+            key = "S",
             label = "Sublime Merge",
             kind = "application",
             action = {type = "launchApp", name = "Sublime Merge"}
         }, {
-            key = "v",
+            key = "V",
             label = "VirtualBuddy",
             kind = "application",
             action = {type = "launchApp", name = "VirtualBuddy"}
         }, {
-            key = "z",
+            key = "Z",
             label = "Zed",
             kind = "application",
             action = {type = "launchApp", name = "Zed"}

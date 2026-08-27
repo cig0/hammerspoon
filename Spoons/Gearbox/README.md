@@ -62,7 +62,7 @@ external `init.lua` ownership, and the Home Manager integration boundary.
 
 ```text
 alt+cmd+space → open or close Gearbox and its scratchpad
-letter key    → run or open the displayed entry
+shown key     → run or open the entry with that exact character
 ↑ / ↓         → select an entry
 Return        → activate the selection
 Esc           → return to the parent or exit
@@ -74,6 +74,37 @@ Tab           → insert a tab while editing the scratchpad
 The first arrow press selects the first or last entry. Selection wraps by
 default. Loupe scaling is immediate, so key repeat does not wait for an
 animation.
+
+Displayed character shortcuts are case-sensitive and use the character the
+keyboard produces. With Caps Lock off, `w` produces `w` and Shift+`w` produces
+`W`; with Caps Lock on, those results reverse. Digits and their shifted symbols
+are distinct too, so `1` and `!` can activate different rows. Caps Lock changes
+ASCII letters only.
+
+Bundled menu data uses lowercase characters for navigation and uppercase
+characters for applications. That is an explicit data convention, not a
+runtime inference: a custom menu may assign any supported character to either
+kind of action.
+
+The character input listener runs only while a Gearbox menu is open. It remains
+active across submenu transitions and stops on exit, timeout, Scratchpad entry,
+or `Gearbox.stop()`. Gearbox refuses to open the menu and shows an alert when
+macOS Secure Input prevents reliable character capture.
+
+### Character input provenance
+
+Gearbox reads each key-down event with Hammerspoon's `getCharacters(true)`,
+[verified against the Hammerspoon 1.1.1 source](https://github.com/Hammerspoon/hammerspoon/blob/1.1.1/extensions/eventtap/libeventtap_event.m#L516-L541),
+which delegates to AppKit's
+[`charactersIgnoringModifiers`](https://developer.apple.com/documentation/appkit/nsevent/charactersignoringmodifiers).
+On 2026-08-27, a native AppKit probe for `w` returned cleaned characters `w`,
+`W`, `w`, and `W` for no modifiers, Shift, Caps Lock, and Caps Lock+Shift.
+Gearbox therefore applies the event-local, currently experimental
+[`alphaShift` raw flag](https://www.hammerspoon.org/docs/hs.eventtap.event.html#rawFlagMasks)
+once, and only to ASCII letters. If that event API is unavailable, it falls
+back to Hammerspoon's
+[`checkKeyboardModifiers()`](https://www.hammerspoon.org/docs/hs.eventtap.html#checkKeyboardModifiers)
+poll.
 
 ## Menu map
 
@@ -219,7 +250,7 @@ startup. See [configuration ownership](../../assets/docs/NIX.md#configuration-ow
 | `menu.screen` | `"main"` | `"main"` or the `"mouse"` pointer screen |
 | `menu.width` | `420` | HUD width in points |
 | `menu.showEmojis` | `true` | Includes the menu definition's emoji in its title |
-| `menu.highlightGroups` | `true` | Uses the active accent behind group shortcuts |
+| `menu.highlightGroups` | `true` | Uses the active accent behind group shortcut key caps at every submenu depth |
 
 The zero timeout is a deliberate disabled sentinel, not a usable runtime
 setting. `Gearbox.start()` opens a Borland-style RetroUI dialog that dismisses
@@ -294,10 +325,16 @@ Bundled IDs and semantic palette fields are documented beside the
 | `navigation.includeFooter` | `true` | Includes Back or Exit in arrow navigation |
 | `navigation.resetTimeoutOnInput` | `true` | Restarts an enabled timeout after navigation |
 
-Displayed item shortcuts accept the retained Gearbox modifiers, allowing an
-immediate choice before those keys are released. Escape, Up, Down, and Return
-remain bare controls, preserving modified macOS shortcuts such as
-`alt+cmd+escape`.
+Displayed character shortcuts accept either no Command, Option, or Control
+modifier, or the exact subset used by the Gearbox hotkey. This permits an
+immediate choice before the opening modifiers are released. Shift always
+selects the resulting character, even when Shift belongs to the opening
+hotkey. Escape, Up, Down, and Return remain bare controls, preserving modified
+macOS shortcuts such as `alt+cmd+escape`.
+
+Navigation keys may use named Hammerspoon keys or letters. Raw keycodes and
+printable keypad names are rejected because they can describe the same
+physical input as a resulting-character row, leaving two input owners.
 
 ### Scratchpad
 

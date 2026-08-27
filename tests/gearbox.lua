@@ -5,6 +5,7 @@ package.path = root .. "/?.lua;" .. root .. "/?/init.lua;" .. package.path
 local caffeinateState = {displayIdle = false, systemIdle = false}
 
 local createdCanvases = {}
+local createdEventTaps = {}
 local createdModals = {}
 local createdTimers = {}
 local createdWebviews = {}
@@ -16,7 +17,10 @@ local launchedApplication
 local defaultTextStyleCalls = 0
 local failNextModalBind = false
 local failNextGlobalHotkey = false
+local failNextEventTapStart = false
 local failNextWebviewSetup = false
+local polledCapsLockEnabled = false
+local secureInputEnabled = false
 local interfaceStyle = "Dark"
 local interfaceStyleCalls = 0
 local osascriptCalls = 0
@@ -30,6 +34,58 @@ local promptResponses = {}
 local homeDirectory = assert(os.getenv("HOME"))
 local preferencesPath = homeDirectory ..
                             "/.config/hammerspoon-gearbox/preferences.json"
+
+local keycodesByName = {
+    a = 0,
+    b = 11,
+    c = 8,
+    d = 2,
+    e = 14,
+    f = 3,
+    g = 5,
+    h = 4,
+    i = 34,
+    j = 38,
+    k = 40,
+    l = 37,
+    m = 46,
+    n = 45,
+    o = 31,
+    p = 35,
+    q = 12,
+    r = 15,
+    s = 1,
+    t = 17,
+    u = 32,
+    v = 9,
+    w = 13,
+    x = 7,
+    y = 16,
+    z = 6,
+    ["0"] = 29,
+    ["1"] = 18,
+    ["2"] = 19,
+    ["3"] = 20,
+    ["4"] = 21,
+    ["5"] = 23,
+    ["6"] = 22,
+    ["7"] = 26,
+    ["8"] = 28,
+    ["9"] = 25,
+    down = 125,
+    escape = 53,
+    ["return"] = 36,
+    space = 49,
+    tab = 48,
+    up = 126
+}
+
+local keycodeMap = {}
+
+for key, keycode in pairs(keycodesByName) do
+    keycodeMap[key] = keycode
+    keycodeMap[keycode] = key
+end
 
 fileModes["/"] = "directory"
 fileModes[homeDirectory] = "directory"
@@ -158,6 +214,31 @@ local function newCanvas(frame)
 
     table.insert(createdCanvases, canvas)
     return canvas
+end
+
+local function newEventTap(callback)
+    local eventTap = {callback = callback, enabled = false}
+
+    function eventTap:start()
+        if failNextEventTapStart then
+            failNextEventTapStart = false
+            self.enabled = false
+        else
+            self.enabled = true
+        end
+
+        return self
+    end
+
+    function eventTap:stop()
+        self.enabled = false
+        return self
+    end
+
+    function eventTap:isEnabled() return self.enabled end
+
+    table.insert(createdEventTaps, eventTap)
+    return eventTap
 end
 
 local function elementById(canvas, id)
@@ -298,7 +379,19 @@ hs = {
         end
     },
 
-    eventtap = {checkMouseButtons = function() return mouseButtons end},
+    eventtap = {
+        checkKeyboardModifiers = function()
+            return {capslock = polledCapsLockEnabled}
+        end,
+        checkMouseButtons = function() return mouseButtons end,
+        event = {
+            properties = {keyboardEventAutorepeat = 8},
+            rawFlagMasks = {alphaShift = 0x00010000},
+            types = {keyDown = 10}
+        },
+        isSecureInputEnabled = function() return secureInputEnabled end,
+        new = function(_, callback) return newEventTap(callback) end
+    },
 
     fs = {
         attributes = function(path, name)
@@ -383,20 +476,7 @@ hs = {
         end
     },
 
-    keycodes = {
-        map = setmetatable({
-            down = 125,
-            tab = 48,
-            escape = 53,
-            ["return"] = 36,
-            space = 49,
-            up = 126
-        }, {
-            __index = function(_, key)
-                if key:match("^[a-z0-9]$") then return 1 end
-            end
-        })
-    },
+    keycodes = {map = keycodeMap},
 
     mouse = {getCurrentScreen = function() return nil end},
 
@@ -509,11 +589,38 @@ assert(config.scratchpad.enable and config.scratchpad.width == 720 and
            config.scratchpad.storagePath == nil,
        "standalone scratchpad defaults changed")
 
-assert(Validation.keyIdentity("Down") == "down" and
-           Validation.keyIdentity("#01") == "#1" and
+for byte = 0x21, 0x7e do
+    assert(Validation.isCharacterActivationKey(string.char(byte)),
+           "all printable non-space ASCII characters must be valid menu keys")
+end
+
+assert(Validation.hotkeyIdentity("Down") == "down" and
+           Validation.hotkeyIdentity("#01") == "#1" and
+           Validation.menuActivationIdentity("w") == "w" and
+           Validation.menuActivationIdentity("W") == "W" and
+           Validation.isCharacterActivationKey("!") and
+           not Validation.isCharacterActivationKey(" ") and
+           not Validation.isCharacterActivationKey(string.char(0x7f)) and
+           Validation.isMenuActivationKey("!") and
+           not Validation.isMenuActivationKey("#13") and
+           not Validation.isMenuActivationKey("pad1") and
+           not Validation.isHotkeyKey("!") and
+           Validation.isMenuNavigationKey("q") and
+           not Validation.isMenuNavigationKey("#13") and
+           not Validation.isMenuNavigationKey("pad1") and
+           Validation.isHotkeyKey("#13") and
            Validation.isHotkeyKey("space") and
            not Validation.isHotkeyKey("not-a-real-key"),
-       "shared hotkey validation must preserve key semantics")
+       "menu and modal key validation must preserve separate semantics")
+
+local ambiguousNavigationAccepted = pcall(function()
+    local invalidConfig = dofile(root .. "/Spoons/Gearbox/config.lua")
+    invalidConfig.navigation.cancelKey = "pad1"
+    Validation.validateConfig(invalidConfig)
+end)
+
+assert(not ambiguousNavigationAccepted,
+       "printable keypad navigation must not compete with character rows")
 
 local configColorAccepted, configColorError = pcall(function()
     Validation.validateColor({
@@ -578,8 +685,18 @@ end
 
 local leaderShape = rowShape(menus.leader)
 
-assert(leaderShape == "c,l,k,o,p,s,|,n,i,a,d,f,w,|,m,t,g,|,escape",
+assert(leaderShape == "C,L,K,O,P,s,|,n,i,a,d,f,w,|,m,t,g,|,escape",
        "leader ordering or divider placement changed: " .. leaderShape)
+
+for _, menu in pairs(menus) do
+    for _, row in ipairs(menu.rows) do
+        if row.action and row.action.type == "launchApp" then
+            assert(row.key:match("^[A-Z]$"),
+                   "bundled application shortcuts must be uppercase: " ..
+                       row.label)
+        end
+    end
+end
 
 local scratchpadRow
 
@@ -594,14 +711,96 @@ assert(scratchpadRow and scratchpadRow.key == "s" and scratchpadRow.requires ==
            nil,
        "declarative feature requirements must resolve before runtime assembly")
 
-assert(rowShape(menus.browsers) == "o,a,c,f,s,|,escape",
+assert(rowShape(menus.browsers) == "O,A,C,F,S,|,escape",
        "browser menu shape changed")
 
 assert(menus.browsers.rows[4].action.name == "Firefox",
        "Firefox must launch Firefox")
 
-assert(rowShape(menus.macos) == "h,e,|,a,i,x,|,s,|,escape",
+assert(rowShape(menus.macos) == "h,E,|,a,i,x,|,s,|,escape",
        "macOS Utilities menu shape changed")
+assert(rowShape(menus.applications) == "c,o,p,|,escape",
+       "nested Applications group ordering changed")
+assert(menus.leader.activationRowsByCharacter.C.label == "Calculator" and
+           menus.leader.activationRowsByCharacter.a.label == "Applications" and
+           menus.leader.activationRowsByCharacter.escape == nil,
+       "loader must precompute exact character rows without the footer")
+assert(menus.applications.activationRowsByCharacter.c.label == "Communications",
+       "nested group rows must enter the character lookup")
+
+local characterDefinitions = {}
+
+for _, definition in ipairs(supplementalMenus) do
+    table.insert(characterDefinitions, definition)
+end
+
+table.insert(characterDefinitions, {
+    id = "character-test",
+    title = "Character Test",
+    parent = "leader",
+    entry = {key = "W", label = "Uppercase Character"},
+    items = {
+        {
+            key = "1",
+            label = "Digit",
+            kind = "action",
+            action = {type = "reload"}
+        }, {
+            key = "!",
+            label = "Shifted Symbol",
+            kind = "action",
+            action = {type = "reload"}
+        }
+    }
+})
+
+local characterMenus = Loader.load(root .. "/Spoons/Gearbox", config, Actions,
+                                   characterDefinitions, discoveredTheme)
+
+assert(characterMenus.leader.activationRowsByCharacter.w and
+           characterMenus.leader.activationRowsByCharacter.W,
+       "lowercase and uppercase character rows must coexist")
+assert(characterMenus["character-test"].activationRowsByCharacter["1"] and
+           characterMenus["character-test"].activationRowsByCharacter["!"],
+       "digits and shifted symbols must coexist")
+
+local uppercaseNavigationConfig = dofile(root .. "/Spoons/Gearbox/config.lua")
+uppercaseNavigationConfig.navigation.cancelKey = "W"
+
+local uppercaseNavigationAccepted = pcall(function()
+    Loader.load(root .. "/Spoons/Gearbox", uppercaseNavigationConfig, Actions,
+                supplementalMenus, discoveredTheme)
+end)
+
+assert(not uppercaseNavigationAccepted,
+       "a modal-owned letter must reserve both Caps Lock cases")
+
+local printableFooterConfig = dofile(root .. "/Spoons/Gearbox/config.lua")
+printableFooterConfig.navigation.cancelKey = "q"
+
+local printableFooterMenus = Loader.load(root .. "/Spoons/Gearbox",
+                                         printableFooterConfig, Actions,
+                                         supplementalMenus, discoveredTheme)
+local printableFooter = printableFooterMenus.leader.rows[
+                            #printableFooterMenus.leader.rows]
+
+assert(printableFooter.kind == "footer" and printableFooter.key == "q" and
+           printableFooterMenus.leader.activationRowsByCharacter.q == nil,
+       "printable footer keys must remain exclusively modal-owned")
+
+local rawMenuKeyAccepted = pcall(function()
+    Loader.load(root .. "/Spoons/Gearbox", config, Actions, {
+        {
+            id = "raw-key-child",
+            title = "Raw Key Child",
+            parent = "leader",
+            entry = {key = "#13", label = "Raw Key Child"}
+        }
+    }, discoveredTheme)
+end)
+
+assert(not rawMenuKeyAccepted,
+       "raw menu keys must not overlap resulting-character ownership")
 
 assert(rowShape(menus.themes) == "s,|,a,l,g,|,c,r,d,h,m,n,t,|,escape",
        "Themes menu shape changed")
@@ -684,7 +883,7 @@ local duplicateChildAccepted = pcall(function()
             id = "duplicate-child-key",
             title = "Duplicate Child Key",
             parent = "leader",
-            entry = {key = "c", label = "Duplicate Child Key"},
+            entry = {key = "C", label = "Duplicate Child Key"},
             items = {}
         }
     }, discoveredTheme)
@@ -886,6 +1085,54 @@ local function startGearbox(values)
     return Gearbox.start()
 end
 
+local function sendCharacterKeyDown(character, options)
+    options = options or {}
+
+    local eventTap = options.eventTap or createdEventTaps[#createdEventTaps]
+
+    assert(eventTap and eventTap.enabled,
+           "character input requires an active Gearbox event tap")
+
+    local flags = {}
+
+    for modifier, enabled in pairs(options.flags or {}) do
+        flags[modifier] = enabled
+    end
+
+    local physicalKey = options.physicalKey or character:lower()
+    local keycode = options.keycode or keycodeMap[physicalKey]
+
+    assert(keycode, "missing mocked keycode for " .. tostring(physicalKey))
+
+    local event = {}
+
+    -- Native AppKit probe, 2026-08-27: clean characters were w, W, w,
+    -- W for none, Shift, Caps, and Caps+Shift. Hammerspoon 1.1.1 delegates
+    -- getCharacters(true) to that same API.
+    polledCapsLockEnabled = options.capsLock == true
+
+    function event:getCharacters() return character end
+    function event:getFlags() return flags end
+    function event:getKeyCode() return keycode end
+    function event:getProperty()
+        if type(options.autorepeat) == "number" then
+            return options.autorepeat
+        end
+
+        return options.autorepeat and 1 or 0
+    end
+    if not options.omitRawFlags then
+        function event:rawFlags()
+            return options.capsLock and
+                       hs.eventtap.event.rawFlagMasks.alphaShift or 0
+        end
+    end
+
+    local result = eventTap.callback(event)
+    polledCapsLockEnabled = false
+    return result
+end
+
 local staleWarningCanvas, staleWarningModal = startWarning()
 local overridesAccepted, overridesError = pcall(function()
     Gearbox.start({})
@@ -921,8 +1168,15 @@ assert(type(globalHotkeyPressed) == "function",
 assert(interfaceStyleCalls == 0,
        "system appearance must remain lazy until a menu opens")
 
+local runtimeEventTap = createdEventTaps[#createdEventTaps]
+
+assert(runtimeEventTap and not runtimeEventTap.enabled,
+       "character input must remain disabled while Gearbox is idle")
+
 globalHotkeyPressed()
 assert(runtime.activeMenu.id == "leader", "global hotkey must open leader")
+assert(runtimeEventTap.enabled,
+       "opening Gearbox must start character input")
 assert(runtime.timeoutTimer and runtime.timeoutTimer.duration == 5,
        "a positive timeout must arm the menu timer")
 assert(interfaceStyleCalls == 0,
@@ -966,8 +1220,9 @@ end
 
 local rootModal = runtime.menus.leader.modal
 
-assert(findBinding(rootModal, "d", config.hotkey.modifiers),
-       "item keys must accept the retained leader modifiers")
+assert(not findBinding(rootModal, "d", {}) and
+           not findBinding(rootModal, "d", config.hotkey.modifiers),
+       "character rows must not also own modal bindings")
 
 assert(not findBinding(rootModal, "escape", config.hotkey.modifiers),
        "Escape must not shadow the native modified shortcut")
@@ -983,6 +1238,121 @@ local downBinding = assert(findBinding(rootModal, "down", {}))
 assert(downBinding.pressed and downBinding.repeated,
        "arrow navigation must run on key press and key repeat")
 
+local dispatchedCharacters = {}
+local originalLowercaseW = runtime.menus.leader.activationRowsByCharacter.w
+local originalUppercaseW = runtime.menus.leader.activationRowsByCharacter.W
+
+local function recordingRow(character)
+    return {
+        action = {
+            type = "custom",
+            run = function()
+                table.insert(dispatchedCharacters, character)
+                return {}
+            end
+        }
+    }
+end
+
+runtime.menus.leader.activationRowsByCharacter.w = recordingRow("w")
+runtime.menus.leader.activationRowsByCharacter.W = recordingRow("W")
+
+assert(sendCharacterKeyDown("w") == true and
+           sendCharacterKeyDown("W", {
+            physicalKey = "w",
+            flags = {shift = true}
+        }) == true and sendCharacterKeyDown("w", {
+            physicalKey = "w",
+            capsLock = true
+        }) == true and sendCharacterKeyDown("W", {
+            physicalKey = "w",
+            capsLock = true,
+            flags = {shift = true}
+        }) == true and table.concat(dispatchedCharacters, ",") == "w,W,W,w",
+       "Shift and Caps Lock must select the exact resulting letter")
+
+assert(sendCharacterKeyDown("W", {
+    physicalKey = "w",
+    flags = {alt = true, cmd = true, shift = true}
+}) == true and dispatchedCharacters[#dispatchedCharacters] == "W",
+       "configured command modifiers must preserve character case")
+
+assert(sendCharacterKeyDown("w", {
+    physicalKey = "w",
+    capsLock = true,
+    omitRawFlags = true
+}) == true and dispatchedCharacters[#dispatchedCharacters] == "W",
+       "the documented Caps Lock poll fallback must preserve resulting case")
+
+assert(sendCharacterKeyDown("w", {
+    physicalKey = "w",
+    flags = {fn = true}
+}) == true and dispatchedCharacters[#dispatchedCharacters] == "w",
+       "Fn must not change character-command acceptance")
+
+local dispatchCountBeforeRepeat = #dispatchedCharacters
+
+assert(sendCharacterKeyDown("w", {autorepeat = 2}) == true and
+           #dispatchedCharacters == dispatchCountBeforeRepeat,
+       "every non-zero matched autorepeat must be consumed without redispatch")
+assert(sendCharacterKeyDown("q") == nil,
+       "an unmatched character must pass through")
+assert(sendCharacterKeyDown("w", {flags = {ctrl = true}}) == nil,
+       "an unsupported command chord must pass through")
+
+runtime.menus.leader.activationRowsByCharacter.w = originalLowercaseW
+runtime.menus.leader.activationRowsByCharacter.W = originalUppercaseW
+
+local symbolDispatches = 0
+local symbolRow = {
+    action = {
+        type = "custom",
+        run = function()
+            symbolDispatches = symbolDispatches + 1
+            return {}
+        end
+    }
+}
+
+runtime.menus.leader.activationRowsByCharacter["1"] = symbolRow
+runtime.menus.leader.activationRowsByCharacter["!"] = symbolRow
+
+assert(sendCharacterKeyDown("1", {physicalKey = "1"}) == true and
+           sendCharacterKeyDown("!", {
+            physicalKey = "1",
+            flags = {shift = true}
+        }) == true and sendCharacterKeyDown("1", {
+            physicalKey = "1",
+            capsLock = true
+        }) == true and symbolDispatches == 3,
+       "digits and shifted symbols must dispatch independently of Caps Lock")
+
+runtime.menus.leader.activationRowsByCharacter["1"] = nil
+runtime.menus.leader.activationRowsByCharacter["!"] = nil
+
+local function rowVisualByLabel(menu, label)
+    for index, row in ipairs(menu.rows) do
+        if row.label == label then return menu.rowVisuals[index] end
+    end
+end
+
+assert(rowVisualByLabel(runtime.menus.leader, "Applications").keyBackgroundIndex,
+       "root group keys must use the configured accent background")
+
+assert(sendCharacterKeyDown("a") == true and
+           runtime.activeMenu.id == "applications",
+       "a must open the nested Applications menu")
+assert(runtimeEventTap.enabled,
+       "menu transitions must retain the same character input tap")
+assert(rowVisualByLabel(runtime.menus.applications, "Communications").keyBackgroundIndex,
+       "nested group keys must use the configured accent background")
+runtime.menus.applications.modal.bindings.escape()
+
+assert(sendCharacterKeyDown("d", {flags = {alt = true, cmd = true}}) == true and
+           runtime.activeMenu.id == "developer",
+       "character rows must accept the configured command chord")
+runtime.menus.developer.modal.bindings.escape()
+
 local menuEntryTimer = runtime.timeoutTimer
 
 runtime.menus.leader.modal.bindings.down()
@@ -995,28 +1365,59 @@ assert(menuEntryTimer.stopped and runtime.timeoutTimer ~= menuEntryTimer and
 runtime.timeoutTimer.callback()
 assert(runtime.activeMenu == nil and runtime.timeoutTimer == nil,
        "an elapsed positive timeout must exit the active modal")
+assert(not runtimeEventTap.enabled,
+       "an elapsed positive timeout must stop character input")
 assert(#shownAlerts == 0,
        "an elapsed positive timeout must not show a dismissal message")
 
+secureInputEnabled = true
 globalHotkeyPressed()
+assert(runtime.activeMenu == nil and not runtimeEventTap.enabled and
+           shownAlerts[#shownAlerts].message:match("Secure Input"),
+       "Secure Input must prevent a partial menu session")
+secureInputEnabled = false
+
+failNextEventTapStart = true
+globalHotkeyPressed()
+assert(runtime.activeMenu == nil and not runtimeEventTap.enabled and
+           shownAlerts[#shownAlerts].message:match("could not start"),
+       "a disabled event tap must prevent a partial menu session")
+
+local eventTapCountBeforeReopen = #createdEventTaps
+
+globalHotkeyPressed()
+assert(#createdEventTaps == eventTapCountBeforeReopen and runtimeEventTap.enabled,
+       "repeated sessions must reuse one Runtime-owned event tap")
 runtime.menus.leader.modal.bindings.down()
 runtime.menus.leader.modal.bindings["return"]()
 assert(launchedApplication == "Calculator",
        "Return must activate selected entry")
 assert(runtime.activeMenu == nil, "application launch must close Gearbox")
+assert(not runtimeEventTap.enabled,
+       "a close-result action must stop character input")
+
+globalHotkeyPressed()
+assert(sendCharacterKeyDown("C", {
+    physicalKey = "c",
+    flags = {shift = true}
+}) == true and launchedApplication == "Calculator" and
+           runtime.activeMenu == nil,
+       "uppercase application characters must launch and close Gearbox")
 
 globalHotkeyPressed()
 
 failNextWebviewSetup = true
 
 local failedScratchpadAccepted = pcall(function()
-    runtime.menus.leader.modal.bindings.s()
+    sendCharacterKeyDown("s")
 end)
 
 assert(not failedScratchpadAccepted,
        "a first-use scratchpad construction failure must surface")
 assert(runtime.activeMenu.id == "leader",
        "a first-use scratchpad failure must leave the menu active")
+assert(runtimeEventTap.enabled,
+       "a failed Scratchpad handoff must retain character input")
 assert(#createdWebviews == 1 and createdWebviews[1].deleted and
            runtime.scratchpad.webview == nil,
        "a first-use scratchpad failure must delete its partial webview")
@@ -1025,12 +1426,14 @@ assert(#createdWebviewControllers == 1 and
            runtime.scratchpad.controller == nil,
        "a first-use scratchpad failure must release its controller")
 
-runtime.menus.leader.modal.bindings.s()
+sendCharacterKeyDown("s")
 
 local scratchpadWebview = createdWebviews[2]
 local scratchpadController = createdWebviewControllers[2]
 
 assert(runtime.activeMenu == nil, "scratchpad must replace the menu HUD")
+assert(not runtimeEventTap.enabled,
+       "a successful Scratchpad handoff must stop character input")
 assert(#createdWebviews == 2 and scratchpadWebview.visible,
        "scratchpad must create one usable webview on a successful retry")
 assert(scratchpadController.name == "gearboxScratchpad",
@@ -1087,7 +1490,7 @@ assert(not scratchpadWebview.visible,
        "global Gearbox hotkey must hide the scratchpad")
 
 globalHotkeyPressed()
-runtime.menus.leader.modal.bindings.s()
+sendCharacterKeyDown("s")
 assert(#createdWebviews == 2 and scratchpadWebview.visible,
        "scratchpad must reuse its existing webview")
 
@@ -1100,12 +1503,12 @@ assert(
     "Gearbox hotkey must save and hide the reopened scratchpad")
 
 globalHotkeyPressed()
-runtime.menus.leader.modal.bindings.m()
+sendCharacterKeyDown("m")
 assert(runtime.activeMenu.id == "macos", "m must open macOS Utilities")
 
 local styleCallsBeforeHUDRefresh = interfaceStyleCalls
 
-runtime.menus.macos.modal.bindings.a()
+sendCharacterKeyDown("a")
 assert(Actions.currentCaffeinateMode() == "display",
        "display mode action must remain active after HUD refresh")
 assert(runtime.activeMenu.id == "macos",
@@ -1114,7 +1517,7 @@ assert(interfaceStyleCalls == styleCallsBeforeHUDRefresh,
        "HUD-only refreshes must not resolve system appearance")
 
 runtime.menus.macos.modal.bindings.escape()
-runtime.menus.leader.modal.bindings.t()
+sendCharacterKeyDown("t")
 assert(runtime.activeMenu.id == "themes", "t must open Themes")
 
 local function checkedThemeKeys()
@@ -1133,7 +1536,7 @@ assert(checkedThemeKeys() == "d",
 
 local styleCallsBeforeThemePreview = interfaceStyleCalls
 
-runtime.menus.themes.modal.bindings.c()
+sendCharacterKeyDown("c")
 
 assert(runtime.theme.selection == "catppuccin-mocha",
        "theme action must update the selected theme")
@@ -1148,7 +1551,7 @@ assert(settings["Gearbox.theme.selection"].selection == "catppuccin-mocha",
        "theme selections must persist")
 
 interfaceStyle = nil
-runtime.menus.themes.modal.bindings.s()
+sendCharacterKeyDown("s")
 
 assert(runtime.theme.selection == "system", "system selection must be restored")
 assert(runtime.theme.activeThemeId == "gearbox-light",
@@ -1161,20 +1564,20 @@ runtime.menus.themes.modal.bindings.escape()
 assert(runtime.theme.activeThemeId == "gearbox-dark",
        "modal entry must re-evaluate the system appearance")
 
-runtime.menus.leader.modal.bindings.t()
-runtime.menus.themes.modal.bindings.r()
+sendCharacterKeyDown("t")
+sendCharacterKeyDown("r")
 
 assert(runtime.theme.selection == "dracula",
        "manual selection must switch away from system mode")
 
 runtime.menus.themes.modal.bindings.escape()
-runtime.menus.leader.modal.bindings.g()
+sendCharacterKeyDown("g")
 
 assert(runtime.activeMenu.id == "configuration",
        "g must open the generated Configuration menu")
 
-runtime.menus.configuration.modal.bindings.m()
-runtime.menus["menu-position"].modal.bindings.b()
+sendCharacterKeyDown("m")
+sendCharacterKeyDown("b")
 
 assert(runtime.config.menu.position == "bottom" and
            settings["Gearbox.preferences.local.v1"].menu.position == "bottom",
@@ -1188,30 +1591,30 @@ assert(positionChecks[2] and not positionChecks[1],
        "only the effective menu position must be checked")
 
 runtime.menus["menu-position"].modal.bindings.escape()
-runtime.menus.configuration.modal.bindings.s()
+sendCharacterKeyDown("s")
 
-runtime.menus["scratchpad-settings"].modal.bindings.p()
+sendCharacterKeyDown("p")
 assert(runtime.config.scratchpad.persistContent == false,
        "Scratchpad persistence must toggle off")
-runtime.menus["scratchpad-settings"].modal.bindings.p()
+sendCharacterKeyDown("p")
 assert(runtime.config.scratchpad.persistContent == true,
        "Scratchpad persistence must toggle back on")
 
 local sharedDirectory = homeDirectory .. "/Shared Gearbox"
 fileModes[sharedDirectory] = "directory"
 table.insert(chosenPaths, {sharedDirectory})
-runtime.menus["scratchpad-settings"].modal.bindings.f()
+sendCharacterKeyDown("f")
 
 assert(runtime.config.scratchpad.storagePath ==
            "~/Shared Gearbox/scratchpad.txt",
        "folder selection must store a portable external path")
 
 table.insert(promptResponses, {button = "Save", text = "notes.txt"})
-runtime.menus["scratchpad-settings"].modal.bindings.n()
+sendCharacterKeyDown("n")
 table.insert(promptResponses, {button = "Save", text = "900"})
-runtime.menus["scratchpad-settings"].modal.bindings.w()
+sendCharacterKeyDown("w")
 table.insert(promptResponses, {button = "Save", text = "640"})
-runtime.menus["scratchpad-settings"].modal.bindings.e()
+sendCharacterKeyDown("e")
 
 assert(runtime.config.scratchpad.storagePath == "~/Shared Gearbox/notes.txt" and
            runtime.config.scratchpad.width == 900 and
@@ -1226,7 +1629,7 @@ assert(runtime.menus["scratchpad-settings"].rows[4].label ==
        "value-bearing Scratchpad rows must refresh their labels")
 
 runtime.menus["scratchpad-settings"].modal.bindings.escape()
-runtime.menus.configuration.modal.bindings.p()
+sendCharacterKeyDown("p")
 
 local savedProfile = assert(jsonFiles[preferencesPath])
 
@@ -1240,16 +1643,16 @@ assert(savedProfile.schemaVersion == 1 and
 assert(settings["Gearbox.preferences.local.v1"] == nil,
        "saving the profile must clear redundant local overrides")
 
-runtime.menus.configuration.modal.bindings.m()
-runtime.menus["menu-position"].modal.bindings.t()
+sendCharacterKeyDown("m")
+sendCharacterKeyDown("t")
 runtime.menus["menu-position"].modal.bindings.escape()
-runtime.menus.configuration.modal.bindings.x()
+sendCharacterKeyDown("x")
 
 assert(runtime.config.menu.position == "bottom",
        "resetting local overrides must restore the versioned profile")
 
 savedProfile.menu.position = "top"
-runtime.menus.configuration.modal.bindings.r()
+sendCharacterKeyDown("r")
 
 assert(runtime.config.menu.position == "top",
        "Reload Versioned Profile must apply external profile changes")
@@ -1280,7 +1683,7 @@ assert(io.open(storagePath .. ".gearbox.tmp", "rb") == nil,
 
 runtime.preferences:setStorage({backend = "file", path = storagePath})
 runtime.menus.configuration.modal.bindings.escape()
-runtime.menus.leader.modal.bindings.s()
+sendCharacterKeyDown("s")
 
 assert(runtime.scratchpad.content == "shared draft",
        "opening Scratchpad must load the selected external file")
@@ -1293,7 +1696,7 @@ assert(externalFile:write("remote update"))
 assert(externalFile:close())
 
 globalHotkeyPressed()
-runtime.menus.leader.modal.bindings.s()
+sendCharacterKeyDown("s")
 
 assert(runtime.scratchpad.content == "remote update",
        "reopening Scratchpad must load changes written by another host")
@@ -1319,7 +1722,7 @@ globalHotkeyPressed()
 runtime.preferences:setStorage({backend = "file", path = "/missing/notes.txt"})
 globalHotkeyPressed()
 local alertsBeforeReadFailure = #shownAlerts
-runtime.menus.leader.modal.bindings.s()
+sendCharacterKeyDown("s")
 
 assert(runtime.activeMenu.id == "leader" and
            #shownAlerts == alertsBeforeReadFailure + 1,
@@ -1358,6 +1761,8 @@ assert(
     "zero-timeout replacement must only allocate its configuration dialog")
 assert(validRuntime.started and validRuntime.activeMenu == nil,
        "zero-timeout replacement must preserve the runtime while closing its visible menu")
+assert(not validRuntime.characterInputTap.enabled,
+       "zero-timeout replacement must stop the preserved runtime's input tap")
 
 local mixedColorAccepted = pcall(function()
     startGearbox({
@@ -1450,6 +1855,7 @@ assert(validRuntime.activeMenu == nil,
 
 local fontCallsBeforePartialStart = defaultTextStyleCalls
 local partialStartModalIndex = #createdModals + 1
+local eventTapsBeforePartialStart = #createdEventTaps
 failNextModalBind = true
 
 local partialStartAccepted = pcall(function()
@@ -1457,6 +1863,9 @@ local partialStartAccepted = pcall(function()
 end)
 
 assert(not partialStartAccepted, "partial modal registration must fail startup")
+assert(#createdEventTaps == eventTapsBeforePartialStart + 1 and
+           not createdEventTaps[#createdEventTaps].enabled,
+       "partial startup must stop its candidate event tap")
 
 for index = partialStartModalIndex, #createdModals do
     assert(createdModals[index].deleted,
@@ -1471,6 +1880,7 @@ assert(validRuntime.activeMenu == nil,
 
 local fontCallsBeforeGlobalFailure = defaultTextStyleCalls
 local globalFailureModalIndex = #createdModals + 1
+local eventTapsBeforeGlobalFailure = #createdEventTaps
 failNextGlobalHotkey = true
 
 local unavailableHotkeyAccepted = pcall(function()
@@ -1482,6 +1892,9 @@ end)
 
 assert(not unavailableHotkeyAccepted,
        "unavailable global hotkeys must fail startup")
+assert(#createdEventTaps == eventTapsBeforeGlobalFailure + 1 and
+           not createdEventTaps[#createdEventTaps].enabled,
+       "global-hotkey failure must stop its candidate event tap")
 assert(validRuntime.started,
        "failed hotkey registration must not stop the active runtime")
 assert(validRuntime.activeMenu == nil,
@@ -1590,7 +2003,7 @@ local bottomMenuMargin = 1080 - bottomMenuFrame.y - bottomMenuFrame.h
 assert(bottomMenuMargin == (1080 - bottomMenuFrame.h) * 0.25,
        "bottom HUD placement must mirror the top margin")
 
-bottomRuntime.menus.leader.modal.bindings.s()
+sendCharacterKeyDown("s")
 
 local bottomScratchpad = createdWebviews[#createdWebviews]
 local bottomScratchpadFrame = bottomScratchpad.currentFrame
@@ -1603,14 +2016,79 @@ assert(bottomScratchpadState.bodySize == 18 and
            bottomScratchpadState.footerSize == 17,
        "scratchpad font size must reach the webview state")
 
+local unhighlightedGroupRuntime = startGearbox({
+    menu = {timeout = 5, highlightGroups = false},
+    theme = {accentSource = "theme"}
+})
+
+globalHotkeyPressed()
+assert(rowVisualByLabel(unhighlightedGroupRuntime.menus.leader, "Applications").keyBackgroundIndex ==
+           nil, "disabled group highlighting must apply to the root menu")
+sendCharacterKeyDown("a")
+assert(rowVisualByLabel(unhighlightedGroupRuntime.menus.applications,
+                        "Communications").keyBackgroundIndex == nil,
+       "disabled group highlighting must apply to nested menus")
+globalHotkeyPressed()
+
+local letterToggleRuntime = startGearbox({
+    hotkey = {key = "g"},
+    menu = {timeout = 5},
+    theme = {accentSource = "theme"}
+})
+
+globalHotkeyPressed()
+assert(sendCharacterKeyDown("g", {
+    flags = {alt = true, cmd = true}
+}) == nil and letterToggleRuntime.activeMenu.id == "leader",
+       "the configured global chord must pass through without dispatching its row")
+
+local shiftedToggleDispatches = 0
+letterToggleRuntime.menus.leader.activationRowsByCharacter.G = {
+    action = {
+        type = "custom",
+        run = function()
+            shiftedToggleDispatches = shiftedToggleDispatches + 1
+            return {}
+        end
+    }
+}
+
+assert(sendCharacterKeyDown("G", {
+    physicalKey = "g",
+    flags = {alt = true, cmd = true, shift = true}
+}) == nil and shiftedToggleDispatches == 0 and
+           letterToggleRuntime.activeMenu.id == "leader",
+       "a same-key chord with extra Shift must remain reserved for the toggle")
+
+assert(sendCharacterKeyDown("g", {
+    flags = {alt = true, cmd = true, fn = true}
+}) == nil and letterToggleRuntime.activeMenu.id == "leader",
+       "a same-key chord with Fn must remain reserved for the toggle")
+
+letterToggleRuntime.menus.leader.activationRowsByCharacter.G = nil
+globalHotkeyPressed()
+
+local shiftHotkeyRuntime = startGearbox({
+    hotkey = {modifiers = {"cmd", "shift"}},
+    menu = {timeout = 5},
+    theme = {accentSource = "theme"}
+})
+
+globalHotkeyPressed()
+assert(sendCharacterKeyDown("w", {flags = {cmd = true}}) == true and
+           shiftHotkeyRuntime.activeMenu.id == "browsers",
+       "Shift in the global chord must remain character state inside menus")
+shiftHotkeyRuntime.menus.browsers.modal.bindings.escape()
+globalHotkeyPressed()
+
 local noScratchpadRuntime = startGearbox({
     menu = {timeout = 5},
     scratchpad = {enable = false},
     theme = {accentSource = "theme"}
 })
 
-assert(noScratchpadRuntime.menus.leader.modal.bindings.s == nil,
-       "disabled scratchpad must not register a root-menu key")
+assert(noScratchpadRuntime.menus.leader.activationRowsByCharacter.s == nil,
+       "disabled scratchpad must not register a root-menu character")
 
 Gearbox.stop()
 

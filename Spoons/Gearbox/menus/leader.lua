@@ -3,31 +3,30 @@ return {
     id = "leader",
     title = "Gearbox",
     emoji = "⚙️",
-    highlightGroups = true,
 
     items = {
         {
-            key = "c",
+            key = "C",
             label = "Calculator",
             kind = "application",
             action = {type = "launchApp", name = "Calculator"}
         }, {
-            key = "l",
+            key = "L",
             label = "ForkLift",
             kind = "application",
             action = {type = "launchApp", name = "ForkLift"}
         }, {
-            key = "k",
+            key = "K",
             label = "KeePassXC",
             kind = "application",
             action = {type = "launchApp", name = "KeePassXC"}
         }, {
-            key = "o",
+            key = "O",
             label = "Obsidian",
             kind = "application",
             action = {type = "launchApp", name = "Obsidian"}
         }, {
-            key = "p",
+            key = "P",
             label = "Passwords",
             kind = "application",
             action = {type = "launchApp", name = "Passwords"}

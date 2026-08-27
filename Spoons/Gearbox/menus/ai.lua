@@ -9,12 +9,12 @@ return {
 
     items = {
         {
-            key = "c",
+            key = "C",
             label = "ChatGPT",
             kind = "application",
             action = {type = "launchApp", name = "ChatGPT"}
         }, {
-            key = "g",
+            key = "G",
             label = "Gemini",
             kind = "application",
             action = {type = "launchApp", name = "Gemini"}

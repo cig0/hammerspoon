@@ -8,7 +8,7 @@ order.
 menus/*.lua
   → loader.lua discovery and graph validation
   → ordered rows, dividers, and Back/Exit footer
-  → runtime.lua modal bindings
+  → runtime.lua character dispatch and named-key modal bindings
 ```
 
 Files beginning with `.` or `_` are ignored. Every other `.lua` file enters the
@@ -30,7 +30,7 @@ return {
 
   items = {
     {
-      key = "s",
+      key = "S",
       label = "Safari",
       kind = "application",
       action = {
@@ -58,6 +58,28 @@ The loader rejects duplicate IDs and keys, missing parents, parent cycles,
 invalid Hammerspoon keys, reserved navigation keys, unsupported actions, and
 missing action targets before runtime bindings are created.
 
+## Activation-key contract
+
+An item or child-menu entry may use one exact printable ASCII character other
+than space. Letter case is significant: `w` and `W` are separate shortcuts, as
+are a digit and its shifted symbol such as `1` and `!`. Runtime dispatch uses
+the character produced by Shift and Caps Lock, not an inferred physical chord.
+See the main README's
+[character input provenance](../README.md#character-input-provenance) for the
+native event contract.
+
+Bundled definitions use lowercase characters for menu navigation and uppercase
+characters for application launches. Keep that convention explicit in menu
+data; the loader does not guess action intent from case.
+
+Named Hammerspoon keys such as `escape`, `return`, `up`, and `down` remain
+modal-owned physical controls. The generated Back/Exit footer and configured
+navigation controls follow that path. A modal-owned letter reserves both cases
+because Caps Lock can produce either one without changing the modal chord.
+Raw keycodes and printable keypad names are not valid menu-row or navigation
+keys because they can alias a resulting-character row. Use the resulting
+character itself for those entries.
+
 ## Current graph
 
 | Definition | Parent | Parent key | Concern |
@@ -68,7 +90,7 @@ missing action targets before runtime bindings are created.
 | `applications.lua` | `leader` | `a` | Parent for application suites |
 | `developer.lua` | `leader` | `d` | Developer applications |
 | `finder.lua` | `leader` | `f` | Finder destinations |
-| `browsers.lua` | `leader` | `w` | Web browsers |
+| `web-browsers.lua` | `leader` | `w` | Web browsers |
 | `macos.lua` | `leader` | `m` | Hammerspoon, caffeinate, and system controls |
 | `comms.lua` | `applications` | `c` | Communications |
 | `omni.lua` | `applications` | `o` | Omni applications |

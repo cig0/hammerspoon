@@ -18,7 +18,10 @@ local currentConfigurationDialog
 
 --- Show the intentionally disabled timeout without failing Hammerspoon setup.
 local function showDisabledTimeoutDialog()
-    if currentRuntime and currentRuntime.activeMenu then currentRuntime.activeMenu.modal:exit() end
+    if currentRuntime and currentRuntime.activeMenu then
+        currentRuntime:endMenuSession()
+    end
+
     local dialog
     dialog = Dependencies.retroUI().Dialog.show({
         theme = "borland",
