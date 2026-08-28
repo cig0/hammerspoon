@@ -1,6 +1,6 @@
 --- Menu-session input runtime.
 --
--- Owns the global hotkey, session character capture, named modal controls,
+-- Owns the global hotkey, session keyboard observation, named modal controls,
 -- navigation, timeouts, and action dispatch. Input: assembled menus from
 -- `loader.lua`. Output: menu-session lifecycle and HUD updates.
 local Runtime = {}
@@ -135,7 +135,7 @@ end
 ---@field activeMenu table|nil
 ---@field timeoutTimer any
 ---@field globalHotkey any
----@field characterInputTap any
+---@field sessionInputTap any
 ---@field requiredHotkeyModifiers table
 ---@field globalHotkeyKeyCode integer|nil
 ---@field started boolean
@@ -166,7 +166,7 @@ function Runtime.new(config, menus, rootId, actions, theme, preferences, hud,
     self.activeMenu = nil
     self.timeoutTimer = nil
     self.globalHotkey = nil
-    self.characterInputTap = nil
+    self.sessionInputTap = nil
     self.requiredHotkeyModifiers = nil
     self.globalHotkeyKeyCode = nil
     self.started = false
@@ -262,7 +262,7 @@ function Runtime:switchMenu(currentMenu, targetId)
     target.modal:enter()
 end
 
---- Start character capture and enter the root menu.
+--- Start session input observation and enter the root menu.
 ---@return boolean
 function Runtime:beginMenuSession()
     if hs.eventtap.isSecureInputEnabled() then
@@ -270,11 +270,11 @@ function Runtime:beginMenuSession()
         return false
     end
 
-    self.characterInputTap:start()
+    self.sessionInputTap:start()
 
-    if not self.characterInputTap:isEnabled() then
-        self.characterInputTap:stop()
-        hs.alert.show("Gearbox could not start character input")
+    if not self.sessionInputTap:isEnabled() then
+        self.sessionInputTap:stop()
+        hs.alert.show("Gearbox could not start session input observation")
         return false
     end
 
@@ -282,11 +282,32 @@ function Runtime:beginMenuSession()
     return true
 end
 
---- End the active Gearbox menu session and stop character capture.
+--- End the active Gearbox menu session and stop input observation.
 function Runtime:endMenuSession()
-    if self.characterInputTap then self.characterInputTap:stop() end
+    if self.sessionInputTap then self.sessionInputTap:stop() end
 
     if self.activeMenu then self.activeMenu.modal:exit() end
+end
+
+--- Dispatch one session input event without consuming modifier changes.
+---@param event any
+---@return boolean|nil
+function Runtime:handleSessionInput(event)
+    -- Hammerspoon reports modifier and status-key transitions as `flagsChanged`.
+    if event:getType() == hs.eventtap.event.types.flagsChanged then
+        if event:getKeyCode() == hs.keycodes.map.capslock then
+            local rootMenu = self.menus[self.rootId]
+
+            if self.activeMenu == rootMenu then
+                self.hud:refresh(rootMenu, self:checkedRows(rootMenu))
+            end
+        end
+
+        -- Observed modifier events must continue to macOS unchanged.
+        return nil
+    end
+
+    return self:handleCharacterKeyDown(event)
 end
 
 --- Handle one key-down event while a Gearbox menu session is active.
@@ -451,9 +472,9 @@ end
 
 --- Delete the global hotkey and all modal bindings.
 function Runtime:deleteBindings()
-    if self.characterInputTap then
-        self.characterInputTap:stop()
-        self.characterInputTap = nil
+    if self.sessionInputTap then
+        self.sessionInputTap:stop()
+        self.sessionInputTap = nil
     end
 
     if self.globalHotkey then
@@ -476,14 +497,15 @@ function Runtime:start()
             assert(resolveHotkeyKeyCode(self.config.hotkey.key),
                    "Gearbox: cannot resolve the global hotkey keycode")
 
-        self.characterInputTap = hs.eventtap.new({
-            hs.eventtap.event.types.keyDown
+        self.sessionInputTap = hs.eventtap.new({
+            hs.eventtap.event.types.keyDown,
+            hs.eventtap.event.types.flagsChanged
         }, function(event)
-            return self:handleCharacterKeyDown(event)
+            return self:handleSessionInput(event)
         end)
 
-        if not self.characterInputTap then
-            error("Gearbox: failed to create the character input tap", 0)
+        if not self.sessionInputTap then
+            error("Gearbox: failed to create the session input tap", 0)
         end
 
         for _, menu in pairs(self.menus) do self:registerMenu(menu) end

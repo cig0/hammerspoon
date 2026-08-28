@@ -76,6 +76,8 @@ local keycodesByName = {
     down = 125,
     escape = 53,
     ["return"] = 36,
+    capslock = 57,
+    shift = 56,
     space = 49,
     tab = 48,
     up = 126
@@ -217,8 +219,8 @@ local function newCanvas(frame)
     return canvas
 end
 
-local function newEventTap(callback)
-    local eventTap = {callback = callback, enabled = false}
+local function newEventTap(types, callback)
+    local eventTap = {types = types, callback = callback, enabled = false}
 
     function eventTap:start()
         if failNextEventTapStart then
@@ -237,6 +239,20 @@ local function newEventTap(callback)
     end
 
     function eventTap:isEnabled() return self.enabled end
+
+    function eventTap:sendModifierStateChange(key, capsLockIsOn)
+        assert(self.enabled,
+               "modifier observation requires an active Gearbox event tap")
+
+        capsLockRenderState.enabled = capsLockIsOn
+
+        local event = {}
+
+        function event:getKeyCode() return assert(keycodeMap[key]) end
+        function event:getType() return hs.eventtap.event.types.flagsChanged end
+
+        return self.callback(event)
+    end
 
     table.insert(createdEventTaps, eventTap)
     return eventTap
@@ -388,10 +404,10 @@ hs = {
         event = {
             properties = {keyboardEventAutorepeat = 8},
             rawFlagMasks = {alphaShift = 0x00010000},
-            types = {keyDown = 10}
+            types = {flagsChanged = 12, keyDown = 10}
         },
         isSecureInputEnabled = function() return secureInputEnabled end,
-        new = function(_, callback) return newEventTap(callback) end
+        new = function(types, callback) return newEventTap(types, callback) end
     },
 
     fs = {
@@ -1157,6 +1173,7 @@ local function sendCharacterKeyDown(character, options)
     function event:getCharacters() return character end
     function event:getFlags() return flags end
     function event:getKeyCode() return keycode end
+    function event:getType() return hs.eventtap.event.types.keyDown end
     function event:getProperty()
         if type(options.autorepeat) == "number" then
             return options.autorepeat
@@ -1211,16 +1228,20 @@ assert(type(globalHotkeyPressed) == "function",
 assert(interfaceStyleCalls == 0,
        "system appearance must remain lazy until a menu opens")
 
-local runtimeEventTap = createdEventTaps[#createdEventTaps]
+local runtimeSessionInputTap = createdEventTaps[#createdEventTaps]
 
-assert(runtimeEventTap and not runtimeEventTap.enabled,
-       "character input must remain disabled while Gearbox is idle")
+assert(runtimeSessionInputTap and not runtimeSessionInputTap.enabled and
+           runtimeSessionInputTap.types[1] ==
+           hs.eventtap.event.types.keyDown and
+           runtimeSessionInputTap.types[2] ==
+           hs.eventtap.event.types.flagsChanged,
+       "session input observation must remain disabled while Gearbox is idle")
 
 capsLockRenderState.enabled = true
 globalHotkeyPressed()
 assert(runtime.activeMenu.id == "leader", "global hotkey must open leader")
-assert(runtimeEventTap.enabled,
-       "opening Gearbox must start character input")
+assert(runtimeSessionInputTap.enabled,
+       "opening Gearbox must start session input observation")
 assert(runtime.timeoutTimer and runtime.timeoutTimer.duration == 5,
        "a positive timeout must arm the menu timer")
 assert(interfaceStyleCalls == 0,
@@ -1260,6 +1281,21 @@ assert(styledTextValue(assert(elementById(runtime.hud.canvas,
        "enabled Caps Lock must render an inverse-color root-header warning")
 assert(capsLockRenderState.reads == 1,
        "the root header must sample Caps Lock exactly when rendered")
+
+assert(runtimeSessionInputTap:sendModifierStateChange("shift", false) == nil and
+           capsLockRenderState.reads == 1 and
+           elementById(runtime.hud.canvas, "caps-lock-warning"),
+       "unrelated modifier changes must pass through without refreshing the HUD")
+
+assert(runtimeSessionInputTap:sendModifierStateChange("capslock", false) == nil and
+           capsLockRenderState.reads == 2 and
+           elementById(runtime.hud.canvas, "caps-lock-warning") == nil,
+       "disabling Caps Lock must remove the visible root warning immediately")
+
+assert(runtimeSessionInputTap:sendModifierStateChange("capslock", true) == nil and
+           capsLockRenderState.reads == 3 and
+           elementById(runtime.hud.canvas, "caps-lock-warning"),
+       "enabling Caps Lock must restore the visible root warning immediately")
 
 assert(defaultTextStyleCalls == 1,
        "system font defaults must be resolved once per theme")
@@ -1400,16 +1436,19 @@ assert(sendCharacterKeyDown("a") == true and
            runtime.activeMenu.id == "applications",
        "a must open the nested Applications menu")
 assert(elementById(runtime.hud.canvas, "caps-lock-warning") == nil and
-           capsLockRenderState.reads == 1,
+           capsLockRenderState.reads == 3,
        "child menus must not render or sample the root Caps Lock warning")
-assert(runtimeEventTap.enabled,
-       "menu transitions must retain the same character input tap")
+assert(runtimeSessionInputTap.enabled,
+       "menu transitions must retain the same session input tap")
 assert(rowVisualByLabel(runtime.menus.applications, "Communications").keyBackgroundIndex,
        "nested group keys must use the configured accent background")
-capsLockRenderState.enabled = false
+assert(runtimeSessionInputTap:sendModifierStateChange("capslock", false) == nil and
+           capsLockRenderState.reads == 3 and
+           runtime.activeMenu.id == "applications",
+       "Caps Lock changes must not redraw a submenu without the warning")
 runtime.menus.applications.modal.bindings.escape()
 assert(elementById(runtime.hud.canvas, "caps-lock-warning") == nil and
-           capsLockRenderState.reads == 2,
+           capsLockRenderState.reads == 4,
        "disabled Caps Lock must leave the root header unchanged")
 
 assert(sendCharacterKeyDown("d", {flags = {alt = true, cmd = true}}) == true and
@@ -1429,35 +1468,36 @@ assert(menuEntryTimer.stopped and runtime.timeoutTimer ~= menuEntryTimer and
 runtime.timeoutTimer.callback()
 assert(runtime.activeMenu == nil and runtime.timeoutTimer == nil,
        "an elapsed positive timeout must exit the active modal")
-assert(not runtimeEventTap.enabled,
-       "an elapsed positive timeout must stop character input")
+assert(not runtimeSessionInputTap.enabled,
+       "an elapsed positive timeout must stop session input observation")
 assert(#shownAlerts == 0,
        "an elapsed positive timeout must not show a dismissal message")
 
 secureInputEnabled = true
 globalHotkeyPressed()
-assert(runtime.activeMenu == nil and not runtimeEventTap.enabled and
+assert(runtime.activeMenu == nil and not runtimeSessionInputTap.enabled and
            shownAlerts[#shownAlerts].message:match("Secure Input"),
        "Secure Input must prevent a partial menu session")
 secureInputEnabled = false
 
 failNextEventTapStart = true
 globalHotkeyPressed()
-assert(runtime.activeMenu == nil and not runtimeEventTap.enabled and
+assert(runtime.activeMenu == nil and not runtimeSessionInputTap.enabled and
            shownAlerts[#shownAlerts].message:match("could not start"),
        "a disabled event tap must prevent a partial menu session")
 
 local eventTapCountBeforeReopen = #createdEventTaps
 
 globalHotkeyPressed()
-assert(#createdEventTaps == eventTapCountBeforeReopen and runtimeEventTap.enabled,
+assert(#createdEventTaps == eventTapCountBeforeReopen and
+           runtimeSessionInputTap.enabled,
        "repeated sessions must reuse one Runtime-owned event tap")
 runtime.menus.leader.modal.bindings.down()
 runtime.menus.leader.modal.bindings["return"]()
 assert(launchedApplication == "Calculator",
        "Return must activate selected entry")
 assert(runtime.activeMenu == nil, "application launch must close Gearbox")
-assert(not runtimeEventTap.enabled,
+assert(not runtimeSessionInputTap.enabled,
        "a close-result action must stop character input")
 
 globalHotkeyPressed()
@@ -1480,7 +1520,7 @@ assert(not failedScratchpadAccepted,
        "a first-use scratchpad construction failure must surface")
 assert(runtime.activeMenu.id == "leader",
        "a first-use scratchpad failure must leave the menu active")
-assert(runtimeEventTap.enabled,
+assert(runtimeSessionInputTap.enabled,
        "a failed Scratchpad handoff must retain character input")
 assert(#createdWebviews == 1 and createdWebviews[1].deleted and
            runtime.scratchpad.webview == nil,
@@ -1496,7 +1536,7 @@ local scratchpadWebview = createdWebviews[2]
 local scratchpadController = createdWebviewControllers[2]
 
 assert(runtime.activeMenu == nil, "scratchpad must replace the menu HUD")
-assert(not runtimeEventTap.enabled,
+assert(not runtimeSessionInputTap.enabled,
        "a successful Scratchpad handoff must stop character input")
 assert(#createdWebviews == 2 and scratchpadWebview.visible,
        "scratchpad must create one usable webview on a successful retry")
@@ -1840,7 +1880,7 @@ assert(
     "zero-timeout replacement must only allocate its configuration dialog")
 assert(validRuntime.started and validRuntime.activeMenu == nil,
        "zero-timeout replacement must preserve the runtime while closing its visible menu")
-assert(not validRuntime.characterInputTap.enabled,
+assert(not validRuntime.sessionInputTap.enabled,
        "zero-timeout replacement must stop the preserved runtime's input tap")
 
 local mixedColorAccepted = pcall(function()

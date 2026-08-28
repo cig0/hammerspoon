@@ -30,7 +30,7 @@ not a replacement for a live Hammerspoon hit-testing check.
 | Themes | All bundled IDs, grouped ordering, overrides, color models, system/manual selection |
 | Preferences | Config/profile/local precedence, generated configuration menus, prompts, save/reload/reset, validation |
 | Persistence | Theme restoration, Scratchpad settings/file backends, atomic replacement, cross-open reload, visible failures |
-| Runtime | Zero-timeout RetroUI dialog, hotkey replacement, partial-start rollback, session-scoped character capture, exact case and symbol dispatch, the documented native Caps Lock/Shift matrix, Secure Input refusal, repeat suppression, modal cleanup, and arrow-key activation |
+| Runtime | Zero-timeout RetroUI dialog, hotkey replacement, partial-start rollback, session-scoped character capture and live Caps Lock observation, exact case and symbol dispatch, Secure Input refusal, repeat suppression, modal cleanup, and arrow-key activation |
 | RetroUI | Frame styles and alignment, asymmetric padding, footer actions, box-glyph width, strict themes and mnemonics, targeted redraws, button focus/press state, keyboard and left-mouse activation, background dismissal, and cleanup races |
 | Packaging | Manifest identity, complete private bundle, private preference, canonical fallback, and broken/missing-bundle diagnostics |
 | HUD boundary | Root Caps Lock warning, passive trigger legend, checked rows, group key-cap backgrounds, immediate theme refresh, lazy appearance resolution |
