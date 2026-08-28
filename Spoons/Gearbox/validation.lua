@@ -243,6 +243,8 @@ function Validation.validateConfig(config)
     assert(config.menu.width >= 200, "Gearbox: menu.width must be at least 200")
     assertType(config.menu.showEmojis, "boolean", "menu.showEmojis")
     assertType(config.menu.highlightGroups, "boolean", "menu.highlightGroups")
+    assertType(config.menu.showAccentBorder, "boolean",
+               "menu.showAccentBorder")
 
     if config.font.family ~= nil then
         assertType(config.font.family, "string", "font.family")

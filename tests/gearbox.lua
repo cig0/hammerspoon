@@ -648,6 +648,12 @@ end)
 assert(not ambiguousNavigationAccepted,
        "printable keypad navigation must not compete with character rows")
 
+assert(not pcall(function()
+    local invalidConfig = dofile(root .. "/Spoons/Gearbox/config.lua")
+    invalidConfig.menu.showAccentBorder = "yes"
+    Validation.validateConfig(invalidConfig)
+end), "menu.showAccentBorder must remain an explicit Boolean")
+
 local configColorAccepted, configColorError = pcall(function()
     Validation.validateColor({
         red = 2,
@@ -860,8 +866,8 @@ assert(menus.configuration.title == "Gearbox Configuration" and
            menus.themes.parentId == "configuration",
        "Themes must belong to Gearbox Configuration")
 assert(menus.configuration.legend ==
-           "Trigger: ⌥⌘Space · Customizable via Spoon docs",
-       "configuration legend must derive the configured Gearbox trigger")
+           "See Spoon documentation to customize the menu shortcut",
+       "configuration legend must remain a concise memory aid")
 assert(rowShape(menus["menu-position"]) == "t,b,|,escape",
        "Menu Position menu shape changed")
 assert(rowShape(menus["scratchpad-settings"]) ==
@@ -1269,6 +1275,28 @@ assert(runtime.hud.canvas.elements[1].roundedRectRadii.xRadius ==
            runtime.theme.metrics.windowCornerRadius,
        "menu HUD and scratchpad must share the outer corner radius")
 
+assert(assert(elementById(runtime.hud.canvas,
+                          "menu-accent-border")).action == "stroke" and
+           elementById(runtime.hud.canvas,
+                       "menu-accent-border").strokeColor ==
+           runtime.theme.colors.accent and
+           elementById(runtime.hud.canvas,
+                       "menu-accent-border").strokeWidth == 2 and
+           elementById(runtime.hud.canvas,
+                       "menu-accent-border").frame.x == 1 and
+           elementById(runtime.hud.canvas,
+                       "menu-accent-border").frame.y == 1 and
+           elementById(runtime.hud.canvas,
+                       "menu-accent-border").frame.w ==
+           runtime.hud.canvas.currentFrame.w - 2 and
+           elementById(runtime.hud.canvas,
+                       "menu-accent-border").frame.h ==
+           runtime.hud.canvas.currentFrame.h - 2 and
+           elementById(runtime.hud.canvas,
+                       "menu-accent-border").roundedRectRadii.xRadius ==
+           runtime.theme.metrics.windowCornerRadius - 1,
+       "enabled accent borders must render completely inside every HUD canvas")
+
 assert(styledTextValue(assert(elementById(runtime.hud.canvas,
                                          "caps-lock-warning")).text) ==
            "CAPS LOCK" and
@@ -1442,6 +1470,8 @@ assert(runtimeSessionInputTap.enabled,
        "menu transitions must retain the same session input tap")
 assert(rowVisualByLabel(runtime.menus.applications, "Communications").keyBackgroundIndex,
        "nested group keys must use the configured accent background")
+assert(elementById(runtime.hud.canvas, "menu-accent-border"),
+       "enabled accent borders must apply at every menu depth")
 assert(runtimeSessionInputTap:sendModifierStateChange("capslock", false) == nil and
            capsLockRenderState.reads == 3 and
            runtime.activeMenu.id == "applications",
@@ -1631,8 +1661,15 @@ assert(styledTextValue(assert(elementById(runtime.hud.canvas,
            runtime.menus.configuration.legend and
            elementById(runtime.hud.canvas,
                        "menu-legend").text.segments[1].attributes.color ==
-           runtime.theme.colors.secondary,
-       "Gearbox Configuration must render its trigger legend subdued")
+           runtime.theme.colors.secondary and
+           elementById(runtime.hud.canvas,
+                       "menu-legend").text.segments[1].attributes.font.size ==
+           runtime.config.font.size - 2 and
+           runtime.menus.configuration.rowVisuals[1].baseY -
+           (elementById(runtime.hud.canvas, "menu-legend").frame.y +
+               elementById(runtime.hud.canvas, "menu-legend").frame.h) ==
+           runtime.hud.layout.legendBottomSpacing,
+       "Gearbox Configuration must separate its smaller, subdued memory aid")
 
 sendCharacterKeyDown("h")
 assert(reloadCalls == 2 and runtime.activeMenu.id == "configuration",
@@ -2136,17 +2173,27 @@ assert(bottomScratchpadState.bodySize == 18 and
        "scratchpad font size must reach the webview state")
 
 local unhighlightedGroupRuntime = startGearbox({
-    menu = {timeout = 5, highlightGroups = false},
+    menu = {
+        timeout = 5,
+        highlightGroups = false,
+        showAccentBorder = false
+    },
     theme = {accentSource = "theme"}
 })
 
 globalHotkeyPressed()
 assert(rowVisualByLabel(unhighlightedGroupRuntime.menus.leader, "Applications").keyBackgroundIndex ==
            nil, "disabled group highlighting must apply to the root menu")
+assert(elementById(unhighlightedGroupRuntime.hud.canvas,
+                   "menu-accent-border") == nil,
+       "disabled accent borders must leave the root HUD unframed")
 sendCharacterKeyDown("a")
 assert(rowVisualByLabel(unhighlightedGroupRuntime.menus.applications,
                         "Communications").keyBackgroundIndex == nil,
        "disabled group highlighting must apply to nested menus")
+assert(elementById(unhighlightedGroupRuntime.hud.canvas,
+                   "menu-accent-border") == nil,
+       "disabled accent borders must leave nested HUDs unframed")
 globalHotkeyPressed()
 
 local letterToggleRuntime = startGearbox({
@@ -2154,10 +2201,6 @@ local letterToggleRuntime = startGearbox({
     menu = {timeout = 5},
     theme = {accentSource = "theme"}
 })
-
-assert(letterToggleRuntime.menus.configuration.legend ==
-           "Trigger: ⌥⌘G · Customizable via Spoon docs",
-       "configuration legend must follow a customized trigger key")
 
 globalHotkeyPressed()
 assert(sendCharacterKeyDown("g", {
@@ -2196,10 +2239,6 @@ local shiftHotkeyRuntime = startGearbox({
     menu = {timeout = 5},
     theme = {accentSource = "theme"}
 })
-
-assert(shiftHotkeyRuntime.menus.configuration.legend ==
-           "Trigger: ⌘⇧Space · Customizable via Spoon docs",
-       "configuration legend must follow customized trigger modifiers")
 
 globalHotkeyPressed()
 assert(sendCharacterKeyDown("w", {flags = {cmd = true}}) == true and

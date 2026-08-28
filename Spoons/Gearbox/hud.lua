@@ -1,8 +1,9 @@
 --- Canvas-based HUD renderer.
 --
--- Builds the visual menu with a header, rows, dividers, selection highlight, and
--- optional loupe scaling animation. Input: menu definitions and theme colors
--- from `theme.lua`. Output: an `hs.canvas` shown by `runtime.lua`.
+-- Builds the visual menu with an optional accent border, header, passive legend,
+-- rows, dividers, selection highlight, and optional loupe scaling animation.
+-- Input: menu definitions and theme colors from `theme.lua`. Output: an
+-- `hs.canvas` shown by `runtime.lua`.
 local HUD = {}
 
 ---@class HUD
@@ -88,7 +89,10 @@ function HUD.new(config, theme)
         keyWidth = math.max(36, round(config.font.size * 2.6)),
         keyBackgroundHeight = math.max(23, round(config.font.size + 9)),
         dividerHeight = math.max(17, round(config.font.size + 3)),
-        legendHeight = math.max(24, round(config.font.size + 10)),
+        legendFontSize = math.max(1, config.font.size - 2),
+        legendTextHeight = math.max(18, round(config.font.size + 4)),
+        legendBottomSpacing = 8,
+        accentBorderWidth = 2,
         capsLockWarningWidth = math.max(104, round(config.font.size * 7.5)),
         bottomPadding = math.max(16, round(config.font.size + 2))
     }
@@ -133,7 +137,10 @@ end
 ---@param menu table
 ---@return number
 function HUD:menuContentTop(menu)
-    return self.layout.contentTop + (menu.legend and self.layout.legendHeight or 0)
+    if not menu.legend then return self.layout.contentTop end
+
+    return self.layout.contentTop + self.layout.legendTextHeight +
+               self.layout.legendBottomSpacing
 end
 
 --- Calculate the total canvas height for `menu`.
@@ -336,6 +343,32 @@ function HUD:show(menu, checkedRows)
         }
     })
 
+    if self.config.menu.showAccentBorder then
+        local borderInset = layout.accentBorderWidth / 2
+
+        -- `hs.canvas` stroke widths are measured in points. Insetting the path
+        -- by half its width keeps the complete outline inside the HUD canvas.
+        appendElement(elements, {
+            id = "menu-accent-border",
+            type = "rectangle",
+            action = "stroke",
+            frame = {
+                x = borderInset,
+                y = borderInset,
+                w = self.config.menu.width - (borderInset * 2),
+                h = height - (borderInset * 2)
+            },
+            strokeColor = colors.accent,
+            strokeWidth = layout.accentBorderWidth,
+            roundedRectRadii = {
+                xRadius = math.max(0, self.theme.metrics.windowCornerRadius -
+                                       borderInset),
+                yRadius = math.max(0, self.theme.metrics.windowCornerRadius -
+                                       borderInset)
+            }
+        })
+    end
+
     menu.selectionElementIndex = appendElement(elements, {
         type = "rectangle",
         action = "skip",
@@ -410,9 +443,11 @@ function HUD:show(menu, checkedRows)
                 x = layout.horizontalPadding,
                 y = layout.contentTop,
                 w = self.config.menu.width - (layout.horizontalPadding * 2),
-                h = layout.legendHeight
+                h = layout.legendTextHeight
             },
-            text = styledText(menu.legend, self.theme.fonts.body,
+            text = styledText(menu.legend,
+                              resizedFont(self.theme.fonts.body,
+                                          layout.legendFontSize),
                               colors.secondary, "left")
         })
     end

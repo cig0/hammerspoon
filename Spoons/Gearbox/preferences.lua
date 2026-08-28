@@ -518,10 +518,10 @@ function Preferences:refreshMenu(menu)
   end
 end
 
---- Return the configuration menus for the effective runtime configuration.
+--- Return the passive configuration menus.
 ---@return table
 function Preferences:menuDefinitions()
-  return ConfigurationMenu.definitions(self.config)
+  return ConfigurationMenu.definitions()
 end
 
 return Preferences
