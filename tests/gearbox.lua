@@ -685,7 +685,7 @@ end
 
 local leaderShape = rowShape(menus.leader)
 
-assert(leaderShape == "C,L,K,O,P,s,|,n,i,a,d,f,w,|,m,|,g,escape",
+assert(leaderShape == "C,L,K,O,P,s,|,n,i,a,d,f,w,|,m,g,|,escape",
        "leader ordering or divider placement changed: " .. leaderShape)
 
 for _, menu in pairs(menus) do
@@ -836,6 +836,9 @@ assert(themeLabels.l == "Gearbox Light", "light theme label changed")
 assert(themeLabels.d == "Gearbox Dark", "dark theme label changed")
 assert(menus.leader.rows[#menus.leader.rows].label:match("^Exit Gearbox"),
        "leader footer changed")
+
+assert(menus.macos.rows[#menus.macos.rows].label == "Back to main menu",
+       "root child footers must point back to the main menu")
 
 local themeCount = 0
 
