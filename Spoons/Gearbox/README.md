@@ -180,6 +180,7 @@ Gearbox
     │   └── Height
     └── Themes
         ├── Follow macOS
+        ├── Show Outer Frame
         ├── Light: Catppuccin, Gearbox, Gruvbox
         └── Dark: Catppuccin, Dracula, Gearbox, Gruvbox, Monokai, Nord, Tokyo Night
 ```
@@ -198,7 +199,8 @@ the caption from the first option.
 
 When `menu.showAccentBorder` is enabled, every menu draws a two-point outline
 inside its canvas using the active theme accent. The shared corner radius keeps
-the outline aligned with the menu background.
+the outline aligned with the menu background. The checked `Show Outer Frame`
+item in Themes toggles the outline for the current preference profile.
 
 The macOS power modes behave as one checked selection:
 
@@ -246,8 +248,8 @@ config.lua + preferences.json + local hs.settings + menus/*.lua + themes/*.lua
 [`config.lua`](./config.lua) is the runtime configuration contract. It contains
 no Hammerspoon calls, and `Gearbox.start()` accepts no configuration arguments.
 A standalone installation reads the file as shipped or edited locally. The
-versioned profile and local preferences then override only menu position and the
-documented Scratchpad fields.
+versioned profile and local preferences then override only menu position, outer
+frame visibility, and the documented Scratchpad fields.
 
 Nix delivery creates a derived copy of the Spoon and substitutes only
 `menu.timeout` from
@@ -404,6 +406,7 @@ effective configuration:
 
 | Menu | Values |
 | --- | --- |
+| Themes | outer frame visibility |
 | Menu Position | `top`, `bottom` |
 | Scratchpad | persistence, storage folder/filename, width, height |
 | Profile | save, reload, clear local overrides |
@@ -428,7 +431,8 @@ profile file.
 {
   "schemaVersion": 1,
   "menu": {
-    "position": "bottom"
+    "position": "bottom",
+    "showAccentBorder": true
   },
   "scratchpad": {
     "persistContent": true,
@@ -444,7 +448,9 @@ profile file.
 
 The profile is passive JSON, contains no executable Lua, and is read only at
 startup or after the explicit reload action. Gearbox creates its parent
-directory when saving but does not watch the file or commit changes.
+directory when saving but does not watch the file or commit changes. Existing
+version-one profiles without `menu.showAccentBorder` retain the value from
+`config.lua`; the field is written the next time the profile is saved.
 
 ## Theme persistence
 

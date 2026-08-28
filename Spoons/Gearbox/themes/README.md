@@ -2,7 +2,8 @@
 
 `themes/` contains passive visual definitions. Every visible `.lua` file is
 loaded, validated, and added to the generated Themes menu. Files beginning with
-`.` or `_` are ignored.
+`.` or `_` are ignored. The menu also provides the independent, checked
+`Show Outer Frame` preference immediately below `Follow macOS`.
 
 ```text
 themes/*.lua
