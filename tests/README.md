@@ -28,7 +28,7 @@ not a replacement for a live Hammerspoon hit-testing check.
 | --- | --- |
 | Menu graph | Discovery, ordering, dividers, parent links, reserved and duplicate keys |
 | Themes | All bundled IDs, grouped ordering, overrides, color models, system/manual selection |
-| Preferences | Config/profile/local precedence, generated configuration menus, prompts, save/reload/reset, validation |
+| Preferences | Config/profile/local precedence, generated configuration menus, outer-frame toggle, prompts, save/reload/reset, validation |
 | Persistence | Theme restoration, Scratchpad settings/file backends, atomic replacement, cross-open reload, visible failures |
 | Runtime | Zero-timeout RetroUI dialog, hotkey replacement, partial-start rollback, session-scoped character capture and live Caps Lock observation, exact case and symbol dispatch, Secure Input refusal, repeat suppression, modal cleanup, and arrow-key activation |
 | RetroUI | Frame styles and alignment, asymmetric padding, footer actions, box-glyph width, strict themes and mnemonics, targeted redraws, button focus/press state, keyboard and left-mouse activation, background dismissal, and cleanup races |

@@ -21,6 +21,7 @@ local configurableOperations = {
   setHeight = true,
   setPosition = true,
   setWidth = true,
+  toggleOuterFrame = true,
   togglePersistence = true,
   useHammerspoonStorage = true
 }
@@ -28,6 +29,7 @@ local configurableOperations = {
 local checkableOperations = {
   chooseStorageFolder = true,
   setPosition = true,
+  toggleOuterFrame = true,
   togglePersistence = true,
   useHammerspoonStorage = true
 }
@@ -118,7 +120,10 @@ local function validateRecord(record, name, complete)
   if record.menu ~= nil then
     if type(record.menu) ~= "table" then fail(name .. ".menu must be an object") end
 
-    rejectUnknown(record.menu, { position = true }, name .. ".menu")
+    rejectUnknown(record.menu, {
+      position = true,
+      showAccentBorder = true
+    }, name .. ".menu")
 
     if complete and record.menu.position == nil then
       fail(name .. ".menu.position is required")
@@ -126,6 +131,11 @@ local function validateRecord(record, name, complete)
 
     if record.menu.position ~= nil and not positions[record.menu.position] then
       fail(name .. ".menu.position must be top, center, or bottom")
+    end
+
+    if record.menu.showAccentBorder ~= nil and
+        type(record.menu.showAccentBorder) ~= "boolean" then
+      fail(name .. ".menu.showAccentBorder must be a boolean")
     end
   end
 
@@ -183,7 +193,10 @@ local function snapshot(config)
 
   return {
     schemaVersion = schemaVersion,
-    menu = { position = config.menu.position },
+    menu = {
+      position = config.menu.position,
+      showAccentBorder = config.menu.showAccentBorder
+    },
     scratchpad = {
       persistContent = config.scratchpad.persistContent,
       storage = storage,
@@ -196,6 +209,10 @@ end
 local function applyRecord(config, record)
   if record.menu and record.menu.position ~= nil then
     config.menu.position = record.menu.position
+  end
+
+  if record.menu and record.menu.showAccentBorder ~= nil then
+    config.menu.showAccentBorder = record.menu.showAccentBorder
   end
 
   local scratchpad = record.scratchpad
@@ -337,6 +354,12 @@ function Preferences:setMenuPosition(position)
   self:persistLocalOverrides()
 end
 
+function Preferences:setOuterFrameVisibility(isVisible)
+  self.localOverrides.menu = self.localOverrides.menu or {}
+  self.localOverrides.menu.showAccentBorder = isVisible
+  self:persistLocalOverrides()
+end
+
 function Preferences:setScratchpadValue(name, value)
   self.localOverrides.scratchpad = self.localOverrides.scratchpad or {}
   self.localOverrides.scratchpad[name] = value
@@ -451,6 +474,8 @@ function Preferences:execute(action)
 
     if operation == "setPosition" then
       self:setMenuPosition(action.value)
+    elseif operation == "toggleOuterFrame" then
+      self:setOuterFrameVisibility(not self.config.menu.showAccentBorder)
     elseif operation == "togglePersistence" then
       self:setScratchpadValue("persistContent",
         not self.config.scratchpad.persistContent)
@@ -486,6 +511,8 @@ end
 function Preferences:isSelected(action)
   if action.operation == "setPosition" then
     return self.config.menu.position == action.value
+  elseif action.operation == "toggleOuterFrame" then
+    return self.config.menu.showAccentBorder
   elseif action.operation == "togglePersistence" then
     return self.config.scratchpad.persistContent
   elseif action.operation == "useHammerspoonStorage" then

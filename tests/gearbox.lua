@@ -692,6 +692,38 @@ assert(not themeColorAccepted and
        "theme color validation diagnostics must remain compatible")
 
 local discoveredTheme = Theme.new(config, root .. "/Spoons/Gearbox")
+
+do
+    jsonFiles[preferencesPath] = {
+        schemaVersion = 1,
+        menu = {position = "bottom"},
+        scratchpad = {
+            persistContent = true,
+            storage = {backend = "settings"},
+            width = 720,
+            height = 480
+        }
+    }
+
+    local legacyProfilePreferences = Preferences.new(config)
+
+    assert(legacyProfilePreferences.config.menu.position == "bottom" and
+               legacyProfilePreferences.config.menu.showAccentBorder == true,
+           "version-one profiles without outer-frame state must retain the configured default")
+
+    jsonFiles[preferencesPath] = nil
+    fileModes[preferencesPath] = nil
+    settings["Gearbox.preferences.local.v1"] = {
+        schemaVersion = 1,
+        menu = {showAccentBorder = "yes"}
+    }
+
+    assert(not pcall(function() Preferences.new(config) end),
+           "outer-frame preference state must remain an explicit Boolean")
+
+    settings["Gearbox.preferences.local.v1"] = nil
+end
+
 local discoveredPreferences = Preferences.new(config)
 local supplementalMenus = {discoveredTheme:menuDefinition()}
 
@@ -858,7 +890,7 @@ assert(not pcall(function()
     }, discoveredTheme)
 end), "passive menu legends must be non-empty strings")
 
-assert(rowShape(menus.themes) == "s,|,a,l,g,|,c,r,d,h,m,n,t,|,escape",
+assert(rowShape(menus.themes) == "s,o,|,a,l,g,|,c,r,d,h,m,n,t,|,escape",
        "Themes menu shape changed")
 assert(rowShape(menus.configuration) == "h,|,p,r,x,|,m,s,t,|,escape",
        "Gearbox Configuration menu shape changed")
@@ -1678,7 +1710,7 @@ assert(reloadCalls == 2 and runtime.activeMenu.id == "configuration",
 sendCharacterKeyDown("t")
 assert(runtime.activeMenu.id == "themes", "t must open Themes")
 
-local function checkedThemeKeys()
+local function checkedThemeMenuKeys()
     local checked = runtime:checkedRows(runtime.menus.themes)
     local keys = {}
 
@@ -1689,8 +1721,27 @@ local function checkedThemeKeys()
     return table.concat(keys, ",")
 end
 
-assert(checkedThemeKeys() == "d",
-       "migrated theme must be the only checked selector")
+assert(checkedThemeMenuKeys() == "o,d",
+       "Themes must check the outer frame and migrated theme")
+
+sendCharacterKeyDown("o")
+
+assert(runtime.config.menu.showAccentBorder == false and
+           settings["Gearbox.preferences.local.v1"].menu.showAccentBorder ==
+           false,
+       "outer frame changes must apply immediately and persist locally")
+assert(elementById(runtime.hud.canvas, "menu-accent-border") == nil,
+       "disabling the outer frame must redraw the open Themes menu")
+assert(checkedThemeMenuKeys() == "d",
+       "a disabled outer frame must remove its left-side check")
+
+sendCharacterKeyDown("o")
+
+assert(runtime.config.menu.showAccentBorder == true and
+           elementById(runtime.hud.canvas, "menu-accent-border"),
+       "enabling the outer frame must redraw the open Themes menu")
+assert(checkedThemeMenuKeys() == "o,d",
+       "an enabled outer frame must restore its left-side check")
 
 local styleCallsBeforeThemePreview = interfaceStyleCalls
 
@@ -1704,7 +1755,8 @@ assert(runtime.theme.colors.accent.red == 0.796078,
        "theme accent source must use the selected preset")
 assert(interfaceStyleCalls == styleCallsBeforeThemePreview,
        "manual theme previews must not resolve system appearance")
-assert(checkedThemeKeys() == "c", "only the selected theme must be checked")
+assert(checkedThemeMenuKeys() == "o,c",
+       "the outer frame and selected theme must remain checked")
 assert(settings["Gearbox.theme.selection"].selection == "catppuccin-mocha",
        "theme selections must persist")
 
@@ -1714,7 +1766,8 @@ sendCharacterKeyDown("s")
 assert(runtime.theme.selection == "system", "system selection must be restored")
 assert(runtime.theme.activeThemeId == "gearbox-light",
        "system selection must resolve the light appearance")
-assert(checkedThemeKeys() == "s", "system must regain the exclusive check")
+assert(checkedThemeMenuKeys() == "s,o",
+       "system and the outer frame must retain their independent checks")
 
 interfaceStyle = "Dark"
 runtime.menus.themes.modal.bindings.escape()
@@ -1791,6 +1844,7 @@ local savedProfile = assert(jsonFiles[preferencesPath])
 
 assert(savedProfile.schemaVersion == 1 and
            savedProfile.menu.position == "bottom" and
+           savedProfile.menu.showAccentBorder == true and
            savedProfile.scratchpad.storage.backend == "file" and
            savedProfile.scratchpad.storage.path ==
            "~/Shared Gearbox/notes.txt" and savedProfile.scratchpad.width == 900 and

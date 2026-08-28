@@ -509,6 +509,11 @@ function Theme:menuDefinition()
             label = "Follow macOS",
             kind = "action",
             action = {type = "setTheme", theme = "system"}
+        }, {
+            key = "o",
+            label = "Show Outer Frame",
+            kind = "action",
+            action = {type = "configure", operation = "toggleOuterFrame"}
         }, {divider = true}
     }
 
