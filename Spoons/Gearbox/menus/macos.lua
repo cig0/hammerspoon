@@ -1,41 +1,41 @@
 --- macOS utilities submenu: System Settings, caffeinate modes, and Sleep.
 return {
-    id = "macos",
-    title = "macOS Utilities",
-    emoji = "🍎",
-    parent = "leader",
+  id = "macos",
+  title = "macOS Utilities",
+  emoji = "🍎",
+  parent = "leader",
 
-    entry = {
-        key = "m",
-        label = "macOS Utilities",
-        section = "utilities",
-        sectionOrder = 200,
-        order = 10
-    },
+  entry = {
+    key = "m",
+    label = "macOS Utilities",
+    section = "utilities",
+    sectionOrder = 200,
+    order = 10
+  },
 
-    items = {
-        {
-            key = "E",
-            label = "System Settings",
-            kind = "application",
-            action = {type = "launchApp", name = "System Settings"}
-        }, {divider = true}, {
-            key = "a",
-            label = "Keep Display Awake",
-            kind = "action",
-            action = {type = "setCaffeinateMode", mode = "display"}
-        }, {
-            key = "i",
-            label = "Prevent Idle Sleep",
-            kind = "action",
-            action = {type = "setCaffeinateMode", mode = "idle"}
-        }, {
-            key = "x",
-            label = "Allow Normal Sleep",
-            kind = "action",
-            action = {type = "setCaffeinateMode", mode = "normal"}
-        }, {divider = true},
+  items = {
+    {
+      key = "E",
+      label = "System Settings",
+      kind = "application",
+      action = { type = "launchApp", name = "System Settings" }
+    }, { divider = true }, {
+    key = "a",
+    label = "Keep Display Awake",
+    kind = "action",
+    action = { type = "setCaffeinateMode", mode = "display" }
+  }, {
+    key = "i",
+    label = "Prevent Idle Sleep",
+    kind = "action",
+    action = { type = "setCaffeinateMode", mode = "idle" }
+  }, {
+    key = "x",
+    label = "Allow Normal Sleep",
+    kind = "action",
+    action = { type = "setCaffeinateMode", mode = "normal" }
+  }, { divider = true },
 
-        {key = "s", label = "Sleep", kind = "action", action = {type = "sleep"}}
-    }
+    { key = "s",     label = "Sleep", kind = "action", action = { type = "sleep" } }
+  }
 }
