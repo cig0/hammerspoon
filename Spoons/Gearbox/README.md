@@ -86,10 +86,11 @@ characters for applications. That is an explicit data convention, not a
 runtime inference: a custom menu may assign any supported character to either
 kind of action.
 
-The character input listener runs only while a Gearbox menu is open. It remains
-active across submenu transitions and stops on exit, timeout, Scratchpad entry,
-or `Gearbox.stop()`. Gearbox refuses to open the menu and shows an alert when
-macOS Secure Input prevents reliable character capture.
+The session input listener runs only while a Gearbox menu is open. It observes
+character key-down events plus Caps Lock state changes, remains active across
+submenu transitions, and stops on exit, timeout, Scratchpad entry, or
+`Gearbox.stop()`. Gearbox refuses to open the menu and shows an alert when macOS
+Secure Input prevents reliable character capture.
 
 ### Character input provenance
 
@@ -188,9 +189,10 @@ Ordinary child menus are sorted by displayed label. `macOS Utilities` and
 Gearbox Configuration without another divider. Themes retain separate Light
 and Dark sections and sort alphabetically within each.
 
-The root header samples Caps Lock when the menu opens and shows an inverse-color
-`CAPS LOCK` warning only while it is enabled; Gearbox creates no watcher, timer,
-or stored Caps Lock state. Gearbox Configuration also shows the active trigger
+The root header samples Caps Lock when the menu opens and refreshes immediately
+when Caps Lock changes while it remains visible. The inverse-color `CAPS LOCK`
+warning requires no polling timer or stored Caps Lock state. Gearbox
+Configuration also shows the active trigger
 as a subdued, non-interactive legend derived from `hotkey.modifiers` and
 `hotkey.key`, with a reminder that it is customizable through this Spoon
 documentation.
@@ -212,7 +214,7 @@ Hammerspoon releases those assertions when its configuration reloads.
 | [`themes/`](./themes/README.md) | Passive palettes and generated Themes-menu metadata |
 | [`loader.lua`](./loader.lua) | Discovery, validation, ordering, dividers, and footers |
 | [`actions.lua`](./actions.lua) | Application, filesystem, power, and theme operations |
-| [`runtime.lua`](./runtime.lua) | Modal lifecycle, hotkeys, timeout, selection, and rollback |
+| [`runtime.lua`](./runtime.lua) | Modal lifecycle, session input, timeout, selection, and rollback |
 | [`hud.lua`](./hud.lua) | Canvas geometry, text, checks, selection, and loupe rendering |
 | [`scratchpad.lua`](./scratchpad.lua) | Editable webview, keyboard handling, persistence, and focus |
 | [`scratchpad_storage.lua`](./scratchpad_storage.lua) | Scratchpad settings/file persistence and atomic file replacement |
