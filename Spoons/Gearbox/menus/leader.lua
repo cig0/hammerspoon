@@ -3,6 +3,7 @@ return {
     id = "leader",
     title = "Gearbox",
     emoji = "⚙️",
+    showFooterDivider = false,
 
     items = {
         {

@@ -53,6 +53,7 @@ return {
 | `items[].requires` | Optional feature name whose `config.<name>.enable` controls the row |
 | `items[].action` | Descriptor validated by `actions.lua` and dispatched by `runtime.lua` |
 | `{ divider = true }` | Explicit divider between item groups |
+| `showFooterDivider` | Optional Boolean; `false` places Back/Exit directly after the final row |
 
 The loader rejects duplicate IDs and keys, missing parents, parent cycles,
 invalid Hammerspoon keys, reserved navigation keys, unsupported actions, and
@@ -91,14 +92,21 @@ character itself for those entries.
 | `developer.lua` | `leader` | `d` | Developer applications |
 | `finder.lua` | `leader` | `f` | Finder destinations |
 | `web-browsers.lua` | `leader` | `w` | Web browsers |
-| `macos.lua` | `leader` | `m` | Hammerspoon, caffeinate, and system controls |
+| `macos.lua` | `leader` | `m` | Caffeinate and macOS system controls |
 | `comms.lua` | `applications` | `c` | Communications |
 | `omni.lua` | `applications` | `o` | Omni applications |
 | `photo-and-video.lua` | `applications` | `p` | Photo and video applications |
 
-Ordinary child definitions are sorted by their displayed label. Explicit
-sections place `macOS Utilities` and the generated `Themes` entry after ordinary
-groups. The generated `Configuration` entry follows them before the footer.
+Ordinary child definitions are sorted by their displayed label. Explicit root
+sections place `macOS Utilities` after ordinary groups, then add a divider
+before the generated `Gearbox Configuration` entry. The root definition omits
+the otherwise-default divider before its Exit footer.
+
+`menus/` intentionally contains only passive, file-backed definitions. Two
+state-dependent definitions join that graph during startup: `theme.lua`
+generates `Themes` from the discovered palettes, and `preferences.lua`
+generates `Gearbox Configuration` from the supported preference operations.
+Themes is a child of Gearbox Configuration.
 
 ## Action descriptors
 
@@ -122,7 +130,7 @@ groups. The generated `Configuration` entry follows them before the footer.
   configuration.
 - [`../themes/README.md`](../themes/README.md) — the generated Themes menu and
   palette contract.
-- [`../preferences.lua`](../preferences.lua) — generated Configuration menus
-  and their profile/local preference state.
+- [`../preferences.lua`](../preferences.lua) — generated Gearbox Configuration
+  menus and their profile/local preference state.
 - [`../loader.lua`](../loader.lua) — discovery, validation, sorting, dividers,
   and footer assembly.

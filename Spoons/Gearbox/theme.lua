@@ -529,14 +529,11 @@ function Theme:menuDefinition()
         id = "themes",
         title = "Themes",
         emoji = "🎨",
-        parent = "leader",
+        parent = "configuration",
 
         entry = {
             key = "t",
-            label = "Themes",
-            section = "utilities",
-            sectionOrder = 200,
-            order = 20
+            label = "Themes"
         },
 
         items = items

@@ -267,6 +267,11 @@ local function validateDefinitions(definitions, config, actions, theme)
             fail(id .. " items must be a table")
         end
 
+        if definition.showFooterDivider ~= nil and
+            type(definition.showFooterDivider) ~= "boolean" then
+            fail(id .. " showFooterDivider must be a boolean")
+        end
+
         local seenKeys = {}
 
         for index, item in ipairs(definition.items or {}) do
@@ -467,7 +472,9 @@ local function assembleMenus(definitions, rootId, config, actions)
             end
         end
 
-        appendDivider(menu.rows)
+        if definition.showFooterDivider ~= false then
+            appendDivider(menu.rows)
+        end
 
         local footerAction
         local footerLabel

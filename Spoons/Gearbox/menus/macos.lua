@@ -1,5 +1,4 @@
---- macOS utilities submenu: Reload Hammerspoon, System Settings, caffeinate
--- modes, and Sleep.
+--- macOS utilities submenu: System Settings, caffeinate modes, and Sleep.
 return {
     id = "macos",
     title = "macOS Utilities",
@@ -16,11 +15,6 @@ return {
 
     items = {
         {
-            key = "h",
-            label = "Reload Hammerspoon",
-            kind = "action",
-            action = {type = "reload"}
-        }, {
             key = "E",
             label = "System Settings",
             kind = "application",
