@@ -192,10 +192,13 @@ and Dark sections and sort alphabetically within each.
 The root header samples Caps Lock when the menu opens and refreshes immediately
 when Caps Lock changes while it remains visible. The inverse-color `CAPS LOCK`
 warning requires no polling timer or stored Caps Lock state. Gearbox
-Configuration also shows the active trigger
-as a subdued, non-interactive legend derived from `hotkey.modifiers` and
-`hotkey.key`, with a reminder that it is customizable through this Spoon
-documentation.
+Configuration begins with the smaller, subdued memory aid “See Spoon
+documentation to customize the menu shortcut.” An eight-point gap separates
+the caption from the first option.
+
+When `menu.showAccentBorder` is enabled, every menu draws a two-point outline
+inside its canvas using the active theme accent. The shared corner radius keeps
+the outline aligned with the menu background.
 
 The macOS power modes behave as one checked selection:
 
@@ -218,7 +221,7 @@ Hammerspoon releases those assertions when its configuration reloads.
 | [`hud.lua`](./hud.lua) | Canvas geometry, text, checks, selection, and loupe rendering |
 | [`scratchpad.lua`](./scratchpad.lua) | Editable webview, keyboard handling, persistence, and focus |
 | [`scratchpad_storage.lua`](./scratchpad_storage.lua) | Scratchpad settings/file persistence and atomic file replacement |
-| [`configuration_menu.lua`](./configuration_menu.lua) | Passive generated Gearbox Configuration menu graph and trigger legend |
+| [`configuration_menu.lua`](./configuration_menu.lua) | Passive generated Gearbox Configuration menu graph and memory-aid legend |
 | [`preferences.lua`](./preferences.lua) | Profile/local preference layering and configuration actions |
 | [`theme.lua`](./theme.lua) | Theme loading, persistence, colors, and the generated Themes menu |
 | [`validation.lua`](./validation.lua) | Configuration, color, and hotkey validation |
@@ -264,6 +267,7 @@ startup. See [configuration ownership](../../assets/docs/NIX.md#configuration-ow
 | `menu.width` | `420` | HUD width in points |
 | `menu.showEmojis` | `true` | Includes the menu definition's emoji in its title |
 | `menu.highlightGroups` | `true` | Uses the active accent behind group shortcut key caps at every submenu depth |
+| `menu.showAccentBorder` | `true` | Draws a two-point active-theme accent border around every menu |
 
 The zero timeout is a deliberate disabled sentinel, not a usable runtime
 setting. `Gearbox.start()` opens a Borland-style RetroUI dialog that dismisses

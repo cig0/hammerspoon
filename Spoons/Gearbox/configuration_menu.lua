@@ -1,54 +1,19 @@
 --- Generated Gearbox Configuration menu definitions.
 --
--- Input: the validated authoritative Gearbox configuration. Output: passive
--- menu definitions consumed by `loader.lua`; preference behavior remains in
--- `preferences.lua`.
+-- Passive menu definitions consumed by `loader.lua`; preference behavior
+-- remains in `preferences.lua`.
 local ConfigurationMenu = {}
 
-local modifierSymbols = {
-  alt = "⌥",
-  cmd = "⌘",
-  ctrl = "⌃",
-  shift = "⇧"
-}
-
-local keyDisplayNames = {
-  down = "↓",
-  escape = "Esc",
-  left = "←",
-  ["return"] = "Return",
-  right = "→",
-  space = "Space",
-  tab = "Tab",
-  up = "↑"
-}
-
---- Return the configured Gearbox trigger in familiar macOS notation.
-local function triggerLegend(hotkey)
-  local displayedModifiers = {}
-
-  for _, modifier in ipairs(hotkey.modifiers) do
-    table.insert(displayedModifiers, modifierSymbols[modifier] or modifier)
-  end
-
-  local displayedKey = keyDisplayNames[hotkey.key] or
-      (#hotkey.key == 1 and hotkey.key:upper() or hotkey.key)
-
-  return "Trigger: " .. table.concat(displayedModifiers) .. displayedKey ..
-      " · Customizable via Spoon docs"
-end
-
---- Build the configuration menu graph from the active Gearbox trigger.
----@param config table
+--- Return the passive Gearbox Configuration menu graph.
 ---@return table
-function ConfigurationMenu.definitions(config)
+function ConfigurationMenu.definitions()
   return {
     {
       id = "configuration",
       title = "Gearbox Configuration",
       emoji = "⚙️",
       parent = "leader",
-      legend = triggerLegend(config.hotkey),
+      legend = "See Spoon documentation to customize the menu shortcut",
       entry = {
         key = "g",
         label = "Gearbox Configuration",
