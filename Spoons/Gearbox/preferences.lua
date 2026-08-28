@@ -1,8 +1,9 @@
---- Runtime preferences and generated configuration menus.
+--- Runtime preference state and actions.
 --
 -- Input: validated `config.lua`, an optional versioned JSON profile, and local
 -- `hs.settings` overrides. Output: the effective mutable configuration shared
--- by the HUD and Scratchpad plus passive menu definitions for editing it.
+-- by the HUD and Scratchpad; `configuration_menu.lua` owns the passive UI data.
+local ConfigurationMenu = require("Spoons.Gearbox.configuration_menu")
 local Preferences = {}
 Preferences.__index = Preferences
 
@@ -517,120 +518,10 @@ function Preferences:refreshMenu(menu)
   end
 end
 
---- Build generated menu definitions consumed by `loader.lua`.
+--- Return the configuration menus for the effective runtime configuration.
 ---@return table
 function Preferences:menuDefinitions()
-  return {
-    {
-      id = "configuration",
-      title = "Gearbox Configuration",
-      emoji = "⚙️",
-      parent = "leader",
-      entry = {
-        key = "g",
-        label = "Gearbox Configuration",
-        section = "utilities",
-        sectionOrder = 200
-      },
-      items = {
-        {
-          key = "h",
-          label = "Reload Hammerspoon",
-          kind = "action",
-          action = { type = "reload" }
-        }, { divider = true },
-        {
-          key = "p",
-          label = "Save Versioned Profile",
-          kind = "action",
-          action = { type = "configure", operation = "saveProfile" }
-        }, {
-        key = "r",
-        label = "Reload Versioned Profile",
-        kind = "action",
-        action = { type = "configure", operation = "reloadProfile" }
-      }, {
-        key = "x",
-        label = "Reset Local Overrides",
-        kind = "action",
-        action = { type = "configure", operation = "resetLocal" }
-      }
-      }
-    }, {
-    id = "menu-position",
-    title = "Menu Position",
-    parent = "configuration",
-    entry = { key = "m", label = "Menu Position" },
-    items = {
-      {
-        key = "t",
-        label = "Top",
-        kind = "action",
-        action = {
-          type = "configure",
-          operation = "setPosition",
-          value = "top"
-        }
-      }, {
-      key = "b",
-      label = "Bottom",
-      kind = "action",
-      action = {
-        type = "configure",
-        operation = "setPosition",
-        value = "bottom"
-      }
-    }
-    }
-  }, {
-    id = "scratchpad-settings",
-    title = "Scratchpad",
-    parent = "configuration",
-    entry = { key = "s", label = "Scratchpad" },
-    items = {
-      {
-        key = "p",
-        label = "Persist Content",
-        kind = "action",
-        action = {
-          type = "configure",
-          operation = "togglePersistence"
-        }
-      }, {
-      key = "h",
-      label = "Hammerspoon Settings",
-      kind = "action",
-      action = {
-        type = "configure",
-        operation = "useHammerspoonStorage"
-      }
-    }, {
-      key = "f",
-      label = "External File…",
-      kind = "action",
-      action = {
-        type = "configure",
-        operation = "chooseStorageFolder"
-      }
-    }, {
-      key = "n",
-      label = "Filename: scratchpad.txt",
-      kind = "action",
-      action = { type = "configure", operation = "setFilename" }
-    }, { divider = true }, {
-      key = "w",
-      label = "Width",
-      kind = "action",
-      action = { type = "configure", operation = "setWidth" }
-    }, {
-      key = "e",
-      label = "Height",
-      kind = "action",
-      action = { type = "configure", operation = "setHeight" }
-    }
-    }
-  }
-  }
+  return ConfigurationMenu.definitions(self.config)
 end
 
 return Preferences

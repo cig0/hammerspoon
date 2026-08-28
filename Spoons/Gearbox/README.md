@@ -188,6 +188,13 @@ Ordinary child menus are sorted by displayed label. `macOS Utilities` and
 Gearbox Configuration without another divider. Themes retain separate Light
 and Dark sections and sort alphabetically within each.
 
+The root header samples Caps Lock when the menu opens and shows an inverse-color
+`CAPS LOCK` warning only while it is enabled; Gearbox creates no watcher, timer,
+or stored Caps Lock state. Gearbox Configuration also shows the active trigger
+as a subdued, non-interactive legend derived from `hotkey.modifiers` and
+`hotkey.key`, with a reminder that it is customizable through this Spoon
+documentation.
+
 The macOS power modes behave as one checked selection:
 
 - `Keep Display Awake` enables `displayIdle`.
@@ -209,7 +216,8 @@ Hammerspoon releases those assertions when its configuration reloads.
 | [`hud.lua`](./hud.lua) | Canvas geometry, text, checks, selection, and loupe rendering |
 | [`scratchpad.lua`](./scratchpad.lua) | Editable webview, keyboard handling, persistence, and focus |
 | [`scratchpad_storage.lua`](./scratchpad_storage.lua) | Scratchpad settings/file persistence and atomic file replacement |
-| [`preferences.lua`](./preferences.lua) | Profile/local preference layering and the generated Gearbox Configuration tree |
+| [`configuration_menu.lua`](./configuration_menu.lua) | Passive generated Gearbox Configuration menu graph and trigger legend |
+| [`preferences.lua`](./preferences.lua) | Profile/local preference layering and configuration actions |
 | [`theme.lua`](./theme.lua) | Theme loading, persistence, colors, and the generated Themes menu |
 | [`validation.lua`](./validation.lua) | Configuration, color, and hotkey validation |
 | [`dependencies.lua`](./dependencies.lua) | Resolves the packaged RetroUI copy, then a development checkout |
@@ -219,7 +227,8 @@ Hammerspoon releases those assertions when its configuration reloads.
 ```text
 config.lua + preferences.json + local hs.settings + menus/*.lua + themes/*.lua
   → init.lua
-    → preferences.lua and theme.lua generate their state-dependent menus
+    → configuration_menu.lua and theme.lua generate state-dependent menus
+    → preferences.lua owns preference state and actions
     → loader.lua joins generated menus with menus/*.lua
     → validation.lua
     → runtime.lua + actions.lua

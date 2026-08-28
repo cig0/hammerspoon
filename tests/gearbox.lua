@@ -20,6 +20,7 @@ local failNextGlobalHotkey = false
 local failNextEventTapStart = false
 local failNextWebviewSetup = false
 local polledCapsLockEnabled = false
+local capsLockRenderState = {enabled = false, reads = 0}
 local secureInputEnabled = false
 local interfaceStyle = "Dark"
 local interfaceStyleCalls = 0
@@ -459,6 +460,15 @@ hs = {
         end
     },
 
+    hid = {
+        capslock = {
+            get = function()
+                capsLockRenderState.reads = capsLockRenderState.reads + 1
+                return capsLockRenderState.enabled
+            end
+        }
+    },
+
     json = {
         decode = function(value)
             if value == "system-accent" then
@@ -814,6 +824,18 @@ assert(not pcall(function()
     }, discoveredTheme)
 end), "showFooterDivider must remain explicit Boolean menu data")
 
+assert(not pcall(function()
+    Loader.load(root .. "/Spoons/Gearbox", config, Actions, {
+        {
+            id = "invalid-legend",
+            title = "Invalid Legend",
+            parent = "leader",
+            legend = "",
+            entry = {key = "v", label = "Invalid Legend"}
+        }
+    }, discoveredTheme)
+end), "passive menu legends must be non-empty strings")
+
 assert(rowShape(menus.themes) == "s,|,a,l,g,|,c,r,d,h,m,n,t,|,escape",
        "Themes menu shape changed")
 assert(rowShape(menus.configuration) == "h,|,p,r,x,|,m,s,t,|,escape",
@@ -821,6 +843,9 @@ assert(rowShape(menus.configuration) == "h,|,p,r,x,|,m,s,t,|,escape",
 assert(menus.configuration.title == "Gearbox Configuration" and
            menus.themes.parentId == "configuration",
        "Themes must belong to Gearbox Configuration")
+assert(menus.configuration.legend ==
+           "Trigger: ⌥⌘Space · Customizable via Spoon docs",
+       "configuration legend must derive the configured Gearbox trigger")
 assert(rowShape(menus["menu-position"]) == "t,b,|,escape",
        "Menu Position menu shape changed")
 assert(rowShape(menus["scratchpad-settings"]) ==
@@ -1191,6 +1216,7 @@ local runtimeEventTap = createdEventTaps[#createdEventTaps]
 assert(runtimeEventTap and not runtimeEventTap.enabled,
        "character input must remain disabled while Gearbox is idle")
 
+capsLockRenderState.enabled = true
 globalHotkeyPressed()
 assert(runtime.activeMenu.id == "leader", "global hotkey must open leader")
 assert(runtimeEventTap.enabled,
@@ -1221,6 +1247,19 @@ assert(#createdWebviews == 0 and #createdWebviewControllers == 0,
 assert(runtime.hud.canvas.elements[1].roundedRectRadii.xRadius ==
            runtime.theme.metrics.windowCornerRadius,
        "menu HUD and scratchpad must share the outer corner radius")
+
+assert(styledTextValue(assert(elementById(runtime.hud.canvas,
+                                         "caps-lock-warning")).text) ==
+           "CAPS LOCK" and
+           elementById(runtime.hud.canvas,
+                       "caps-lock-warning").text.segments[1].attributes.color ==
+           runtime.theme.colors.background and
+           assert(elementById(runtime.hud.canvas,
+                              "caps-lock-warning-background")).fillColor ==
+           runtime.theme.colors.primary,
+       "enabled Caps Lock must render an inverse-color root-header warning")
+assert(capsLockRenderState.reads == 1,
+       "the root header must sample Caps Lock exactly when rendered")
 
 assert(defaultTextStyleCalls == 1,
        "system font defaults must be resolved once per theme")
@@ -1360,11 +1399,18 @@ assert(rowVisualByLabel(runtime.menus.leader, "Applications").keyBackgroundIndex
 assert(sendCharacterKeyDown("a") == true and
            runtime.activeMenu.id == "applications",
        "a must open the nested Applications menu")
+assert(elementById(runtime.hud.canvas, "caps-lock-warning") == nil and
+           capsLockRenderState.reads == 1,
+       "child menus must not render or sample the root Caps Lock warning")
 assert(runtimeEventTap.enabled,
        "menu transitions must retain the same character input tap")
 assert(rowVisualByLabel(runtime.menus.applications, "Communications").keyBackgroundIndex,
        "nested group keys must use the configured accent background")
+capsLockRenderState.enabled = false
 runtime.menus.applications.modal.bindings.escape()
+assert(elementById(runtime.hud.canvas, "caps-lock-warning") == nil and
+           capsLockRenderState.reads == 2,
+       "disabled Caps Lock must leave the root header unchanged")
 
 assert(sendCharacterKeyDown("d", {flags = {alt = true, cmd = true}}) == true and
            runtime.activeMenu.id == "developer",
@@ -1539,6 +1585,14 @@ sendCharacterKeyDown("g")
 assert(runtime.activeMenu.id == "configuration" and
            runtime.activeMenu.title == "Gearbox Configuration",
        "g must open Gearbox Configuration")
+
+assert(styledTextValue(assert(elementById(runtime.hud.canvas,
+                                         "menu-legend")).text) ==
+           runtime.menus.configuration.legend and
+           elementById(runtime.hud.canvas,
+                       "menu-legend").text.segments[1].attributes.color ==
+           runtime.theme.colors.secondary,
+       "Gearbox Configuration must render its trigger legend subdued")
 
 sendCharacterKeyDown("h")
 assert(reloadCalls == 2 and runtime.activeMenu.id == "configuration",
@@ -2061,6 +2115,10 @@ local letterToggleRuntime = startGearbox({
     theme = {accentSource = "theme"}
 })
 
+assert(letterToggleRuntime.menus.configuration.legend ==
+           "Trigger: ⌥⌘G · Customizable via Spoon docs",
+       "configuration legend must follow a customized trigger key")
+
 globalHotkeyPressed()
 assert(sendCharacterKeyDown("g", {
     flags = {alt = true, cmd = true}
@@ -2098,6 +2156,10 @@ local shiftHotkeyRuntime = startGearbox({
     menu = {timeout = 5},
     theme = {accentSource = "theme"}
 })
+
+assert(shiftHotkeyRuntime.menus.configuration.legend ==
+           "Trigger: ⌘⇧Space · Customizable via Spoon docs",
+       "configuration legend must follow customized trigger modifiers")
 
 globalHotkeyPressed()
 assert(sendCharacterKeyDown("w", {flags = {cmd = true}}) == true and
