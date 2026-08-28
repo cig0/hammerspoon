@@ -158,35 +158,35 @@ Gearbox
 │   └── Safari
 ├── macOS Utilities
 │   ├── System Settings
-│   ├── Reload Hammerspoon
 │   ├── Keep Display Awake
 │   ├── Prevent Idle Sleep
 │   ├── Allow Normal Sleep
 │   └── Sleep
-├── Themes
-│   ├── Follow macOS
-│   ├── Light: Catppuccin, Gearbox, Gruvbox
-│   └── Dark: Catppuccin, Dracula, Gearbox, Gruvbox, Monokai, Nord, Tokyo Night
-└── Configuration
+└── Gearbox Configuration
+    ├── Reload Hammerspoon
     ├── Save Versioned Profile
     ├── Reload Versioned Profile
     ├── Reset Local Overrides
     ├── Menu Position
     │   ├── Top
     │   └── Bottom
-    └── Scratchpad
-        ├── Persist Content
-        ├── Hammerspoon Settings
-        ├── External File
-        ├── Filename
-        ├── Width
-        └── Height
+    ├── Scratchpad
+    │   ├── Persist Content
+    │   ├── Hammerspoon Settings
+    │   ├── External File
+    │   ├── Filename
+    │   ├── Width
+    │   └── Height
+    └── Themes
+        ├── Follow macOS
+        ├── Light: Catppuccin, Gearbox, Gruvbox
+        └── Dark: Catppuccin, Dracula, Gearbox, Gruvbox, Monokai, Nord, Tokyo Night
 ```
 
-Ordinary child menus are sorted by displayed label. `macOS Utilities`, `Themes`,
-and `Configuration` occupy the utilities section immediately before the final
-Exit divider. Themes retain separate Light and Dark sections and sort
-alphabetically within each.
+Ordinary child menus are sorted by displayed label. `macOS Utilities` and
+`Gearbox Configuration` occupy separate root sections. The root footer follows
+Gearbox Configuration without another divider. Themes retain separate Light
+and Dark sections and sort alphabetically within each.
 
 The macOS power modes behave as one checked selection:
 
@@ -201,16 +201,16 @@ Hammerspoon releases those assertions when its configuration reloads.
 | Path | Owns |
 | --- | --- |
 | [`config.lua`](./config.lua) | Runtime configuration contract; Nix derives only `menu.timeout` |
-| [`menus/`](./menus/README.md) | Passive menu graph and action descriptors |
-| [`themes/`](./themes/README.md) | Passive palettes and Themes-menu metadata |
+| [`menus/`](./menus/README.md) | Passive, file-backed menu graph and action descriptors |
+| [`themes/`](./themes/README.md) | Passive palettes and generated Themes-menu metadata |
 | [`loader.lua`](./loader.lua) | Discovery, validation, ordering, dividers, and footers |
 | [`actions.lua`](./actions.lua) | Application, filesystem, power, and theme operations |
 | [`runtime.lua`](./runtime.lua) | Modal lifecycle, hotkeys, timeout, selection, and rollback |
 | [`hud.lua`](./hud.lua) | Canvas geometry, text, checks, selection, and loupe rendering |
 | [`scratchpad.lua`](./scratchpad.lua) | Editable webview, keyboard handling, persistence, and focus |
 | [`scratchpad_storage.lua`](./scratchpad_storage.lua) | Scratchpad settings/file persistence and atomic file replacement |
-| [`preferences.lua`](./preferences.lua) | Profile/local preference layering and generated configuration menus |
-| [`theme.lua`](./theme.lua) | Theme loading, persistence, fonts, appearance, and colors |
+| [`preferences.lua`](./preferences.lua) | Profile/local preference layering and the generated Gearbox Configuration tree |
+| [`theme.lua`](./theme.lua) | Theme loading, persistence, colors, and the generated Themes menu |
 | [`validation.lua`](./validation.lua) | Configuration, color, and hotkey validation |
 | [`dependencies.lua`](./dependencies.lua) | Resolves the packaged RetroUI copy, then a development checkout |
 | [`init.lua`](./init.lua) | Public `start()` and `stop()` boundary |
@@ -219,7 +219,9 @@ Hammerspoon releases those assertions when its configuration reloads.
 ```text
 config.lua + preferences.json + local hs.settings + menus/*.lua + themes/*.lua
   → init.lua
-    → validation.lua + preferences.lua + loader.lua + theme.lua
+    → preferences.lua and theme.lua generate their state-dependent menus
+    → loader.lua joins generated menus with menus/*.lua
+    → validation.lua
     → runtime.lua + actions.lua
       → hud.lua
       → scratchpad.lua → scratchpad_storage.lua
@@ -382,8 +384,8 @@ that was already saved above the configured limit.
 
 ## Runtime preferences
 
-The generated Configuration menus update a strict subset of the effective
-configuration:
+The generated Gearbox Configuration menus update a strict subset of the
+effective configuration:
 
 | Menu | Values |
 | --- | --- |

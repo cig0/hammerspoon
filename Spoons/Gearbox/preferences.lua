@@ -523,17 +523,22 @@ function Preferences:menuDefinitions()
     return {
         {
             id = "configuration",
-            title = "Configuration",
+            title = "Gearbox Configuration",
             emoji = "⚙️",
             parent = "leader",
             entry = {
                 key = "g",
-                label = "Configuration",
-                section = "utilities",
-                sectionOrder = 200,
-                order = 30
+                label = "Gearbox Configuration",
+                section = "gearbox-configuration",
+                sectionOrder = 300
             },
             items = {
+                {
+                    key = "h",
+                    label = "Reload Hammerspoon",
+                    kind = "action",
+                    action = {type = "reload"}
+                }, {divider = true},
                 {
                     key = "p",
                     label = "Save Versioned Profile",

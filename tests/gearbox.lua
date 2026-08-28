@@ -685,7 +685,7 @@ end
 
 local leaderShape = rowShape(menus.leader)
 
-assert(leaderShape == "C,L,K,O,P,s,|,n,i,a,d,f,w,|,m,t,g,|,escape",
+assert(leaderShape == "C,L,K,O,P,s,|,n,i,a,d,f,w,|,m,|,g,escape",
        "leader ordering or divider placement changed: " .. leaderShape)
 
 for _, menu in pairs(menus) do
@@ -717,7 +717,7 @@ assert(rowShape(menus.browsers) == "O,A,C,F,S,|,escape",
 assert(menus.browsers.rows[4].action.name == "Firefox",
        "Firefox must launch Firefox")
 
-assert(rowShape(menus.macos) == "h,E,|,a,i,x,|,s,|,escape",
+assert(rowShape(menus.macos) == "E,|,a,i,x,|,s,|,escape",
        "macOS Utilities menu shape changed")
 assert(rowShape(menus.applications) == "c,o,p,|,escape",
        "nested Applications group ordering changed")
@@ -802,10 +802,25 @@ end)
 assert(not rawMenuKeyAccepted,
        "raw menu keys must not overlap resulting-character ownership")
 
+assert(not pcall(function()
+    Loader.load(root .. "/Spoons/Gearbox", config, Actions, {
+        {
+            id = "invalid-footer-divider",
+            title = "Invalid Footer Divider",
+            parent = "leader",
+            showFooterDivider = "no",
+            entry = {key = "v", label = "Invalid Footer Divider"}
+        }
+    }, discoveredTheme)
+end), "showFooterDivider must remain explicit Boolean menu data")
+
 assert(rowShape(menus.themes) == "s,|,a,l,g,|,c,r,d,h,m,n,t,|,escape",
        "Themes menu shape changed")
-assert(rowShape(menus.configuration) == "p,r,x,|,m,s,|,escape",
-       "Configuration menu shape changed")
+assert(rowShape(menus.configuration) == "h,|,p,r,x,|,m,s,t,|,escape",
+       "Gearbox Configuration menu shape changed")
+assert(menus.configuration.title == "Gearbox Configuration" and
+           menus.themes.parentId == "configuration",
+       "Themes must belong to Gearbox Configuration")
 assert(rowShape(menus["menu-position"]) == "t,b,|,escape",
        "Menu Position menu shape changed")
 assert(rowShape(menus["scratchpad-settings"]) ==
@@ -1517,6 +1532,15 @@ assert(interfaceStyleCalls == styleCallsBeforeHUDRefresh,
        "HUD-only refreshes must not resolve system appearance")
 
 runtime.menus.macos.modal.bindings.escape()
+sendCharacterKeyDown("g")
+assert(runtime.activeMenu.id == "configuration" and
+           runtime.activeMenu.title == "Gearbox Configuration",
+       "g must open Gearbox Configuration")
+
+sendCharacterKeyDown("h")
+assert(reloadCalls == 2 and runtime.activeMenu.id == "configuration",
+       "Reload Hammerspoon must be owned by Gearbox Configuration")
+
 sendCharacterKeyDown("t")
 assert(runtime.activeMenu.id == "themes", "t must open Themes")
 
@@ -1571,10 +1595,8 @@ assert(runtime.theme.selection == "dracula",
        "manual selection must switch away from system mode")
 
 runtime.menus.themes.modal.bindings.escape()
-sendCharacterKeyDown("g")
-
 assert(runtime.activeMenu.id == "configuration",
-       "g must open the generated Configuration menu")
+       "Themes must return to Gearbox Configuration")
 
 sendCharacterKeyDown("m")
 sendCharacterKeyDown("b")

@@ -93,6 +93,7 @@ function Gearbox.start(...)
     local scratchpad = config.scratchpad.enable and
                            Scratchpad.new(config, theme) or nil
 
+    -- State-dependent menus stay with their owners; see menus/README.md.
     local menuDefinitions = {theme:menuDefinition()}
 
     for _, definition in ipairs(preferences:menuDefinitions()) do
