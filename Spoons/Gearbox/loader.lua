@@ -486,7 +486,9 @@ local function assembleMenus(definitions, rootId, config, actions)
                               config.hotkey.key .. ")"
         else
             footerAction = {type = "openMenu", menu = definition.parent}
-            footerLabel = "Back to " .. definitions[definition.parent].title
+            footerLabel = "Back to " ..
+                              (definition.parent == rootId and "main menu" or
+                                   definitions[definition.parent].title)
         end
 
         table.insert(menu.rows, {
