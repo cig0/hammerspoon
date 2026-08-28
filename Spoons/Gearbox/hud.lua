@@ -88,6 +88,8 @@ function HUD.new(config, theme)
         keyWidth = math.max(36, round(config.font.size * 2.6)),
         keyBackgroundHeight = math.max(23, round(config.font.size + 9)),
         dividerHeight = math.max(17, round(config.font.size + 3)),
+        legendHeight = math.max(24, round(config.font.size + 10)),
+        capsLockWarningWidth = math.max(104, round(config.font.size * 7.5)),
         bottomPadding = math.max(16, round(config.font.size + 2))
     }
 
@@ -127,13 +129,20 @@ function HUD:targetScreen()
     return hs.screen.mainScreen()
 end
 
---- Calculate the total canvas height for `rows`.
----@param rows table
+--- Return the first menu-row position after optional passive header content.
+---@param menu table
 ---@return number
-function HUD:calculateHeight(rows)
-    local height = self.layout.contentTop + self.layout.bottomPadding
+function HUD:menuContentTop(menu)
+    return self.layout.contentTop + (menu.legend and self.layout.legendHeight or 0)
+end
 
-    for _, row in ipairs(rows) do
+--- Calculate the total canvas height for `menu`.
+---@param menu table
+---@return number
+function HUD:calculateHeight(menu)
+    local height = self:menuContentTop(menu) + self.layout.bottomPadding
+
+    for _, row in ipairs(menu.rows) do
         if row.divider then
             height = height + self.layout.dividerHeight
         else
@@ -286,7 +295,7 @@ function HUD:show(menu, checkedRows)
         navigationPositionByRow[rowIndex] = position
     end
 
-    local height = self:calculateHeight(menu.rows)
+    local height = self:calculateHeight(menu)
     local screen = self:targetScreen()
 
     assert(screen, "Gearbox: no screen is available for the HUD")
@@ -309,6 +318,13 @@ function HUD:show(menu, checkedRows)
     local layout = self.layout
     local colors = self.theme.colors
     local elements = {}
+    local rootMenuCapsLockIsOn = false
+
+    if menu.parentId == nil then
+        -- `hs.hid.capslock.get()` reads the hardware state directly. Sampling
+        -- here keeps Gearbox free of Caps Lock watchers and synchronized state.
+        rootMenuCapsLockIsOn = hs.hid.capslock.get()
+    end
 
     appendElement(elements, {
         type = "rectangle",
@@ -325,7 +341,7 @@ function HUD:show(menu, checkedRows)
         action = "skip",
         frame = {
             x = layout.selectionInset,
-            y = layout.contentTop,
+            y = self:menuContentTop(menu),
             w = self.config.menu.width - (layout.selectionInset * 2),
             h = layout.rowHeight - 2
         },
@@ -333,19 +349,75 @@ function HUD:show(menu, checkedRows)
         roundedRectRadii = {xRadius = 8, yRadius = 8}
     })
 
+    local titleWidth = self.config.menu.width - (layout.horizontalPadding * 2)
+
+    if rootMenuCapsLockIsOn then
+        titleWidth = titleWidth - layout.capsLockWarningWidth - layout.keyGap
+    end
+
     appendElement(elements, {
         type = "text",
         frame = {
             x = layout.horizontalPadding,
             y = layout.headerTop,
-            w = self.config.menu.width - (layout.horizontalPadding * 2),
+            w = titleWidth,
             h = layout.headerHeight
         },
         text = styledText(self:displayTitle(menu), self.theme.fonts.title,
                           colors.primary, "left")
     })
 
-    local y = layout.contentTop
+    if rootMenuCapsLockIsOn then
+        local warningX = self.config.menu.width - layout.horizontalPadding -
+                             layout.capsLockWarningWidth
+        local warningY = layout.headerTop +
+                             (layout.headerHeight -
+                                 layout.keyBackgroundHeight) / 2
+
+        appendElement(elements, {
+            id = "caps-lock-warning-background",
+            type = "rectangle",
+            action = "fill",
+            frame = {
+                x = warningX,
+                y = warningY,
+                w = layout.capsLockWarningWidth,
+                h = layout.keyBackgroundHeight
+            },
+            fillColor = colors.primary,
+            roundedRectRadii = {xRadius = 5, yRadius = 5}
+        })
+
+        appendElement(elements, {
+            id = "caps-lock-warning",
+            type = "text",
+            frame = {
+                x = warningX,
+                y = warningY,
+                w = layout.capsLockWarningWidth,
+                h = layout.keyBackgroundHeight
+            },
+            text = styledText("CAPS LOCK", self.theme.fonts.group,
+                              colors.background, "center")
+        })
+    end
+
+    if menu.legend then
+        appendElement(elements, {
+            id = "menu-legend",
+            type = "text",
+            frame = {
+                x = layout.horizontalPadding,
+                y = layout.contentTop,
+                w = self.config.menu.width - (layout.horizontalPadding * 2),
+                h = layout.legendHeight
+            },
+            text = styledText(menu.legend, self.theme.fonts.body,
+                              colors.secondary, "left")
+        })
+    end
+
+    local y = self:menuContentTop(menu)
 
     for rowIndex, row in ipairs(menu.rows) do
         if row.divider then

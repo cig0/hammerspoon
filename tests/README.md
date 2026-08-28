@@ -33,7 +33,7 @@ not a replacement for a live Hammerspoon hit-testing check.
 | Runtime | Zero-timeout RetroUI dialog, hotkey replacement, partial-start rollback, session-scoped character capture, exact case and symbol dispatch, the documented native Caps Lock/Shift matrix, Secure Input refusal, repeat suppression, modal cleanup, and arrow-key activation |
 | RetroUI | Frame styles and alignment, asymmetric padding, footer actions, box-glyph width, strict themes and mnemonics, targeted redraws, button focus/press state, keyboard and left-mouse activation, background dismissal, and cleanup races |
 | Packaging | Manifest identity, complete private bundle, private preference, canonical fallback, and broken/missing-bundle diagnostics |
-| HUD boundary | Checked rows, root and nested group key-cap backgrounds, immediate theme refresh, lazy appearance resolution |
+| HUD boundary | Root Caps Lock warning, passive trigger legend, checked rows, group key-cap backgrounds, immediate theme refresh, lazy appearance resolution |
 | Scratchpad | Lazy Webview construction, failed-first-use cleanup, sizing, font size, symmetric placement, capacity, persistence, storage switching, and reuse |
 | Host resolution | System fonts and macOS accent are resolved only at their documented lifecycle points |
 

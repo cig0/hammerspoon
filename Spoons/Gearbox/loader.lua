@@ -272,6 +272,11 @@ local function validateDefinitions(definitions, config, actions, theme)
             fail(id .. " showFooterDivider must be a boolean")
         end
 
+        if definition.legend ~= nil and
+            (type(definition.legend) ~= "string" or definition.legend == "") then
+            fail(id .. " legend must be a non-empty string")
+        end
+
         local seenKeys = {}
 
         for index, item in ipairs(definition.items or {}) do
@@ -398,6 +403,7 @@ local function assembleMenus(definitions, rootId, config, actions)
             title = definition.title,
             emoji = definition.emoji or "",
             parentId = definition.parent,
+            legend = definition.legend,
             rows = {},
             activationRowsByCharacter = {}
         }
