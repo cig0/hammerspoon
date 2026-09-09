@@ -14,6 +14,12 @@ in
   config = lib.mkIf cfg.enable (
     let
       gb = cfg.spoons.gearbox;
+
+      /*
+        Store-side staging copy with the typed options substituted into
+        config.lua; activation deploys it to ~/.hammerspoon as plain
+        user-writable files.
+      */
       configuredGearbox =
         pkgs.runCommand "gearbox-configured"
           {
@@ -51,27 +57,85 @@ in
           require("Spoons.Gearbox").start()
         ''}
       '';
+      managedInit = ''
+        -- Home Manager-managed Hammerspoon entrypoint.
+        -- programs.hammerspoon-spoons.* → nix-spoons.lua → enabled Spoons.
+        require("nix-spoons")
+
+        ${cfg.extraConfig}
+      '';
+
+      managedFiles = pkgs.runCommand "hammerspoon-managed-files" { } ''
+        mkdir -p "$out"
+        cp ${pkgs.writeText "nix-spoons.lua" spoonLoader} "$out/nix-spoons.lua"
+        ${lib.optionalString cfg.manageInit ''
+          cp ${pkgs.writeText "init.lua" managedInit} "$out/init.lua"
+        ''}
+        ${lib.optionalString gb.enable ''
+          mkdir -p "$out/Spoons"
+          cp -R ${configuredGearbox} "$out/Spoons/Gearbox"
+        ''}
+      '';
     in
     {
-      home.file = lib.mkMerge [
-        {
-          ".hammerspoon/nix-spoons.lua".text = spoonLoader;
+      /*
+        Every managed file is deployed as a regular, user-owned, user-writable
+        copy so the configuration can be edited and reloaded live without
+        rebuilding the flake. Each Home Manager activation re-asserts the
+        flake-shipped content; keeping a local edit means porting it back to
+        this repository first. An edited target is moved to <target>.hm-bak
+        before the fresh copy lands.
+      */
+      home.activation.hammerspoonSpoons = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+        hammerspoonDir="${config.home.homeDirectory}/.hammerspoon"
+
+        # installMutableCopy <src> <dst> replaces dst with a writable copy of
+        # src. Store symlinks and untouched copies are dropped silently; an
+        # edited copy is preserved as dst.hm-bak.
+        installMutableCopy() {
+          local src="$1"
+          local dst="$2"
+
+          if [ -L "$dst" ]; then
+            run rm -f "$dst"
+          elif [ -e "$dst" ]; then
+            if diff -r "$src" "$dst" > /dev/null 2>&1; then
+              run rm -rf "$dst"
+            else
+              run rm -rf "$dst.hm-bak"
+              run mv "$dst" "$dst.hm-bak"
+              run echo "hammerspoon-spoons: edited copy moved to $dst.hm-bak"
+            fi
+          fi
+
+          run mkdir -p "$(dirname "$dst")"
+          run cp -R "$src" "$dst"
+          run chmod -R u+w "$dst"
         }
 
-        (lib.mkIf gb.enable {
-          ".hammerspoon/Spoons/Gearbox".source = configuredGearbox;
-        })
-
-        (lib.mkIf cfg.manageInit {
-          ".hammerspoon/init.lua".text = ''
-            -- Home Manager-managed Hammerspoon entrypoint.
-            -- programs.hammerspoon-spoons.* → nix-spoons.lua → enabled Spoons.
-            require("nix-spoons")
-
-            ${cfg.extraConfig}
-          '';
-        })
-      ];
+        installMutableCopy "${managedFiles}/nix-spoons.lua" "$hammerspoonDir/nix-spoons.lua"
+        ${lib.optionalString cfg.manageInit ''
+          installMutableCopy "${managedFiles}/init.lua" "$hammerspoonDir/init.lua"
+        ''}
+        ${lib.optionalString gb.enable ''
+          installMutableCopy "${managedFiles}/Spoons/Gearbox" "$hammerspoonDir/Spoons/Gearbox"
+        ''}
+        ${lib.optionalString (!gb.enable) ''
+          # Gearbox is disabled: drop the deployed copy, preserving local edits.
+          gearboxDir="$hammerspoonDir/Spoons/Gearbox"
+          if [ -L "$gearboxDir" ]; then
+            run rm -f "$gearboxDir"
+          elif [ -e "$gearboxDir" ]; then
+            if diff -r "${../Spoons/Gearbox}" "$gearboxDir" > /dev/null 2>&1; then
+              run rm -rf "$gearboxDir"
+            else
+              run rm -rf "$gearboxDir.hm-bak"
+              run mv "$gearboxDir" "$gearboxDir.hm-bak"
+              run echo "hammerspoon-spoons: edited copy moved to $gearboxDir.hm-bak"
+            fi
+          fi
+        ''}
+      '';
     }
   );
 }

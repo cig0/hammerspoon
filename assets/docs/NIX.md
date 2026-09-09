@@ -63,12 +63,26 @@ Scratchpad placement, the required timeout, and Scratchpad settings:
 }
 ```
 
-The module copies the self-contained Gearbox Spoon into the Nix store, substitutes `menu.position`,
-`menu.timeout`, and the seven `scratchpad.*` values in that copy, and links it
-at `~/.hammerspoon/Spoons/Gearbox`. `menu.position` is the enum `"top"` or
-`"bottom"` and applies to both windows; bottom placement mirrors the top margin.
-The default timeout is the disabled sentinel `0`; normal use requires an
-explicit positive value. Hammerspoon itself must be installed separately.
+The module stages the self-contained Gearbox Spoon with `menu.position`,
+`menu.timeout`, and the seven `scratchpad.*` values substituted into its
+`config.lua`, then deploys it as regular user-writable files at
+`~/.hammerspoon/Spoons/Gearbox` during Home Manager activation; the same
+copy semantics apply to `nix-spoons.lua`, and to `init.lua` when managed.
+`menu.position` is the enum `"top"` or `"bottom"` and applies to both
+windows; bottom placement mirrors the top margin. The default timeout is
+the disabled sentinel `0`; normal use requires an explicit positive value.
+Hammerspoon itself must be installed separately.
+
+Deployed files are mutable working copies: edit anything they contain and
+reload Hammerspoon without rebuilding. Each activation re-asserts the
+flake-shipped content, so lasting changes — including hand edits to values
+the typed options also set — must first be ported back to this repository
+(`extraConfig` covers entrypoint-only snippets). A target edited since the
+last activation is preserved as `<path>.hm-bak` before the fresh copy
+lands. `spoons.gearbox.enable = false` removes the deployed Gearbox tree,
+moving trees that differ from the shipped sources to
+`Spoons/Gearbox.hm-bak`; disabling the module entirely leaves previously
+deployed files in place.
 
 When another module or hand-written file owns the entrypoint:
 
@@ -115,9 +129,10 @@ export a system-level module that writes directly into a user's home directory.
 
 [`Spoons/Gearbox/config.lua`](../../Spoons/Gearbox/config.lua) is Gearbox's
 runtime configuration contract. Standalone installations read it directly.
-Nix delivery derives a store copy and replaces its `menu.position`,
-`menu.timeout`, and Scratchpad values with the corresponding
-`programs.hammerspoon-spoons.spoons.gearbox.*` options.
+Nix delivery stages a copy with its `menu.position`, `menu.timeout`, and
+Scratchpad values replaced by the corresponding
+`programs.hammerspoon-spoons.spoons.gearbox.*` options, then deploys it as
+user-writable files whose content activation re-asserts on every rebuild.
 
 ```text
 repository Spoons/Gearbox/config.lua
