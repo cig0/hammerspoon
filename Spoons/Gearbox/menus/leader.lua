@@ -19,6 +19,7 @@ return {
   }, {
     key = "I",
     label = "iA Writer",
+    kind = "application",
     action = { type = "launchApp", name = "iA Writer" }
   }, {
     key = "K",
