@@ -26,10 +26,15 @@ an externally owned entrypoint must require the loader itself.
 
 | Flake output | Destination |
 | --- | --- |
-| `homeModules.hammerspoon-spoons` | A Home Manager configuration, standalone or embedded |
+| `modules.homeManager.hammerspoon-spoons` | Home Manager module with class checking |
+| `homeModules.hammerspoon-spoons` | Established Home Manager import path, standalone or embedded |
 | `homeModules.default` | Alias of `homeModules.hammerspoon-spoons` |
 | `interfaces.homeManagerOptions` | Reusable Home Manager delivery, Gearbox placement and timeout, and Scratchpad schema |
 | `interfaces.homeManagerOptionDocs` | Markdown-ready option documentation metadata |
+
+The flake uses `flake-parts` with an explicit feature module import.
+`modules/hammerspoon-spoons.nix` owns the Home Manager module, its option
+schema, and the documentation interface together.
 
 ## Home Manager
 
@@ -73,16 +78,17 @@ windows; bottom placement mirrors the top margin. The default timeout is
 the disabled sentinel `0`; normal use requires an explicit positive value.
 Hammerspoon itself must be installed separately.
 
-Deployed files are mutable working copies: edit anything they contain and
-reload Hammerspoon without rebuilding. Each activation re-asserts the
-flake-shipped content, so lasting changes — including hand edits to values
-the typed options also set — must first be ported back to this repository
-(`extraConfig` covers entrypoint-only snippets). A target edited since the
-last activation is preserved as `<path>.hm-bak` before the fresh copy
-lands. `spoons.gearbox.enable = false` removes the deployed Gearbox tree,
-moving trees that differ from the shipped sources to
-`Spoons/Gearbox.hm-bak`; disabling the module entirely leaves previously
-deployed files in place.
+The Nix build stages the configuration in the store. Activation copies it to
+`~/.hammerspoon` as regular, user-writable files; Hammerspoon runs those
+copies. Edit and reload them while trying an idea. Once a change is approved,
+bring it back to this repository before the next activation, which re-asserts
+the flake content (`extraConfig` covers entrypoint-only snippets). A target
+that differs from the version being deployed is preserved as `<path>.hm-bak`
+before the fresh copy lands. Existing backups are kept; additional ones use
+`<path>.hm-bak-1`, then increasing suffixes.
+`spoons.gearbox.enable = false` removes the deployed Gearbox tree and
+preserves a tree that differs from the shipped sources by the same rule.
+Disabling the module entirely leaves previously deployed files in place.
 
 When another module or hand-written file owns the entrypoint:
 
