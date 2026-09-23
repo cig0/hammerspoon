@@ -34,7 +34,9 @@ an externally owned entrypoint must require the loader itself.
 
 The flake uses `flake-parts` with an explicit feature module import.
 `modules/hammerspoon-spoons.nix` owns the Home Manager module, its option
-schema, and the documentation interface together.
+schema, and the documentation interface together. Keep that boundary until a
+second Spoon needs its own staging path or activation needs a third distinct
+deployment case; then split by responsibility rather than file length.
 
 ## Home Manager
 
@@ -89,6 +91,12 @@ before the fresh copy lands. Existing backups are kept; additional ones use
 `spoons.gearbox.enable = false` removes the deployed Gearbox tree and
 preserves a tree that differs from the shipped sources by the same rule.
 Disabling the module entirely leaves previously deployed files in place.
+
+`nix flake check` builds a configured Gearbox tree and exercises the generated
+activation script in a temporary home. It checks all option substitutions,
+default/source agreement, writable regular copies, repeated activation,
+backup suffixes, symlink replacement, and Gearbox disable cleanup. It does not
+launch Hammerspoon; the Lua harnesses cover runtime behavior separately.
 
 When another module or hand-written file owns the entrypoint:
 
