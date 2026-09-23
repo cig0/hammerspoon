@@ -14,7 +14,25 @@
         ./modules/hammerspoon-spoons.nix
       ];
 
-      # This flake exports a reusable module, not per-system packages.
-      systems = [ ];
+      # The module is reusable on any system; these systems build its delivery
+      # regression check without exporting runtime packages.
+      systems = [
+        "aarch64-darwin"
+        "x86_64-darwin"
+        "aarch64-linux"
+        "x86_64-linux"
+      ];
+
+      perSystem =
+        { system, ... }:
+        let
+          pkgs = import inputs.nix-batteries.inputs.nixpkgs { inherit system; };
+        in
+        {
+          checks.hammerspoon-delivery = import ./tests/nix-delivery.nix {
+            inherit pkgs;
+            self = inputs.self;
+          };
+        };
     };
 }

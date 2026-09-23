@@ -6,6 +6,7 @@
 }:
 
 let
+  # Share one option contract between the Home Manager module and the docs interface.
   optionsFor =
     { lib }:
 
@@ -121,6 +122,9 @@ let
       };
     };
 
+  # Keep the schema, staging, and activation in one module while Gearbox is the
+  # only Spoon with bespoke delivery. Split by responsibility if a second Spoon
+  # needs its own staging path or deployment gains a third distinct case.
   homeModule =
     {
       config,
@@ -142,9 +146,11 @@ let
           gearboxSource = self.outPath + "/Spoons/Gearbox";
 
           /*
-            Store-side staging copy with the typed options substituted into
-            config.lua; activation deploys it to ~/.hammerspoon as plain
-            user-writable files.
+            The shipped config.lua literals, option defaults above, and
+            substituteInPlace anchors below intentionally agree. Nix owns these
+            deployment-time values; --replace-fail makes source drift a build
+            failure instead of silently shipping an unconfigured Spoon.
+            Stage in the store first, then deploy a writable copy on activation.
           */
           configuredGearbox =
             pkgs.runCommand "gearbox-configured"
@@ -175,6 +181,8 @@ let
                   --replace-fail "        showInstructions = true" "        showInstructions = $scratchpadShowInstructions"
               '';
 
+          # Generated entrypoint: loading stays independent of manageInit so an
+          # externally owned init.lua can require("nix-spoons") itself.
           spoonLoader = ''
             -- Nix-generated loader for enabled Hammerspoon Spoons.
             -- programs.hammerspoon-spoons.* → this file → Spoons/<name>.start()
@@ -191,6 +199,8 @@ let
             ${cfg.extraConfig}
           '';
 
+          # This layout is the complete set of enabled files activation copies.
+          # Keep it named so staging and target paths are easy to compare.
           managedFiles = pkgs.runCommand "hammerspoon-managed-files" { } ''
             mkdir -p "$out"
             cp ${pkgs.writeText "nix-spoons.lua" spoonLoader} "$out/nix-spoons.lua"
@@ -231,21 +241,30 @@ let
               run echo "hammerspoon-spoons: changed copy moved to $backup"
             }
 
-            # installMutableCopy <src> <dst> replaces dst with a writable copy.
-            installMutableCopy() {
-              local src="$1"
+            # removeExistingCopy <baseline> <dst> removes an identical target
+            # or preserves a changed one. Symlinks are always removed; comparing
+            # them with diff would follow a Home Manager store link.
+            removeExistingCopy() {
+              local baseline="$1"
               local dst="$2"
 
               if [ -L "$dst" ]; then
                 run rm -f "$dst"
               elif [ -e "$dst" ]; then
-                if diff -r "$src" "$dst" > /dev/null 2>&1; then
+                if diff -r "$baseline" "$dst" > /dev/null 2>&1; then
                   run rm -rf "$dst"
                 else
                   preserveChangedCopy "$dst"
                 fi
               fi
+            }
 
+            # installMutableCopy <src> <dst> replaces dst with a writable copy.
+            installMutableCopy() {
+              local src="$1"
+              local dst="$2"
+
+              removeExistingCopy "$src" "$dst"
               run mkdir -p "$(dirname "$dst")"
               run cp -R "$src" "$dst"
               run chmod -R u+w "$dst"
@@ -259,17 +278,10 @@ let
               installMutableCopy "${managedFiles}/Spoons/Gearbox" "$hammerspoonDir/Spoons/Gearbox"
             ''}
             ${lib.optionalString (!gb.enable) ''
-              # Gearbox is disabled: drop the deployed copy, preserving local edits.
+              # Compare disabled Gearbox against the shipped source. The enabled
+              # copy may contain Nix substitutions, so it must be backed up.
               gearboxDir="$hammerspoonDir/Spoons/Gearbox"
-              if [ -L "$gearboxDir" ]; then
-                run rm -f "$gearboxDir"
-              elif [ -e "$gearboxDir" ]; then
-                if diff -r "${gearboxSource}" "$gearboxDir" > /dev/null 2>&1; then
-                  run rm -rf "$gearboxDir"
-                else
-                  preserveChangedCopy "$gearboxDir"
-                fi
-              fi
+              removeExistingCopy "${gearboxSource}" "$gearboxDir"
             ''}
           '';
         }
