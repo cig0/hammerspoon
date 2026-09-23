@@ -1,4 +1,9 @@
-{ config, inputs, ... }:
+{
+  config,
+  inputs,
+  self,
+  ...
+}:
 
 let
   optionsFor =
@@ -134,6 +139,8 @@ let
         let
           gb = cfg.spoons.gearbox;
 
+          gearboxSource = self.outPath + "/Spoons/Gearbox";
+
           /*
             Store-side staging copy with the typed options substituted into
             config.lua; activation deploys it to ~/.hammerspoon as plain
@@ -154,7 +161,7 @@ let
               }
               ''
                 mkdir -p "$out"
-                cp -R ${../Spoons/Gearbox}/. "$out/"
+                cp -R "${gearboxSource}/." "$out/"
                 chmod u+w "$out/config.lua"
                 substituteInPlace "$out/config.lua" \
                   --replace-fail "        timeout = 0," "        timeout = $timeout," \
@@ -257,7 +264,7 @@ let
               if [ -L "$gearboxDir" ]; then
                 run rm -f "$gearboxDir"
               elif [ -e "$gearboxDir" ]; then
-                if diff -r "${../Spoons/Gearbox}" "$gearboxDir" > /dev/null 2>&1; then
+                if diff -r "${gearboxSource}" "$gearboxDir" > /dev/null 2>&1; then
                   run rm -rf "$gearboxDir"
                 else
                   preserveChangedCopy "$gearboxDir"
