@@ -71,12 +71,17 @@ end
 ---@param message string
 local function fail(message) error("Gearbox: " .. message, 3) end
 
---- Validate that `value` is a number in [0, 1].
+--- Validate a color component using the caller's error wording.
 ---@param value any
----@param name string
-local function validateUnit(value, name)
-    if type(value) ~= "number" or value < 0 or value > 1 then
-        fail(name .. " must be a number from 0 to 1")
+---@param componentName string
+---@param useConfigMessages boolean
+local function validateColorComponent(value, componentName, useConfigMessages)
+    if useConfigMessages then
+        assertType(value, "number", componentName)
+        assert(value >= 0 and value <= 1,
+               componentName .. " must be 0..1")
+    elseif type(value) ~= "number" or value < 0 or value > 1 then
+        fail(componentName .. " must be a number from 0 to 1")
     end
 end
 
@@ -117,26 +122,20 @@ function Validation.validateColor(color, name, options)
 
     for _, component in ipairs(components) do
         local componentName = name .. "." .. component
-
-        if options.configMessages then
-            assertType(color[component], "number", componentName)
-            assert(color[component] >= 0 and color[component] <= 1,
-                   componentName .. " must be 0..1")
-        else
-            validateUnit(color[component], componentName)
-        end
+        validateColorComponent(color[component], componentName,
+                               options.configMessages)
     end
 
     if options.configMessages then
-        assertType(color.alpha, "number", name .. ".alpha")
-        assert(color.alpha >= 0 and color.alpha <= 1,
-               name .. ".alpha must be 0..1")
+        validateColorComponent(color.alpha, name .. ".alpha", true)
     else
         if options.requireAlpha and color.alpha == nil then
             fail(name .. ".alpha is required")
         end
 
-        if color.alpha ~= nil then validateUnit(color.alpha, name .. ".alpha") end
+        if color.alpha ~= nil then
+            validateColorComponent(color.alpha, name .. ".alpha", false)
+        end
     end
 
     return model
