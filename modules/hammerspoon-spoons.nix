@@ -225,18 +225,19 @@ let
           home.activation.hammerspoonSpoons = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
             hammerspoonDir="${config.home.homeDirectory}/.hammerspoon"
 
-            # Preserve every changed copy, including earlier backups. A target
-            # may differ because of a local edit or a new flake revision.
-            preserveChangedCopy() {
-              local dst="$1"
-              local backup="$dst.hm-bak"
-              local suffix=1
-
+            # Preserve every changed copy, including earlier backups.
+            nextBackupPath() {
+              local dst="$1" backup="$1.hm-bak" suffix=1
               while [ -e "$backup" ] || [ -L "$backup" ]; do
                 backup="$dst.hm-bak-$suffix"
                 suffix=$((suffix + 1))
               done
+              printf '%s\n' "$backup"
+            }
 
+            preserveChangedCopy() {
+              local dst="$1" backup
+              backup=$(nextBackupPath "$dst")
               run mv "$dst" "$backup"
               run echo "hammerspoon-spoons: changed copy moved to $backup"
             }
@@ -251,24 +252,62 @@ let
               if [ -L "$dst" ]; then
                 run rm -f "$dst"
               elif [ -e "$dst" ]; then
-                if diff -r "$baseline" "$dst" > /dev/null 2>&1; then
-                  run rm -rf "$dst"
-                else
-                  preserveChangedCopy "$dst"
-                fi
+                local difference=0
+                diff -r "$baseline" "$dst" > /dev/null || difference=$?
+                case "$difference" in
+                  0) run rm -rf "$dst" ;;
+                  1) preserveChangedCopy "$dst" ;;
+                  *) return "$difference" ;;
+                esac
               fi
             }
 
-            # installMutableCopy <src> <dst> replaces dst with a writable copy.
-            installMutableCopy() {
-              local src="$1"
-              local dst="$2"
+            # Prepare a complete writable replacement before touching the target.
+            # Files use atomic rename; failed directory publication restores backup.
+            installMutableCopy() (
+              set -eu
+              src="$1"
+              dst="$2"
+              if [[ -n ''${DRY_RUN+x} || -n ''${DRY_RUN_CMD:-} ]]; then
+                printf 'Would install writable copy at %s\n' "$dst"
+                exit 0
+              fi
+              mkdir -p "$(dirname "$dst")"
+              stage=$(mktemp -d "$dst.hm-stage.XXXXXX")
+              trap 'rm -rf -- "$stage"' EXIT
+              cp -RL -- "$src" "$stage/content"
+              chmod -R u+w "$stage/content"
 
-              removeExistingCopy "$src" "$dst"
-              run mkdir -p "$(dirname "$dst")"
-              run cp -R "$src" "$dst"
-              run chmod -R u+w "$dst"
-            }
+              if [[ -e "$dst" && ! -L "$dst" ]]; then
+                difference=0
+                diff -r "$stage/content" "$dst" > /dev/null || difference=$?
+                case "$difference" in
+                  0) chmod -R u+w "$dst"; exit 0 ;;
+                  1) ;;
+                  *) exit "$difference" ;;
+                esac
+                backup=$(nextBackupPath "$dst")
+                if [[ -d "$dst" ]]; then
+                  mv -T -- "$dst" "$backup"
+                  if ! mv -T -- "$stage/content" "$dst"; then
+                    if ! mv -T -- "$backup" "$dst"; then
+                      printf 'Restore failed; recover %s to %s.\n' "$backup" "$dst" >&2
+                    fi
+                    exit 1
+                  fi
+                else
+                  cp -Pp -- "$dst" "$backup"
+                  if ! cmp -s -- "$dst" "$backup"; then
+                    printf 'Config changed while backing up %s.\n' "$dst" >&2
+                    exit 1
+                  fi
+                  mv -fT -- "$stage/content" "$dst"
+                fi
+                printf 'hammerspoon-spoons: changed copy preserved at %s\n' "$backup"
+              else
+                mv -fT -- "$stage/content" "$dst"
+              fi
+            )
 
             installMutableCopy "${managedFiles}/nix-spoons.lua" "$hammerspoonDir/nix-spoons.lua"
             ${lib.optionalString cfg.manageInit ''

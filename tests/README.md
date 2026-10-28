@@ -26,7 +26,8 @@ not a replacement for a live Hammerspoon hit-testing check.
 Home Manager module with a minimal activation interface, builds the staged
 Gearbox tree, and runs enabled and disabled activation in a temporary home.
 It checks option defaults and substitutions, writable copies, backup behavior,
-symlinks, and cleanup without touching the real `~/.hammerspoon`.
+symlinks, cleanup, dry runs, failed preparation, and directory publication
+rollback without touching the real `~/.hammerspoon`.
 
 ## Coverage
 

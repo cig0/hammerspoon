@@ -87,7 +87,10 @@ bring it back to this repository before the next activation, which re-asserts
 the flake content (`extraConfig` covers entrypoint-only snippets). A target
 that differs from the version being deployed is preserved as `<path>.hm-bak`
 before the fresh copy lands. Existing backups are kept; additional ones use
-`<path>.hm-bak-1`, then increasing suffixes.
+`<path>.hm-bak-1`, then increasing suffixes. A complete writable replacement is
+staged before the current target changes. Files use atomic replacement;
+directory publication failures restore the previous tree. An interruption
+between directory renames leaves the previous tree recoverable in its backup.
 `spoons.gearbox.enable = false` removes the deployed Gearbox tree and
 preserves a tree that differs from the shipped sources by the same rule.
 Disabling the module entirely leaves previously deployed files in place.

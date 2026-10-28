@@ -158,5 +158,48 @@ pkgs.runCommand "hammerspoon-delivery-check" { } ''
   activateDefaults
   diff -r ${shippedGearbox} "$TEST_HOME/.hammerspoon/Spoons/Gearbox"
 
+  # Exercise failures in a child shell so its errexit behavior matches HM.
+  # Calling a function directly in an `if` condition would suppress errexit.
+  failureRoot="$TMPDIR/failures"
+  mkdir -p "$failureRoot/source-tree" "$failureRoot/target-tree"
+  printf 'new' > "$failureRoot/source-file"
+  printf 'new' > "$failureRoot/source-tree/config.lua"
+  printf 'old' > "$failureRoot/target-tree/config.lua"
+  cp() {
+    if [[ ''${INJECT_FAILURE:-} == cp ]]; then return 77; fi
+    command cp "$@"
+  }
+  chmod() {
+    if [[ ''${INJECT_FAILURE:-} == chmod ]]; then return 77; fi
+    command chmod "$@"
+  }
+  diff() {
+    if [[ ''${INJECT_FAILURE:-} == diff ]]; then return 77; fi
+    command diff "$@"
+  }
+  mv() {
+    if [[ ''${INJECT_FAILURE:-} == mv && "$*" == *hm-stage.*/content* ]]; then return 77; fi
+    command mv "$@"
+  }
+  export -f installMutableCopy nextBackupPath cp chmod diff mv
+  for failure in cp chmod diff mv; do
+    printf 'old' > "$failureRoot/target-file"
+    if INJECT_FAILURE="$failure" ${pkgs.bash}/bin/bash -c \
+      'installMutableCopy "$1" "$2"' test "$failureRoot/source-file" "$failureRoot/target-file"; then
+      echo "Expected $failure to fail" >&2
+      exit 1
+    fi
+    test "$(cat "$failureRoot/target-file")" = old
+  done
+  if INJECT_FAILURE=mv ${pkgs.bash}/bin/bash -c \
+    'installMutableCopy "$1" "$2"' test "$failureRoot/source-tree" "$failureRoot/target-tree"; then
+    echo 'Expected directory publication to fail' >&2
+    exit 1
+  fi
+  test "$(cat "$failureRoot/target-tree/config.lua")" = old
+  DRY_RUN=1 ${pkgs.bash}/bin/bash -c \
+    'installMutableCopy "$1" "$2"' test "$failureRoot/source-file" "$failureRoot/dry-run/file"
+  test ! -e "$failureRoot/dry-run"
+
   touch "$out"
 ''
