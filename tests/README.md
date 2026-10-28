@@ -22,6 +22,20 @@ canonical/private namespace loading, missing and broken bundle failures, and
 byte-identical bundled RetroUI files. It is deterministic delivery coverage,
 not a replacement for a live Hammerspoon hit-testing check.
 
+## Nix writable-copy deployment
+
+`mutable-copy.py` exercises `nix/mutable-copy.sh` in temporary directories.
+With GNU coreutils and Bash on `PATH`, run:
+
+```sh
+python3 tests/mutable-copy.py nix/mutable-copy.sh
+```
+
+It covers regular files, directory trees, repeated switches, retained edit
+backups, broken symlinks, dry runs, preparation failures, publication rollback,
+and disabled-asset preservation. The helper and tests are mirrored in Hoagie's
+stable Codex adapter. No live Home Manager configuration is activated.
+
 ## Coverage
 
 | Concern | Assertions |

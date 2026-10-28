@@ -77,12 +77,18 @@ Deployed files are mutable working copies: edit anything they contain and
 reload Hammerspoon without rebuilding. Each activation re-asserts the
 flake-shipped content, so lasting changes — including hand edits to values
 the typed options also set — must first be ported back to this repository
-(`extraConfig` covers entrypoint-only snippets). A target edited since the
-last activation is preserved as `<path>.hm-bak` before the fresh copy
-lands. `spoons.gearbox.enable = false` removes the deployed Gearbox tree,
-moving trees that differ from the shipped sources to
-`Spoons/Gearbox.hm-bak`; disabling the module entirely leaves previously
-deployed files in place.
+(`extraConfig` covers entrypoint-only snippets). A target that differs from
+the incoming content is preserved in a private `<path>.hm-bak.XXXXXX/original` directory.
+The complete writable replacement is staged before the current target changes;
+failed preparation leaves it intact. Regular files are replaced atomically.
+Directories use two renames, with restoration on a failed publication; if the
+process is killed between renames, the previous tree remains in its backup.
+Unchanged switches retain all backups. Backups accumulate until deliberately
+removed by the user.
+
+`spoons.gearbox.enable = false` moves the deployed Gearbox tree into one of
+these backup directories, including unchanged trees. Disabling the module
+entirely leaves previously deployed files in place.
 
 When another module or hand-written file owns the entrypoint:
 
