@@ -22,19 +22,12 @@ canonical/private namespace loading, missing and broken bundle failures, and
 byte-identical bundled RetroUI files. It is deterministic delivery coverage,
 not a replacement for a live Hammerspoon hit-testing check.
 
-## Nix writable-copy deployment
-
-`mutable-copy.py` exercises `nix/mutable-copy.sh` in temporary directories.
-With GNU coreutils and Bash on `PATH`, run:
-
-```sh
-python3 tests/mutable-copy.py nix/mutable-copy.sh
-```
-
-It covers regular files, directory trees, repeated switches, retained edit
-backups, broken symlinks, dry runs, preparation failures, publication rollback,
-and disabled-asset preservation. The helper and tests are mirrored in Hoagie's
-stable Codex adapter. No live Home Manager configuration is activated.
+`tests/nix-delivery.nix` is wired into `nix flake check`. It evaluates the
+Home Manager module with a minimal activation interface, builds the staged
+Gearbox tree, and runs enabled and disabled activation in a temporary home.
+It checks option defaults and substitutions, writable copies, backup behavior,
+symlinks, cleanup, dry runs, failed preparation, and directory publication
+rollback without touching the real `~/.hammerspoon`.
 
 ## Coverage
 
@@ -47,6 +40,7 @@ stable Codex adapter. No live Home Manager configuration is activated.
 | Runtime | Zero-timeout RetroUI dialog, hotkey replacement, partial-start rollback, session-scoped character capture and live Caps Lock observation, exact case and symbol dispatch, Secure Input refusal, repeat suppression, modal cleanup, and arrow-key activation |
 | RetroUI | Frame styles and alignment, asymmetric padding, footer actions, box-glyph width, strict themes and mnemonics, targeted redraws, button focus/press state, keyboard and left-mouse activation, background dismissal, and cleanup races |
 | Packaging | Manifest identity, complete private bundle, private preference, canonical fallback, and broken/missing-bundle diagnostics |
+| Nix delivery | Staged config and tree, generated loader, mutable activation copies, backup naming, symlinks, and disable cleanup |
 | HUD boundary | Root Caps Lock warning, passive memory-aid legend, optional accent border, checked rows, group key-cap backgrounds, immediate theme refresh, lazy appearance resolution |
 | Scratchpad | Lazy Webview construction, failed-first-use cleanup, sizing, font size, symmetric placement, capacity, persistence, storage switching, and reuse |
 | Host resolution | System fonts and macOS accent are resolved only at their documented lifecycle points |
@@ -57,6 +51,7 @@ The harness runs with a command-line Lua interpreter:
 lua tests/gearbox.lua "$(pwd)"
 lua tests/retroui.lua "$(pwd)"
 lua tests/retroui-package.lua "$(pwd)"
+nix flake check --no-write-lock-file
 ```
 
 Parse changed Lua files separately. A live Hammerspoon run remains the visual

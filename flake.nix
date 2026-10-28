@@ -2,46 +2,37 @@
   description = "Independent Hammerspoon Spoons with an optional Home Manager module";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nix-fuel.url = "github:cig0/nix-fuel?ref=main";
+    nix-batteries.url = "github:cig0/nix-batteries?ref=main";
+    flake-parts.url = "github:hercules-ci/flake-parts";
   };
 
   outputs =
-    { self, nix-fuel, ... }:
-    {
-      /*
-        Public option schema for the Home Manager module. Exposing it lets
-        downstream flakes reuse the typed option tree under their own namespace
-        without depending on internal file paths.
-      */
-      interfaces.homeManagerOptions = { lib }: import ./nix/options.nix { inherit lib; };
+    inputs@{ flake-parts, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [
+        flake-parts.flakeModules.modules
+        ./modules/hammerspoon-spoons.nix
+      ];
 
-      /*
-        Markdown-ready option documentation. Downstream docs can render this
-        under any namespace prefix without re-walking the schema.
-      */
-      interfaces.homeManagerOptionDocs =
-        { lib }:
-        self._nixOptionsToMd {
-          inherit lib;
-          options = import ./nix/options.nix { inherit lib; };
-          namespace = "programs.hammerspoon-spoons";
-        };
+      # The module is reusable on any system; these systems build its delivery
+      # regression check without exporting runtime packages.
+      systems = [
+        "aarch64-darwin"
+        "x86_64-darwin"
+        "aarch64-linux"
+        "x86_64-linux"
+      ];
 
-      # Reusable helper exposed for internal consumers (devShell, docs).
-      _nixOptionsToMd =
+      perSystem =
+        { system, ... }:
+        let
+          pkgs = import inputs.nix-batteries.inputs.nixpkgs { inherit system; };
+        in
         {
-          lib,
-          options,
-          namespace ? "programs.hammerspoon-spoons",
-        }:
-        nix-fuel.fuelLibs.nixOptionsToMd {
-          inherit lib options namespace;
+          checks.hammerspoon-delivery = import ./tests/nix-delivery.nix {
+            inherit pkgs;
+            self = inputs.self;
+          };
         };
-
-      homeModules = {
-        default = self.homeModules.hammerspoon-spoons;
-        hammerspoon-spoons = import ./nix/home-manager.nix;
-      };
     };
 }

@@ -26,10 +26,17 @@ an externally owned entrypoint must require the loader itself.
 
 | Flake output | Destination |
 | --- | --- |
-| `homeModules.hammerspoon-spoons` | A Home Manager configuration, standalone or embedded |
+| `modules.homeManager.hammerspoon-spoons` | Home Manager module with class checking |
+| `homeModules.hammerspoon-spoons` | Established Home Manager import path, standalone or embedded |
 | `homeModules.default` | Alias of `homeModules.hammerspoon-spoons` |
 | `interfaces.homeManagerOptions` | Reusable Home Manager delivery, Gearbox placement and timeout, and Scratchpad schema |
 | `interfaces.homeManagerOptionDocs` | Markdown-ready option documentation metadata |
+
+The flake uses `flake-parts` with an explicit feature module import.
+`modules/hammerspoon-spoons.nix` owns the Home Manager module, its option
+schema, and the documentation interface together. Keep that boundary until a
+second Spoon needs its own staging path or activation needs a third distinct
+deployment case; then split by responsibility rather than file length.
 
 ## Home Manager
 
@@ -73,22 +80,26 @@ windows; bottom placement mirrors the top margin. The default timeout is
 the disabled sentinel `0`; normal use requires an explicit positive value.
 Hammerspoon itself must be installed separately.
 
-Deployed files are mutable working copies: edit anything they contain and
-reload Hammerspoon without rebuilding. Each activation re-asserts the
-flake-shipped content, so lasting changes — including hand edits to values
-the typed options also set — must first be ported back to this repository
-(`extraConfig` covers entrypoint-only snippets). A target that differs from
-the incoming content is preserved in a private `<path>.hm-bak.XXXXXX/original` directory.
-The complete writable replacement is staged before the current target changes;
-failed preparation leaves it intact. Regular files are replaced atomically.
-Directories use two renames, with restoration on a failed publication; if the
-process is killed between renames, the previous tree remains in its backup.
-Unchanged switches retain all backups. Backups accumulate until deliberately
-removed by the user.
+The Nix build stages the configuration in the store. Activation copies it to
+`~/.hammerspoon` as regular, user-writable files; Hammerspoon runs those
+copies. Edit and reload them while trying an idea. Once a change is approved,
+bring it back to this repository before the next activation, which re-asserts
+the flake content (`extraConfig` covers entrypoint-only snippets). A target
+that differs from the version being deployed is preserved as `<path>.hm-bak`
+before the fresh copy lands. Existing backups are kept; additional ones use
+`<path>.hm-bak-1`, then increasing suffixes. A complete writable replacement is
+staged before the current target changes. Files use atomic replacement;
+directory publication failures restore the previous tree. An interruption
+between directory renames leaves the previous tree recoverable in its backup.
+`spoons.gearbox.enable = false` removes the deployed Gearbox tree and
+preserves a tree that differs from the shipped sources by the same rule.
+Disabling the module entirely leaves previously deployed files in place.
 
-`spoons.gearbox.enable = false` moves the deployed Gearbox tree into one of
-these backup directories, including unchanged trees. Disabling the module
-entirely leaves previously deployed files in place.
+`nix flake check` builds a configured Gearbox tree and exercises the generated
+activation script in a temporary home. It checks all option substitutions,
+default/source agreement, writable regular copies, repeated activation,
+backup suffixes, symlink replacement, and Gearbox disable cleanup. It does not
+launch Hammerspoon; the Lua harnesses cover runtime behavior separately.
 
 When another module or hand-written file owns the entrypoint:
 
