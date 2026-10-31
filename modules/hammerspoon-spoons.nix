@@ -47,6 +47,32 @@ let
           description = "Whether to install and load Gearbox.";
         };
 
+        hotkey.modifiers = mkOption {
+          type = types.nonEmptyListOf (
+            types.enum [
+              "alt"
+              "option"
+              "cmd"
+              "command"
+              "ctrl"
+              "control"
+              "shift"
+            ]
+          );
+          default = [
+            "ctrl"
+            "alt"
+            "cmd"
+          ];
+          description = "Modifiers held with hotkey.key to open or close Gearbox.";
+        };
+
+        hotkey.key = mkOption {
+          type = types.nonEmptyStr;
+          default = "space";
+          description = "Hammerspoon key name or raw #keycode used to open or close Gearbox.";
+        };
+
         menu.timeout = mkOption {
           type = nonNegativeNumber;
           default = 0;
@@ -155,6 +181,8 @@ let
           configuredGearbox =
             pkgs.runCommand "gearbox-configured"
               {
+                hotkeyModifiers = lib.generators.toLua { multiline = false; } gb.hotkey.modifiers;
+                hotkeyKey = builtins.toJSON gb.hotkey.key;
                 timeout = builtins.toJSON gb.menu.timeout;
                 menuPosition = builtins.toJSON gb.menu.position;
                 scratchpadEnable = builtins.toJSON gb.scratchpad.enable;
@@ -170,15 +198,16 @@ let
                 cp -R "${gearboxSource}/." "$out/"
                 chmod u+w "$out/config.lua"
                 substituteInPlace "$out/config.lua" \
-                  --replace-fail "        timeout = 0," "        timeout = $timeout," \
-                  --replace-fail '        position = "top",' "        position = $menuPosition," \
-                  --replace-fail "        enable = true," "        enable = $scratchpadEnable," \
-                  --replace-fail "        fontSize = 14," "        fontSize = $scratchpadFontSize," \
-                  --replace-fail "        width = 720," "        width = $scratchpadWidth," \
-                  --replace-fail "        height = 480," "        height = $scratchpadHeight," \
-                  --replace-fail "        maxCharacters = 4096," "        maxCharacters = $scratchpadMaxCharacters," \
-                  --replace-fail "        persistContent = true," "        persistContent = $scratchpadPersistContent," \
-                  --replace-fail "        showInstructions = true" "        showInstructions = $scratchpadShowInstructions"
+                  --replace-fail '  hotkey = { modifiers = { "ctrl", "alt", "cmd" }, key = "space" },' "  hotkey = { modifiers = $hotkeyModifiers, key = $hotkeyKey }," \
+                  --replace-fail "    timeout = 0," "    timeout = $timeout," \
+                  --replace-fail '    position = "top",' "    position = $menuPosition," \
+                  --replace-fail "    enable = true," "    enable = $scratchpadEnable," \
+                  --replace-fail "    fontSize = 14," "    fontSize = $scratchpadFontSize," \
+                  --replace-fail "    width = 720," "    width = $scratchpadWidth," \
+                  --replace-fail "    height = 480," "    height = $scratchpadHeight," \
+                  --replace-fail "    maxCharacters = 4096," "    maxCharacters = $scratchpadMaxCharacters," \
+                  --replace-fail "    persistContent = true," "    persistContent = $scratchpadPersistContent," \
+                  --replace-fail "    showInstructions = true" "    showInstructions = $scratchpadShowInstructions"
               '';
 
           # Generated entrypoint: loading stays independent of manageInit so an

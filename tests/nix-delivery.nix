@@ -38,6 +38,13 @@ let
                   enable = gearboxEnable;
                 }
                 // lib.optionalAttrs customize {
+                  hotkey = {
+                    modifiers = [
+                      "alt"
+                      "cmd"
+                    ];
+                    key = "f12";
+                  };
                   menu = {
                     timeout = 5;
                     position = "bottom";
@@ -92,17 +99,18 @@ pkgs.runCommand "hammerspoon-delivery-check" { } ''
   grep -Fq 'require("nix-spoons")' "$root/init.lua"
   grep -Fq -- '-- delivery check' "$root/init.lua"
 
-  # All nine anchors must be replaced in the deployed tree. A missing source
+  # All ten anchors must be replaced in the deployed tree. A missing source
   # anchor also fails earlier in the configuredGearbox build.
-  grep -Fqx '        timeout = 5, -- Zero disables timeout and intentionally aborts startup.' "$config"
-  grep -Fqx '        position = "bottom", -- "top", "center", "bottom"' "$config"
-  grep -Fqx '        enable = false,' "$config"
-  grep -Fqx '        fontSize = 18,' "$config"
-  grep -Fqx '        width = 800,' "$config"
-  grep -Fqx '        height = 600,' "$config"
-  grep -Fqx '        maxCharacters = 3000,' "$config"
-  grep -Fqx '        persistContent = false,' "$config"
-  grep -Fqx '        showInstructions = false' "$config"
+  grep -Fqx '    timeout = 5,          -- Zero disables timeout and intentionally aborts startup.' "$config"
+  grep -Fqx '    position = "bottom",     -- "top", "center", "bottom"' "$config"
+  grep -Fqx '  hotkey = { modifiers = { "alt", "cmd" }, key = "f12" },' "$config"
+  grep -Fqx '    enable = false,' "$config"
+  grep -Fqx '    fontSize = 18,' "$config"
+  grep -Fqx '    width = 800,' "$config"
+  grep -Fqx '    height = 600,' "$config"
+  grep -Fqx '    maxCharacters = 3000,' "$config"
+  grep -Fqx '    persistContent = false,' "$config"
+  grep -Fqx '    showInstructions = false' "$config"
 
   # Re-activation of unchanged files should replace them without backups.
   activateEnabled

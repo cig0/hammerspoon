@@ -11,7 +11,7 @@ This repository contains independent Hammerspoon Spoons and reusable Lua
 libraries. Each Spoon owns its
 Lua runtime, configuration, data, tests, and detailed documentation; optional
 Home Manager delivery loads those files and provides Gearbox's required
-timeout, shared placement, and Scratchpad settings.
+timeout, shortcut, shared placement, and Scratchpad settings.
 
 ## Spoons
 

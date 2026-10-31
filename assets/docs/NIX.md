@@ -1,12 +1,13 @@
 # Nix delivery
 
 The repository exports one optional Home Manager module. Nix owns delivery,
-loader wiring, Gearbox's required timeout and shared placement, and Scratchpad
+loader wiring, Gearbox's shortcut, required timeout and shared placement, and Scratchpad
 settings; the Spoon owns every other runtime setting.
 
 ```text
 Spoons/Gearbox
   └ lib/RetroUI (private, byte-identical shipped copy)
+  + programs.hammerspoon-spoons.spoons.gearbox.hotkey.{modifiers,key}
   + programs.hammerspoon-spoons.spoons.gearbox.menu.{position,timeout}
   + programs.hammerspoon-spoons.spoons.gearbox.scratchpad.*
   → Nix-derived Gearbox copy
@@ -22,6 +23,13 @@ enabled Spoon set
 `~/.hammerspoon/init.lua` requires that loader before appending `extraConfig`;
 an externally owned entrypoint must require the loader itself.
 
+## Change the Gearbox shortcut
+
+The default is **Ctrl+Alt+Cmd+Space**. Set
+`programs.hammerspoon-spoons.spoons.gearbox.hotkey.modifiers` and `.key` to
+change it. See the [shortcut quick reference](../../Spoons/Gearbox/README.md#tldr--change-the-gearbox-shortcut)
+for complete manual, Home Manager, and Hoagie examples and reload instructions.
+
 ## Exports
 
 | Flake output | Destination |
@@ -29,7 +37,7 @@ an externally owned entrypoint must require the loader itself.
 | `modules.homeManager.hammerspoon-spoons` | Home Manager module with class checking |
 | `homeModules.hammerspoon-spoons` | Established Home Manager import path, standalone or embedded |
 | `homeModules.default` | Alias of `homeModules.hammerspoon-spoons` |
-| `interfaces.homeManagerOptions` | Reusable Home Manager delivery, Gearbox placement and timeout, and Scratchpad schema |
+| `interfaces.homeManagerOptions` | Reusable Home Manager delivery, Gearbox shortcut, placement and timeout, and Scratchpad schema |
 | `interfaces.homeManagerOptionDocs` | Markdown-ready option documentation metadata |
 
 The flake uses `flake-parts` with an explicit feature module import.
@@ -41,7 +49,7 @@ deployment case; then split by responsibility rather than file length.
 ## Home Manager
 
 The Home Manager module exposes delivery controls, shared Gearbox and
-Scratchpad placement, the required timeout, and Scratchpad settings:
+Scratchpad placement, the shortcut, the required timeout, and Scratchpad settings:
 
 ```nix
 {
@@ -146,7 +154,8 @@ export a system-level module that writes directly into a user's home directory.
 
 [`Spoons/Gearbox/config.lua`](../../Spoons/Gearbox/config.lua) is Gearbox's
 runtime configuration contract. Standalone installations read it directly.
-Nix delivery stages a copy with its `menu.position`, `menu.timeout`, and
+Nix delivery stages a copy with its `hotkey.modifiers`, `hotkey.key`,
+`menu.position`, `menu.timeout`, and
 Scratchpad values replaced by the corresponding
 `programs.hammerspoon-spoons.spoons.gearbox.*` options, then deploys it as
 user-writable files whose content activation re-asserts on every rebuild.
@@ -154,7 +163,7 @@ user-writable files whose content activation re-asserts on every rebuild.
 ```text
 repository Spoons/Gearbox/config.lua
   + Spoons/Gearbox/lib/RetroUI/package.json (shipped version record)
-  + Nix menu.{position,timeout} and scratchpad.*
+  + Nix hotkey.{modifiers,key}, menu.{position,timeout}, and scratchpad.*
   → deployed Spoons/Gearbox/{config.lua,lib/RetroUI}
   → Gearbox.start()
   → validation
@@ -163,7 +172,7 @@ repository Spoons/Gearbox/config.lua
 
 No runtime override table is generated or passed to `Gearbox.start()`. All
 other Gearbox values remain owned by the repository file, so a flake input
-update deploys their changes. Placement, timeout, and Scratchpad options are
+update deploys their changes. Shortcut, placement, timeout, and Scratchpad options are
 deployment-time exceptions: the shipped timeout `0` intentionally prevents
 startup until an installation chooses a positive duration, while shared
 placement and Scratchpad policy, sizing, and editor font size remain
