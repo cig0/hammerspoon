@@ -5,6 +5,50 @@ shortcuts, arrow navigation, an editable scratchpad, loupe scaling, macOS power
 controls, and auto-discovered themes. It uses the macOS system font by default
 and can follow the current appearance and accent.
 
+## TL;DR — Change the Gearbox shortcut
+
+**Default: `ctrl+alt+cmd+space`.** Change the modifiers, the key, or both in
+[`config.lua`](./config.lua).
+
+**Manual installation:** edit `hotkey` near the top of
+`~/.hammerspoon/Spoons/Gearbox/config.lua`. For example, to use Alt+Cmd+F12:
+
+```lua
+hotkey = {modifiers = { "alt", "cmd" }, key = "f12"},
+```
+
+Supported modifiers are `ctrl`, `alt`, `cmd`, and `shift` (also `control`,
+`option`, and `command`). Use at least one modifier. The key can be a
+Hammerspoon key name such as `space`, `return`, or `f12`, or a raw `#keycode`.
+
+Save the file and reload Hammerspoon. When editing the repository's default,
+change `Spoons/Gearbox/config.lua` before copying the Spoon into place.
+Gearbox also requires a positive `menu.timeout` to start.
+
+**Nix / Home Manager:** configure the shortcut through these options instead:
+
+```nix
+programs.hammerspoon-spoons.spoons.gearbox.hotkey = {
+  modifiers = [ "alt" "cmd" ];
+  key = "f12";
+};
+```
+
+**Hoagie:** in `hosts/<host>/profile.nix`, use:
+
+```nix
+myOptions.hm.programs.hammerspoon.spoons.gearbox.hotkey = {
+  modifiers = [ "alt" "cmd" ];
+  key = "f12";
+};
+```
+
+Inside an existing `spoons.gearbox = { ... };` block, add only
+`hotkey = { modifiers = [ "alt" "cmd" ]; key = "f12"; };`.
+Apply your Home Manager configuration (or run `hoagie hs`), then reload
+Hammerspoon. Nix activation reapplies these values, so manual edits to the
+installed file are temporary. Omit the options to inherit the default shortcut.
+
 ## Requirements
 
 - macOS with [Hammerspoon](https://www.hammerspoon.org/) installed and running.
@@ -34,7 +78,7 @@ load Gearbox from `~/.hammerspoon/init.lua`:
 require("Spoons.Gearbox").start()
 ```
 
-Reload Hammerspoon and press `alt+cmd+space`. A full clone at
+Reload Hammerspoon and press `ctrl+alt+cmd+space`. A full clone at
 `~/.hammerspoon` already has the expected directory layout; only the import in
 the repository's root [`init.lua`](../../init.lua) needs to be enabled.
 
@@ -61,7 +105,7 @@ external `init.lua` ownership, and the Home Manager integration boundary.
 ## Controls
 
 ```text
-alt+cmd+space → open or close Gearbox and its scratchpad
+ctrl+alt+cmd+space → open or close Gearbox and its scratchpad
 shown key     → run or open the entry with that exact character
 ↑ / ↓         → select an entry
 Return        → activate the selection
@@ -251,17 +295,16 @@ A standalone installation reads the file as shipped or edited locally. The
 versioned profile and local preferences then override only menu position, outer
 frame visibility, and the documented Scratchpad fields.
 
-Nix delivery creates a derived copy of the Spoon and substitutes only
-`menu.timeout` from
-`programs.hammerspoon-spoons.spoons.gearbox.menu.timeout`. Every other setting
-still comes directly from `config.lua`; no Lua override table is passed at
-startup. See [configuration ownership](../../assets/docs/NIX.md#configuration-ownership).
+Nix delivery creates a derived copy of the Spoon and substitutes `hotkey.*`,
+`menu.{timeout,position}`, and the exposed `scratchpad.*` settings from
+`programs.hammerspoon-spoons.spoons.gearbox.*`. Other settings come directly
+from `config.lua`; no Lua override table is passed at startup. See [configuration ownership](../../assets/docs/NIX.md#configuration-ownership).
 
 ### Hotkey and menu
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `hotkey.modifiers` | `{ "alt", "cmd" }` | Modifiers used to open or close Gearbox |
+| `hotkey.modifiers` | `{ "ctrl", "alt", "cmd" }` | Modifiers used to open or close Gearbox |
 | `hotkey.key` | `"space"` | Hammerspoon key name paired with the modifiers |
 | `menu.timeout` | `0` | Seconds before closing; zero leaves Gearbox stopped and shows its configuration dialog |
 | `menu.position` | `"top"` | `"top"`, `"center"`, or `"bottom"` screen placement |

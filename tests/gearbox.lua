@@ -1434,7 +1434,7 @@ assert(sendCharacterKeyDown("w") == true and
 
 assert(sendCharacterKeyDown("W", {
     physicalKey = "w",
-    flags = { alt = true, cmd = true, shift = true }
+    flags = { ctrl = true, alt = true, cmd = true, shift = true }
   }) == true and dispatchedCharacters[#dispatchedCharacters] == "W",
   "configured command modifiers must preserve character case")
 
@@ -1521,7 +1521,7 @@ assert(elementById(runtime.hud.canvas, "caps-lock-warning") == nil and
   capsLockRenderState.reads == 4,
   "disabled Caps Lock must leave the root header unchanged")
 
-assert(sendCharacterKeyDown("d", { flags = { alt = true, cmd = true } }) == true and
+assert(sendCharacterKeyDown("d", { flags = { ctrl = true, alt = true, cmd = true } }) == true and
   runtime.activeMenu.id == "developer",
   "character rows must accept the configured command chord")
 runtime.menus.developer.modal.bindings.escape()
@@ -1639,7 +1639,7 @@ assert(not scratchpadWebview.document:match('event.key === "Escape"'),
 local scratchpadState = runtime.scratchpad:state(false)
 
 assert(scratchpadState.instructions ==
-  "Cursor keys move · Tab inserts tabs · alt+cmd+space closes scratchpad",
+  "Cursor keys move · Tab inserts tabs · ctrl+alt+cmd+space closes scratchpad",
   "scratchpad instructions must include the configured Gearbox hotkey")
 assert(scratchpadState.bodySize == 14 and scratchpadState.footerSize == 13,
   "scratchpad font sizing must remain configurable and legible")
@@ -2266,7 +2266,7 @@ local letterToggleRuntime = startGearbox({
 
 globalHotkeyPressed()
 assert(sendCharacterKeyDown("g", {
-    flags = { alt = true, cmd = true }
+    flags = { ctrl = true, alt = true, cmd = true }
   }) == nil and letterToggleRuntime.activeMenu.id == "leader",
   "the configured global chord must pass through without dispatching its row")
 
@@ -2283,13 +2283,13 @@ letterToggleRuntime.menus.leader.activationRowsByCharacter.G = {
 
 assert(sendCharacterKeyDown("G", {
     physicalKey = "g",
-    flags = { alt = true, cmd = true, shift = true }
+    flags = { ctrl = true, alt = true, cmd = true, shift = true }
   }) == nil and shiftedToggleDispatches == 0 and
   letterToggleRuntime.activeMenu.id == "leader",
   "a same-key chord with extra Shift must remain reserved for the toggle")
 
 assert(sendCharacterKeyDown("g", {
-    flags = { alt = true, cmd = true, fn = true }
+    flags = { ctrl = true, alt = true, cmd = true, fn = true }
   }) == nil and letterToggleRuntime.activeMenu.id == "leader",
   "a same-key chord with Fn must remain reserved for the toggle")
 

@@ -3,68 +3,68 @@
 -- The sole source of Gearbox behavior. This module contains no Hammerspoon
 -- calls; `Gearbox.start()` loads and validates it without external overrides.
 return {
-    hotkey = {modifiers = {"alt", "cmd"}, key = "space"},
+  hotkey = { modifiers = { "ctrl", "alt", "cmd" }, key = "space" },
 
-    menu = {
-        timeout = 0, -- Zero disables timeout and intentionally aborts startup.
-        position = "top", -- "top", "center", "bottom"
-        screen = "main", -- "main", "mouse"
-        width = 420,
+  menu = {
+    timeout = 0,          -- Zero disables timeout and intentionally aborts startup.
+    position = "top",     -- "top", "center", "bottom"
+    screen = "main",      -- "main", "mouse"
+    width = 420,
 
-        showEmojis = true,
-        highlightGroups = true, -- Applies at every submenu depth.
-        showAccentBorder = true
-    },
+    showEmojis = true,
+    highlightGroups = true,     -- Applies at every submenu depth.
+    showAccentBorder = true
+  },
 
-    font = {
-        family = nil, -- nil uses the macOS system font.
-        size = 14,
-        titleSize = 20,
+  font = {
+    family = nil,     -- nil uses the macOS system font.
+    size = 14,
+    titleSize = 20,
 
-        bodyWeight = "regular",
-        groupWeight = "bold",
-        titleWeight = "bold"
-    },
+    bodyWeight = "regular",
+    groupWeight = "bold",
+    titleWeight = "bold"
+  },
 
-    loupe = {
-        enabled = true,
-        selectedScale = 1.18,
-        adjacentScale = 1.06,
-        duration = 0
-    },
+  loupe = {
+    enabled = true,
+    selectedScale = 1.18,
+    adjacentScale = 1.06,
+    duration = 0
+  },
 
-    theme = {
-        name = "system",
-        persistSelection = true,
+  theme = {
+    name = "system",
+    persistSelection = true,
 
-        system = {dark = "gearbox-dark", light = "gearbox-light"},
+    system = { dark = "gearbox-dark", light = "gearbox-light" },
 
-        accentSource = "system", -- "system", "theme"
+    accentSource = "system",     -- "system", "theme"
 
-        fallbackAccent = {red = 0.04, green = 0.48, blue = 1, alpha = 1},
+    fallbackAccent = { red = 0.04, green = 0.48, blue = 1, alpha = 1 },
 
-        systemAccentText = {white = 1, alpha = 1},
-        overrides = {}
-    },
+    systemAccentText = { white = 1, alpha = 1 },
+    overrides = {}
+  },
 
-    navigation = {
-        enabled = true,
-        wrap = true,
-        activateKey = "return",
-        cancelKey = "escape",
-        includeFooter = true,
-        resetTimeoutOnInput = true
-    },
+  navigation = {
+    enabled = true,
+    wrap = true,
+    activateKey = "return",
+    cancelKey = "escape",
+    includeFooter = true,
+    resetTimeoutOnInput = true
+  },
 
-    scratchpad = {
-        enable = true,
-        fontSize = 14,
-        width = 720,
-        height = 480,
-        maxCharacters = 4096,
-        persistContent = true,
-        -- nil uses local hs.settings; /path or ~/path uses a regular text file.
-        storagePath = nil,
-        showInstructions = true
-    }
+  scratchpad = {
+    enable = true,
+    fontSize = 14,
+    width = 720,
+    height = 480,
+    maxCharacters = 4096,
+    persistContent = true,
+    -- nil uses local hs.settings; /path or ~/path uses a regular text file.
+    storagePath = nil,
+    showInstructions = true
+  }
 }
