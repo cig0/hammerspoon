@@ -49,7 +49,7 @@ let
 
         menu.timeout = mkOption {
           type = nonNegativeNumber;
-          default = 0;
+          default = 10;
           description = ''
             Seconds before the menu closes. Zero disables timeout and intentionally
             leaves Gearbox stopped while showing its configuration dialog; normal
@@ -170,7 +170,7 @@ let
                 cp -R "${gearboxSource}/." "$out/"
                 chmod u+w "$out/config.lua"
                 substituteInPlace "$out/config.lua" \
-                  --replace-fail "        timeout = 0," "        timeout = $timeout," \
+                  --replace-fail "        timeout = 10," "        timeout = $timeout," \
                   --replace-fail '        position = "top",' "        position = $menuPosition," \
                   --replace-fail "        enable = true," "        enable = $scratchpadEnable," \
                   --replace-fail "        fontSize = 14," "        fontSize = $scratchpadFontSize," \

@@ -8,8 +8,8 @@ and can follow the current appearance and accent.
 ## Requirements
 
 - macOS with [Hammerspoon](https://www.hammerspoon.org/) installed and running.
-- A positive menu timeout, set in `config.lua` for a standalone installation or
-  through the Nix delivery option.
+- A positive menu timeout (10 seconds by default), configurable in `config.lua`
+  or through the Nix delivery option.
 
 Gearbox has no third-party Lua dependencies and does not require Nix. It
 bundles its first-party RetroUI dependency privately when installed, so a
@@ -27,8 +27,7 @@ mkdir -p ~/.hammerspoon/Spoons/Gearbox
 cp -R Spoons/Gearbox/. ~/.hammerspoon/Spoons/Gearbox/
 ```
 
-Set `menu.timeout` to a positive value in [`config.lua`](./config.lua), then
-load Gearbox from `~/.hammerspoon/init.lua`:
+Load Gearbox from `~/.hammerspoon/init.lua`:
 
 ```lua
 require("Spoons.Gearbox").start()
@@ -45,13 +44,13 @@ checkout.
 
 ### Nix
 
-The Home Manager module installs the Spoon and generates its loader. A working
-configuration includes an explicit positive timeout:
+The Home Manager module installs the Spoon and generates its loader. Consumer
+flakes can override the 10-second default, for example:
 
 ```nix
 programs.hammerspoon-spoons = {
   enable = true;
-  spoons.gearbox.menu.timeout = 5;
+  spoons.gearbox.menu.timeout = 60;
 };
 ```
 
@@ -59,6 +58,11 @@ See [Nix delivery](../../assets/docs/NIX.md) for module imports, managed and
 external `init.lua` ownership, and the Home Manager integration boundary.
 
 ## Controls
+
+For `alt+cmd+space` to work, load `require("Spoons.Gearbox").start()` from
+`~/.hammerspoon/init.lua` and keep `menu.timeout` above zero. The shipped
+default is 10 seconds; edit [`config.lua`](./config.lua) for standalone use or
+set `programs.hammerspoon-spoons.spoons.gearbox.menu.timeout` in a consumer flake.
 
 ```text
 alt+cmd+space → open or close Gearbox and its scratchpad
@@ -214,7 +218,7 @@ Hammerspoon releases those assertions when its configuration reloads.
 
 | Path | Owns |
 | --- | --- |
-| [`config.lua`](./config.lua) | Runtime configuration contract; Nix derives only `menu.timeout` |
+| [`config.lua`](./config.lua) | Runtime configuration contract; Nix derives timeout, placement, and Scratchpad settings |
 | [`menus/`](./menus/README.md) | Passive, file-backed menu graph and action descriptors |
 | [`themes/`](./themes/README.md) | Passive palettes and generated Themes-menu metadata |
 | [`loader.lua`](./loader.lua) | Discovery, validation, ordering, dividers, and footers |
@@ -251,11 +255,11 @@ A standalone installation reads the file as shipped or edited locally. The
 versioned profile and local preferences then override only menu position, outer
 frame visibility, and the documented Scratchpad fields.
 
-Nix delivery creates a derived copy of the Spoon and substitutes only
-`menu.timeout` from
-`programs.hammerspoon-spoons.spoons.gearbox.menu.timeout`. Every other setting
-still comes directly from `config.lua`; no Lua override table is passed at
-startup. See [configuration ownership](../../assets/docs/NIX.md#configuration-ownership).
+Nix delivery creates a derived copy of the Spoon and substitutes
+`menu.timeout`, `menu.position`, and the exposed Scratchpad settings from
+`programs.hammerspoon-spoons.spoons.gearbox.*`. Other settings come directly
+from `config.lua`; no Lua override table is passed at startup.
+See [configuration ownership](../../assets/docs/NIX.md#configuration-ownership).
 
 ### Hotkey and menu
 
@@ -263,7 +267,7 @@ startup. See [configuration ownership](../../assets/docs/NIX.md#configuration-ow
 | --- | --- | --- |
 | `hotkey.modifiers` | `{ "alt", "cmd" }` | Modifiers used to open or close Gearbox |
 | `hotkey.key` | `"space"` | Hammerspoon key name paired with the modifiers |
-| `menu.timeout` | `0` | Seconds before closing; zero leaves Gearbox stopped and shows its configuration dialog |
+| `menu.timeout` | `10` | Seconds before closing; zero leaves Gearbox stopped and shows its configuration dialog |
 | `menu.position` | `"top"` | `"top"`, `"center"`, or `"bottom"` screen placement |
 | `menu.screen` | `"main"` | `"main"` or the `"mouse"` pointer screen |
 | `menu.width` | `420` | HUD width in points |

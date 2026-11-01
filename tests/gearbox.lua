@@ -604,8 +604,8 @@ local Theme = require("Spoons.Gearbox.theme")
 local Validation = require("Spoons.Gearbox.validation")
 local config = require("Spoons.Gearbox.config")
 
-assert(config.menu.timeout == 0,
-  "zero must remain the standalone disabled-timeout sentinel")
+assert(config.menu.timeout == 10,
+  "standalone Gearbox must default to a ten-second timeout")
 assert(config.menu.position == "top",
   "top must remain the standalone menu-position default")
 assert(config.loupe.selectedScale == 1.18 and config.loupe.duration == 0,
@@ -1039,6 +1039,11 @@ settings["Shift7.theme.selection"] = {
 settings["Gearbox.scratchpad.content"] = "restored draft"
 
 local Gearbox = require("Spoons.Gearbox")
+do
+  local disabledConfig = dofile(root .. "/Spoons/Gearbox/config.lua")
+  disabledConfig.menu.timeout = 0
+  package.loaded["Spoons.Gearbox.config"] = disabledConfig
+end
 local canvasesBeforeDisabledTimeout = #createdCanvases
 local modalsBeforeDisabledTimeout = #createdModals
 local timersBeforeDisabledTimeout = #createdTimers
@@ -2318,6 +2323,13 @@ local noScratchpadRuntime = startGearbox({
 assert(noScratchpadRuntime.menus.leader.activationRowsByCharacter.s == nil,
   "disabled scratchpad must not register a root-menu character")
 
+Gearbox.stop()
+
+runtime = startGearbox({})
+assert(runtime, "the shipped configuration must start without overrides")
+globalHotkeyPressed()
+assert(runtime.activeMenu.id == "leader" and runtime.timeoutTimer.duration == 10,
+  "the default hotkey must open the menu with a ten-second timeout")
 Gearbox.stop()
 
 print("Gearbox smoke test passed")

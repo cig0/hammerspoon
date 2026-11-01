@@ -1,7 +1,7 @@
 # Nix delivery
 
 The repository exports one optional Home Manager module. Nix owns delivery,
-loader wiring, Gearbox's required timeout and shared placement, and Scratchpad
+loader wiring, Gearbox's timeout and shared placement, and Scratchpad
 settings; the Spoon owns every other runtime setting.
 
 ```text
@@ -41,7 +41,7 @@ deployment case; then split by responsibility rather than file length.
 ## Home Manager
 
 The Home Manager module exposes delivery controls, shared Gearbox and
-Scratchpad placement, the required timeout, and Scratchpad settings:
+Scratchpad placement, the menu timeout, and Scratchpad settings:
 
 ```nix
 {
@@ -77,7 +77,7 @@ The module stages the self-contained Gearbox Spoon with `menu.position`,
 copy semantics apply to `nix-spoons.lua`, and to `init.lua` when managed.
 `menu.position` is the enum `"top"` or `"bottom"` and applies to both
 windows; bottom placement mirrors the top margin. The default timeout is
-the disabled sentinel `0`; normal use requires an explicit positive value.
+10 seconds; consumer flakes can override it. Zero explicitly disables startup.
 Hammerspoon itself must be installed separately.
 
 The Nix build stages the configuration in the store. Activation copies it to
@@ -164,10 +164,9 @@ repository Spoons/Gearbox/config.lua
 No runtime override table is generated or passed to `Gearbox.start()`. All
 other Gearbox values remain owned by the repository file, so a flake input
 update deploys their changes. Placement, timeout, and Scratchpad options are
-deployment-time exceptions: the shipped timeout `0` intentionally prevents
-startup until an installation chooses a positive duration, while shared
-placement and Scratchpad policy, sizing, and editor font size remain
-host-configurable.
+deployment-time exceptions: the shipped timeout is 10 seconds and remains
+host-configurable, as do shared placement and Scratchpad policy, sizing, and
+editor font size. A timeout of `0` intentionally prevents startup.
 
 The generated option snapshot is
 [`ALL-OPTIONS.md`](./ALL-OPTIONS.md).

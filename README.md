@@ -10,7 +10,7 @@
 This repository contains independent Hammerspoon Spoons and reusable Lua
 libraries. Each Spoon owns its
 Lua runtime, configuration, data, tests, and detailed documentation; optional
-Home Manager delivery loads those files and provides Gearbox's required
+Home Manager delivery loads those files and configures Gearbox's
 timeout, shared placement, and Scratchpad settings.
 
 ## Spoons
@@ -34,9 +34,9 @@ Copy a Spoon beneath `~/.hammerspoon/Spoons/`, then load it from
 require("Spoons.Gearbox").start()
 ```
 
-Gearbox intentionally ships with its timeout disabled, so set a positive
-`menu.timeout` before loading it. The [Gearbox README](./Spoons/Gearbox/README.md)
-contains installation, configuration, controls, and architecture details.
+Gearbox ships with a 10-second menu timeout, configurable through
+`menu.timeout` in its `config.lua` or the Home Manager option.
+The [Gearbox README](./Spoons/Gearbox/README.md) contains installation, configuration, controls, and architecture details.
 [Nix delivery](./assets/docs/NIX.md) is available through Home Manager.
 
 ## License

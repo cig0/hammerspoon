@@ -39,7 +39,7 @@ let
                 }
                 // lib.optionalAttrs customize {
                   menu = {
-                    timeout = 5;
+                    timeout = 60;
                     position = "bottom";
                   };
                   scratchpad = {
@@ -94,7 +94,7 @@ pkgs.runCommand "hammerspoon-delivery-check" { } ''
 
   # All nine anchors must be replaced in the deployed tree. A missing source
   # anchor also fails earlier in the configuredGearbox build.
-  grep -Fqx '        timeout = 5, -- Zero disables timeout and intentionally aborts startup.' "$config"
+  grep -Fqx '        timeout = 60, -- Zero disables timeout and intentionally aborts startup.' "$config"
   grep -Fqx '        position = "bottom", -- "top", "center", "bottom"' "$config"
   grep -Fqx '        enable = false,' "$config"
   grep -Fqx '        fontSize = 18,' "$config"
