@@ -34,14 +34,8 @@ programs.hammerspoon-spoons.spoons.gearbox.hotkey = {
 };
 ```
 
-**Hoagie:** in `hosts/<host>/profile.nix`, use:
-
-```nix
-myOptions.hm.programs.hammerspoon.spoons.gearbox.hotkey = {
-  modifiers = [ "alt" "cmd" ];
-  key = "f12";
-};
-```
+**Hoagie:** use the same `programs.hammerspoon-spoons` option in the
+host profile's Hammerspoon Home Manager module.
 
 Inside an existing `spoons.gearbox = { ... };` block, add only
 `hotkey = { modifiers = [ "alt" "cmd" ]; key = "f12"; };`.
