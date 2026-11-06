@@ -411,7 +411,7 @@ function Scratchpad:ensureView()
 
     self.controller = hs.webview.usercontent.new("gearboxScratchpad")
     self.controller:setCallback(
-        function(message) self:handleMessage(message) end)
+        function(message) self:handleMessage(message.body) end)
 
     self.webview = hs.webview.new(self:frame(), {
         developerExtrasEnabled = false,

@@ -82,7 +82,13 @@ assert(not pcall(function() RetroUI.Theme.resolve("borland", {button = {pressOff
 assert(not pcall(function() RetroUI.Theme.resolve("borland", {dialog = {backgroundColor = {white = 0, alpha = 1, extra = true}}}) end), "unknown color fields must fail")
 assert(not pcall(function() RetroUI.Theme.resolve("borland", {dialog = {backgroundColor = {white = 0 / 0, alpha = 1}}}) end),
        "non-finite theme values must fail")
-local group = RetroUI.ButtonGroup.new({{id = "ok", label = "OK", hotkey = "o", default = true, enabled = true}, {id = "cancel", label = "Cancel", hotkey = "c", default = false, enabled = true}})
+local group = RetroUI.ButtonGroup.new({
+    {id = "ok", label = "OK", hotkey = "o", default = true, enabled = true},
+    {id = "cancel", label = "Cancel", hotkey = "c", default = false, enabled = true},
+    {id = "unavailable", label = "Unavailable", hotkey = "u", default = false, enabled = false}
+})
+assert(group:focusRelative(-1) and group.focusedId == "cancel", "initial Shift+Tab must focus last enabled button")
+group:reset()
 assert(group:focusRelative(1) and group.focusedId == "ok", "first tab must focus first button")
 assert(group:arm("ok", "mouse") and group:activate("ok", "mouse").id == "ok", "mouse activation must match arm")
 local disabled = RetroUI.ButtonGroup.new({{id = "disabled", label = "Disabled", hotkey = "d", default = false, enabled = false}, {id = "ok", label = "OK", hotkey = "o", default = true, enabled = true}})

@@ -45,7 +45,11 @@ function ButtonGroup:focusRelative(direction)
     if #enabled == 0 then return false end
     local position = 0
     for index, id in ipairs(enabled) do if id == self.focusedId then position = index end end
-    position = ((position - 1 + direction) % #enabled) + 1
+    if position == 0 then
+        position = direction == 1 and 1 or #enabled
+    else
+        position = ((position - 1 + direction) % #enabled) + 1
+    end
     self.focusedId = enabled[position]
     return true
 end

@@ -16,7 +16,7 @@ local function expandHome(path)
 end
 
 local function directoryName(path)
-    return path:match("^(.*)/[^/]+$") or "/"
+    return path:match("^(.+)/[^/]+$") or "/"
 end
 
 function Storage.new(config)
@@ -99,6 +99,29 @@ function Storage:load()
     return content
 end
 
+-- Allocate beside the destination so rename stays on one filesystem. Only
+-- the shell creating the empty file needs the restrictive umask.
+local function stageFile(path)
+    local parent = directoryName(path)
+    local quotedParent = "'" .. parent:gsub("'", "'\\''") .. "'"
+    local command = "cd " .. quotedParent .. [[ && umask 077 &&
+        stage=$(/usr/bin/mktemp -d .gearbox.XXXXXXXX) &&
+        if ( : > "$stage/content" ); then
+            printf '%s\n' "$stage"
+        else
+            rmdir "$stage"
+            exit 1
+        fi]]
+    local pipe, openError = io.popen(command, "r")
+    if not pipe then return nil, openError end
+
+    local name = pipe:read("*l")
+    local ok = pipe:close()
+    if not ok or not name then return nil, "cannot stage save in " .. parent end
+
+    return parent .. "/" .. name
+end
+
 --- Save content to the selected backend.
 ---@param content string
 ---@return boolean|nil, string|nil
@@ -113,10 +136,17 @@ function Storage:save(content)
 
     if not valid then return nil, validationError end
 
-    local temporaryPath = path .. ".gearbox.tmp"
+    local stage, stageError = stageFile(path)
+    if not stage then return nil, stageError end
+
+    local temporaryPath = stage .. "/content"
     local file, openError = io.open(temporaryPath, "wb")
 
-    if not file then return nil, openError end
+    if not file then
+        os.remove(temporaryPath)
+        os.remove(stage)
+        return nil, openError
+    end
 
     local written, writeError = file:write(content)
 
@@ -124,19 +154,12 @@ function Storage:save(content)
 
     local closed, closeError = file:close()
 
-    if not written or not closed then
-        os.remove(temporaryPath)
-        return nil, writeError or closeError or "cannot write " .. path
-    end
-
-    local renamed, renameError = os.rename(temporaryPath, path)
-
-    if not renamed then
-        os.remove(temporaryPath)
-        return nil, renameError
-    end
-
-    return true
+    local saved, saveError = written and closed, writeError or closeError
+    if saved then saved, saveError = os.rename(temporaryPath, path) end
+    if not saved then os.remove(temporaryPath) end
+    local cleaned, cleanupError = os.remove(stage)
+    if not saved then return nil, saveError or "cannot write " .. path end
+    return cleaned, cleanupError
 end
 
 return Storage

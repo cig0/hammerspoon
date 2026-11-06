@@ -272,7 +272,7 @@ let
             }
 
             # removeExistingCopy <baseline> <dst> removes an identical target
-            # or preserves a changed one. Symlinks are always removed; comparing
+            # or preserves a changed one. Top-level symlinks are removed; comparing
             # them with diff would follow a Home Manager store link.
             removeExistingCopy() {
               local baseline="$1"
@@ -282,7 +282,7 @@ let
                 run rm -f "$dst"
               elif [ -e "$dst" ]; then
                 local difference=0
-                diff -r "$baseline" "$dst" > /dev/null || difference=$?
+                diff -r --no-dereference "$baseline" "$dst" > /dev/null || difference=$?
                 case "$difference" in
                   0) run rm -rf "$dst" ;;
                   1) preserveChangedCopy "$dst" ;;
@@ -309,7 +309,7 @@ let
 
               if [[ -e "$dst" && ! -L "$dst" ]]; then
                 difference=0
-                diff -r "$stage/content" "$dst" > /dev/null || difference=$?
+                diff -r --no-dereference "$stage/content" "$dst" > /dev/null || difference=$?
                 case "$difference" in
                   0) chmod -R u+w "$dst"; exit 0 ;;
                   1) ;;

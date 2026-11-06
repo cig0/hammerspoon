@@ -1651,8 +1651,7 @@ assert(scratchpadState.maxCharacters == 4096 and
   "scratchpad must expose its configured capacity to the native editor")
 
 scratchpadController.callback({
-  action = "save",
-  content = "persistent draft"
+  body = { action = "save", content = "persistent draft" }
 })
 
 assert(settings["Gearbox.scratchpad.content"] == "persistent draft",
@@ -1875,10 +1874,18 @@ sendCharacterKeyDown("r")
 assert(runtime.config.menu.position == "top",
   "Reload Versioned Profile must apply external profile changes")
 
-local storagePath = os.tmpname() .. "-gearbox-scratchpad.txt"
-local storageDirectory = storagePath:match("^(.*)/[^/]+$")
-local storageConfig = { scratchpad = { storagePath = storagePath } }
-local storage = ScratchpadStorage.new(storageConfig)
+local storageDirectory = os.tmpname()
+assert(os.remove(storageDirectory))
+assert(os.execute(("mkdir -m 700 %q"):format(storageDirectory)))
+local storagePath = storageDirectory .. "/notes.txt"
+local sentinel = storageDirectory .. "/original"
+do
+  local original = assert(io.open(sentinel, "wb"))
+  assert(original:write("untouched"))
+  assert(original:close())
+  assert(os.execute(("ln -s %q %q"):format(sentinel, storagePath .. ".gearbox.tmp")))
+end
+local storage = ScratchpadStorage.new({ scratchpad = { storagePath = storagePath } })
 
 fileModes[storageDirectory] = "directory"
 os.remove(storagePath)
@@ -1896,8 +1903,15 @@ local storedContent = assert(storage:load())
 
 assert(storedContent == "shared draft",
   "external Scratchpad content must round-trip as UTF-8 text")
-assert(io.open(storagePath .. ".gearbox.tmp", "rb") == nil,
-  "successful external writes must not leave a temporary file")
+do
+  local target = assert(io.open(sentinel, "rb"))
+  assert(target:read("*a") == "untouched", "staging must leave pre-existing links alone")
+  assert(target:close())
+  assert(os.execute(("test ! -L %q && test -L %q"):format(storagePath, storagePath .. ".gearbox.tmp")))
+  local modeCheck = assert(io.popen(("find %q -perm 0600"):format(storagePath)))
+  assert(modeCheck:read("*l") == storagePath, "saved file must be private")
+  assert(modeCheck:close())
+end
 
 runtime.preferences:setStorage({ backend = "file", path = storagePath })
 runtime.menus.configuration.modal.bindings.escape()
@@ -1948,7 +1962,10 @@ assert(runtime.activeMenu.id == "leader" and
 assert(settings["Gearbox.scratchpad.content"] == "reopened draft",
   "external storage failures must never fall back to hs.settings")
 
-os.remove(storagePath)
+assert(os.remove(storagePath))
+assert(os.remove(storagePath .. ".gearbox.tmp"))
+assert(os.remove(sentinel))
+assert(os.remove(storageDirectory), "staging directory must be cleaned up")
 fileModes[storagePath] = nil
 jsonFiles[preferencesPath] = nil
 fileModes[preferencesPath] = nil
