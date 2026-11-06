@@ -166,6 +166,22 @@ pkgs.runCommand "hammerspoon-delivery-check" { } ''
   activateDefaults
   diff -r ${shippedGearbox} "$TEST_HOME/.hammerspoon/Spoons/Gearbox"
 
+  # Equal bytes behind a nested link must still count as a local change.
+  gearbox="$TEST_HOME/.hammerspoon/Spoons/Gearbox"
+  for activation in activateDefaults activateDisabled; do
+    rm "$gearbox/config.lua"
+    ln -s ${shippedGearbox}/config.lua "$gearbox/config.lua"
+    "$activation"
+    if [[ "$activation" == activateDefaults ]]; then
+      test -f "$gearbox/config.lua"
+      test ! -L "$gearbox/config.lua"
+      test -L "$gearbox.hm-bak/config.lua"
+    else
+      test ! -e "$gearbox"
+      test -L "$gearbox.hm-bak-1/config.lua"
+    fi
+  done
+
   # Exercise failures in a child shell so its errexit behavior matches HM.
   # Calling a function directly in an `if` condition would suppress errexit.
   failureRoot="$TMPDIR/failures"
