@@ -166,6 +166,7 @@ function Runtime.new(config, menus, rootId, actions, theme, preferences, hud,
     self.activeMenu = nil
     self.timeoutTimer = nil
     self.globalHotkey = nil
+    self.quickLaunchHotkeys = {}
     self.sessionInputTap = nil
     self.requiredHotkeyModifiers = nil
     self.globalHotkeyKeyCode = nil
@@ -334,6 +335,12 @@ function Runtime:handleCharacterKeyDown(event)
 
     if not character then return nil end
 
+    -- Hyper letters belong to global shortcuts, including those owned by other apps.
+    if flags.ctrl and flags.alt and flags.cmd and flags.shift and
+        next(self.config.quickLaunch) and character:match("^[A-Za-z]$") then
+        return nil
+    end
+
     local row = menu.activationRowsByCharacter[character]
 
     if not row then return nil end
@@ -477,6 +484,9 @@ function Runtime:deleteBindings()
         self.sessionInputTap = nil
     end
 
+    for _, binding in ipairs(self.quickLaunchHotkeys) do binding:delete() end
+    self.quickLaunchHotkeys = {}
+
     if self.globalHotkey then
         self.globalHotkey:delete()
         self.globalHotkey = nil
@@ -523,6 +533,22 @@ function Runtime:start()
 
         if not self.globalHotkey then
             error("Gearbox: failed to register the global hotkey", 0)
+        end
+
+        local hyper = {"ctrl", "alt", "cmd", "shift"}
+        local toggle = self.requiredHotkeyModifiers
+        for _, key in ipairs(self.menus[self.rootId].quickLaunchKeys) do
+            if toggle.ctrl and toggle.alt and toggle.cmd and toggle.shift and
+                resolveHotkeyKeyCode(key) == self.globalHotkeyKeyCode then
+                error("Gearbox: Hyper+" .. key .. " is also the menu hotkey", 0)
+            end
+            local app = self.config.quickLaunch[key]
+            local binding = hs.hotkey.bind(hyper, key, function()
+                if self.activeMenu then self:endMenuSession() end
+                self.actions.execute({type = "launchApp", name = app})
+            end)
+            assert(binding, "Gearbox: failed to register Hyper+" .. key)
+            table.insert(self.quickLaunchHotkeys, binding)
         end
 
         self.theme:activate()

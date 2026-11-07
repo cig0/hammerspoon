@@ -11,8 +11,31 @@ local createdTimers = {}
 local createdWebviews = {}
 local createdWebviewControllers = {}
 local shownAlerts = {}
-local globalHotkeyPressed
-local globalHotkeyBindCalls = 0
+local keys = {
+  bindings = {}, hyper = {"ctrl", "alt", "cmd", "shift"}, launches = 0, bindCalls = 0, screenHeight = 1080
+}
+function keys.chord(modifiers, key)
+  local sorted = {table.unpack(modifiers)}
+  table.sort(sorted)
+  return table.concat(sorted, "+") .. "+" .. key
+end
+
+function keys.press(modifiers, key)
+  local id = keys.chord(modifiers, key)
+  for i = #keys.bindings, 1, -1 do
+    local binding = keys.bindings[i]
+    if not binding.deleted and binding.id == id then
+      binding.callback()
+      return true
+    end
+  end
+  return false
+end
+
+local function globalHotkeyPressed()
+  local toggle = require("Spoons.Gearbox.config").hotkey
+  assert(keys.press(toggle.modifiers, toggle.key), "missing menu toggle")
+end
 local launchedApplication
 local defaultTextStyleCalls = 0
 local failNextModalBind = false
@@ -367,7 +390,11 @@ hs = {
   },
 
   application = {
-    launchOrFocus = function(name) launchedApplication = name end
+    launchOrFocus = function(name)
+      launchedApplication = name
+      keys.launches = keys.launches + 1
+      return true
+    end
   },
 
   canvas = {
@@ -450,16 +477,18 @@ hs = {
   },
 
   hotkey = {
-    bind = function(_, _, callback)
-      globalHotkeyBindCalls = globalHotkeyBindCalls + 1
+    bind = function(modifiers, key, callback)
+      keys.bindCalls = keys.bindCalls + 1
 
-      if failNextGlobalHotkey then
+      if failNextGlobalHotkey == true or failNextGlobalHotkey == key then
         failNextGlobalHotkey = false
         return nil
       end
 
-      globalHotkeyPressed = callback
-      return { delete = function(self) self.deleted = true end }
+      local binding = {id = keys.chord(modifiers, key), callback = callback,
+        delete = function(self) self.deleted = true end}
+      table.insert(keys.bindings, binding)
+      return binding
     end,
     modal = {
       new = function()
@@ -522,7 +551,7 @@ hs = {
     mainScreen = function()
       return {
         frame = function()
-          return { x = 0, y = 0, w = 1920, h = 1080 }
+          return { x = 0, y = 0, w = 1920, h = keys.screenHeight }
         end
       }
     end
@@ -1044,7 +1073,7 @@ local modalsBeforeDisabledTimeout = #createdModals
 local timersBeforeDisabledTimeout = #createdTimers
 local webviewsBeforeDisabledTimeout = #createdWebviews
 local controllersBeforeDisabledTimeout = #createdWebviewControllers
-local hotkeysBeforeDisabledTimeout = globalHotkeyBindCalls
+local hotkeysBeforeDisabledTimeout = keys.bindCalls
 local fontCallsBeforeDisabledTimeout = defaultTextStyleCalls
 local appearanceCallsBeforeDisabledTimeout = interfaceStyleCalls
 local accentCallsBeforeDisabledTimeout = osascriptCalls
@@ -1085,7 +1114,7 @@ assert(disabledTimeoutCanvas.elements[1].fillColor.green == 0.53 and
   "zero timeout must use the Borland footer action layout")
 assert(#createdWebviews == webviewsBeforeDisabledTimeout and
   #createdWebviewControllers == controllersBeforeDisabledTimeout and
-  globalHotkeyBindCalls == hotkeysBeforeDisabledTimeout and
+  keys.bindCalls == hotkeysBeforeDisabledTimeout and
   defaultTextStyleCalls == fontCallsBeforeDisabledTimeout and
   interfaceStyleCalls == appearanceCallsBeforeDisabledTimeout and
   osascriptCalls == accentCallsBeforeDisabledTimeout,
@@ -1178,6 +1207,7 @@ end
 
 local function startGearbox(values)
   local fixture = dofile(root .. "/Spoons/Gearbox/config.lua")
+  if values.quickLaunch then fixture.quickLaunch = {} end
   applyFixture(fixture, values)
   package.loaded[configModule] = fixture
   return Gearbox.start()
@@ -1435,8 +1465,8 @@ assert(sendCharacterKeyDown("w") == true and
 assert(sendCharacterKeyDown("W", {
     physicalKey = "w",
     flags = { ctrl = true, alt = true, cmd = true, shift = true }
-  }) == true and dispatchedCharacters[#dispatchedCharacters] == "W",
-  "configured command modifiers must preserve character case")
+  }) == nil and #dispatchedCharacters == 4,
+  "an unbound Hyper letter must pass through even when its uppercase row exists")
 
 assert(sendCharacterKeyDown("w", {
     physicalKey = "w",
@@ -1977,7 +2007,7 @@ local modalsBeforeFailedReplacement = #createdModals
 local timersBeforeFailedReplacement = #createdTimers
 local webviewsBeforeFailedReplacement = #createdWebviews
 local controllersBeforeFailedReplacement = #createdWebviewControllers
-local hotkeysBeforeFailedReplacement = globalHotkeyBindCalls
+local hotkeysBeforeFailedReplacement = keys.bindCalls
 local fontCallsBeforeFailedReplacement = defaultTextStyleCalls
 local failedReplacementAccepted, failedReplacementResult = pcall(function()
   return startGearbox({ menu = { timeout = 0 } })
@@ -1990,7 +2020,7 @@ assert(
   #createdModals == modalsBeforeFailedReplacement + 1 and #createdTimers ==
   timersBeforeFailedReplacement + 1 and #createdWebviews ==
   webviewsBeforeFailedReplacement and #createdWebviewControllers ==
-  controllersBeforeFailedReplacement and globalHotkeyBindCalls ==
+  controllersBeforeFailedReplacement and keys.bindCalls ==
   hotkeysBeforeFailedReplacement and defaultTextStyleCalls ==
   fontCallsBeforeFailedReplacement,
   "zero-timeout replacement must only allocate its configuration dialog")
@@ -2337,4 +2367,79 @@ assert(noScratchpadRuntime.menus.leader.activationRowsByCharacter.s == nil,
 
 Gearbox.stop()
 
+function keys.checkQuickLaunch()
+  keys.screenHeight = 740
+  local quick = startGearbox({menu = {timeout = 5}})
+  assert(not quick.activeMenu and not quick.sessionInputTap.enabled)
+  local siriWindow = {isStandard = function() return true end}
+  local siri = {
+    mainWindow = function() return siriWindow end,
+    isFrontmost = function() return true end
+  }
+  hs.application.open = function(app, _, waitForWindow)
+    assert(app == "com.apple.campo" and waitForWindow)
+    return siri
+  end
+  local focused = false
+  local editor = {
+    attributeValue = function(_, name) if name == "AXRole" then return "AXTextArea" end end,
+    isAttributeSettable = function() return true end,
+    setAttributeValue = function(self, name, value)
+      assert(name == "AXFocused" and value == true)
+      focused = true
+      return self
+    end
+  }
+  hs.axuielement = {
+    applicationElement = function()
+      return {attributeValue = function() return focused and editor or nil end}
+    end,
+    windowElement = function(window)
+    assert(window == siriWindow)
+    return {elementSearch = function(_, _, match)
+      local search = {attributeValue = function(_, name)
+        return name == "AXRole" and "AXTextField" or "AXSearchField"
+      end}
+      assert(match(editor) and not match(search))
+      return {editor}
+    end}
+  end}
+  assert(keys.press(keys.hyper, "s") and focused)
+  hs.axuielement.windowElement = function() error("composer already focused") end
+  assert(keys.press(keys.hyper, "s") and focused)
+  hs.application.open = function() return nil end
+  assert(keys.press(keys.hyper, "s") and shownAlerts[#shownAlerts].message:match("unavailable"))
+  assert(keys.press(keys.hyper, "f") and launchedApplication == "Finder" and not quick.activeMenu)
+  globalHotkeyPressed()
+  local menu = quick.activeMenu
+  assert(menu.rows[menu.navigableRows[1]].label == "Calculator")
+  assert(table.concat(menu.quickLaunchKeys) == "abcefklmnopstz")
+  local canvas = quick.hud.canvas
+  local left = assert(elementById(canvas, "hyper-a")).frame
+  local right = assert(elementById(canvas, "hyper-m")).frame
+  assert(elementById(canvas, "hyper-heading") and left.y == right.y and left.x < right.x)
+  assert(canvas.currentFrame.y >= 0 and canvas.currentFrame.y + canvas.currentFrame.h <= keys.screenHeight)
+  assert(menu.rows[#menu.rows].kind == "footer")
+  local before = keys.launches
+  assert(sendCharacterKeyDown("C", {flags = {ctrl=true, alt=true, cmd=true, shift=true}}) == nil)
+  assert(keys.press(keys.hyper, "c") and launchedApplication == "Calendar")
+  assert(keys.launches == before + 1 and not quick.activeMenu and not quick.sessionInputTap.enabled)
+  -- Fail partway through replacement. The candidate must release its bindings only.
+  local first = #keys.bindings + 1
+  failNextGlobalHotkey = "f"
+  local ok, err = pcall(startGearbox, {menu = {timeout = 5}})
+  assert(not ok and tostring(err):match("Hyper%+f") and quick.started)
+  for i = first, #keys.bindings do assert(keys.bindings[i].deleted) end
+  assert(keys.press(keys.hyper, "m") and launchedApplication == "Mail")
+
+  local disabled = startGearbox({menu = {timeout = 5}, quickLaunch = {}})
+  assert(not keys.press(keys.hyper, "m"))
+  globalHotkeyPressed()
+  assert(not elementById(disabled.hud.canvas, "hyper-heading"))
+  assert(sendCharacterKeyDown("C", {flags = {ctrl=true, alt=true, cmd=true, shift=true}}))
+  assert(launchedApplication == "Calculator")
+  Gearbox.stop()
+end
+
+keys.checkQuickLaunch()
 print("Gearbox smoke test passed")
