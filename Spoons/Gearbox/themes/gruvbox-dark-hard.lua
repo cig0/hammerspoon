@@ -1,10 +1,13 @@
---- Gruvbox Dark Hard theme (dark).
+--- Gruvbox Dark display name; gruvbox-dark-hard remains the saved theme ID.
 return {
     id = "gruvbox-dark-hard",
-    label = "Gruvbox Dark Hard",
+    label = "Gruvbox Dark",
     key = "h",
     group = "dark",
 
+    -- Warm selection colors stay readable with either macOS or theme accents.
+    selection = {red = 0.843137, green = 0.6, blue = 0.129412, alpha = 1}, -- #d79921
+    selectionText = {red = 0.235294, green = 0.219608, blue = 0.211765, alpha = 1}, -- #3c3836
     selectionAlpha = 0.22,
     background = {
         red = 0.113725,

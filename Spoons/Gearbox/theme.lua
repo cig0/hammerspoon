@@ -49,6 +49,8 @@ local accentScript = [[
 local themeGroups = {light = true, dark = true}
 
 local visualFields = {
+    selection = true,
+    selectionText = true,
     selectionAlpha = true,
     background = true,
     primary = true,
@@ -155,6 +157,12 @@ local function validateDefinition(definition, source)
         fail(definition.id .. " group must be light or dark", 2)
     end
 
+    for _, field in ipairs({"selection", "selectionText"}) do
+        if definition[field] ~= nil then
+            validateColor(definition[field], definition.id .. "." .. field,
+                          {requireAlpha = true})
+        end
+    end
     validateUnit(definition.selectionAlpha, definition.id .. ".selectionAlpha")
 
     for field in pairs(colorFields) do
@@ -246,7 +254,7 @@ local function applyOverrides(themes, overrides)
                               "theme.overrides." .. id .. "." .. field)
 
                 local color = copyTable(value)
-                color.alpha = color.alpha or definition[field].alpha
+                color.alpha = color.alpha or (definition[field] and definition[field].alpha) or 1
                 definition[field] = color
             end
         end
@@ -478,6 +486,9 @@ function Theme:refreshAppearance()
 
     local selection = copyTable(accent)
     selection.alpha = definition.selectionAlpha
+    -- Dedicated row colors are independent of the system accent used by group
+    -- keycaps. Themes without these fields keep their accent-based selection.
+    selection = definition.selection or selection
 
     self.activeThemeId = id
     self.colors = {
@@ -487,7 +498,8 @@ function Theme:refreshAppearance()
         divider = definition.divider,
         accent = accent,
         accentText = accentText,
-        selection = selection
+        selection = selection,
+        selectionText = definition.selectionText
     }
 end
 

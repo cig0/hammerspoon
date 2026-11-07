@@ -22,7 +22,7 @@ local verticalPositions = {top = 0.25, center = 0.50, bottom = 0.75}
 local windowShadows = {
     {blurRadius = 44, offset = {w = 0, h = -8}, color = {white = 0, alpha = 0.24}},
     {blurRadius = 22, offset = {w = 0, h = -8}, color = {white = 0, alpha = 0.34}},
-    {blurRadius = 3, offset = {w = 0, h = -1}, color = {white = 0, alpha = 0.16}}
+    {blurRadius = 3, offset = {w = 0, h = -1}, color = {white = 0, alpha = 0.30}}
 }
 
 local keyDisplayNames = {escape = "esc", ["return"] = "↩"}
@@ -602,7 +602,17 @@ function HUD:renderRowScale(menu, rowIndex, scale)
 
     if not row or not visual then return end
 
-    if math.abs(scale - visual.currentScale) < 0.001 then return end
+    local selected = rowIndex == menu.selectedIndex
+    if math.abs(scale - visual.currentScale) < 0.001 and
+        visual.isSelected == selected then return end
+    visual.isSelected = selected
+    -- Selection colors must update even with loupe disabled or equal scales.
+    -- Cached base colors restore the previous row when the cursor moves.
+    local selectedText = selected and self.theme.colors.selectionText
+    if visual.keyBackgroundIndex then
+        self.canvas:elementAttribute(visual.keyBackgroundIndex, "action",
+                                     selectedText and "skip" or "fill")
+    end
 
     visual.currentScale = scale
 
@@ -639,7 +649,7 @@ function HUD:renderRowScale(menu, rowIndex, scale)
 
     self.canvas:elementAttribute(
         visual.keyTextIndex, "text",
-        styledText(self:displayKey(row), scaledFont, visual.keyColor, "center"))
+        styledText(self:displayKey(row), scaledFont, selectedText or visual.keyColor, "center"))
 
     if visual.checkTextIndex then
         self.canvas:elementAttribute(visual.checkTextIndex, "frame", {
@@ -652,7 +662,7 @@ function HUD:renderRowScale(menu, rowIndex, scale)
         self.canvas:elementAttribute(
             visual.checkTextIndex, "text",
             styledText(visual.isChecked and "✓" or "", scaledFont,
-                       self.theme.colors.accent, "center"))
+                       selectedText or self.theme.colors.accent, "center"))
     end
 
     self.canvas:elementAttribute(visual.labelTextIndex, "frame", {
@@ -664,7 +674,7 @@ function HUD:renderRowScale(menu, rowIndex, scale)
 
     self.canvas:elementAttribute(
         visual.labelTextIndex, "text",
-        styledText(row.label, scaledFont, visual.labelColor, "left"))
+        styledText(row.label, scaledFont, selectedText or visual.labelColor, "left"))
 end
 
 --- Determine the target scale for a row based on its distance from selection.
