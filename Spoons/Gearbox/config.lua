@@ -17,7 +17,9 @@ return {
 
     showEmojis = true,
     highlightGroups = true,     -- Applies at every submenu depth.
-    showAccentBorder = true
+    showAccentBorder = true,
+    showWindowShadow = true,
+    backgroundOpacity = 100      -- Menu background only, from 50 to 100 in steps of 5.
   },
 
   font = {

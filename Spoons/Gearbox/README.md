@@ -212,7 +212,8 @@ precedes that section and another precedes Exit. Set `showFooterDivider = false`
 in `menus/leader.lua` to remove the divider before Exit.
 
 The root header shows the current Caps Lock state. Themes → Show Outer Frame
-toggles the accent border through the local preference layer.
+toggles the accent border. Show Window Shadow controls the drop shadow.
+Open Transparency to adjust the menu background in five-point steps.
 
 The macOS power modes behave as one checked selection:
 
@@ -261,8 +262,8 @@ config.lua + preferences.json + local hs.settings + menus/*.lua + themes/*.lua
 [`config.lua`](./config.lua) is the runtime configuration contract. It contains
 no Hammerspoon calls, and `Gearbox.start()` accepts no configuration arguments.
 A standalone installation reads the file as shipped or edited locally. The
-versioned profile and local preferences then override only menu position, outer
-frame visibility, and the documented Scratchpad fields.
+versioned profile and local preferences then override menu position, outer
+frame visibility, window shadow, background opacity, and the documented Scratchpad fields.
 
 Nix delivery creates a derived copy of the Spoon and substitutes `hotkey.*`,
 `menu.{timeout,position}`, and the exposed `scratchpad.*` settings from
@@ -282,6 +283,8 @@ at startup. See [configuration ownership](../../assets/docs/NIX.md#configuration
 | `menu.width` | `420` | HUD width in points |
 | `menu.showEmojis` | `true` | Includes the menu definition's emoji in its title |
 | `menu.highlightGroups` | `true` | Uses the active accent behind group shortcut key caps at every submenu depth |
+| `menu.showWindowShadow` | `true` | Draws a shadow around each menu |
+| `menu.backgroundOpacity` | `100` | Menu background opacity in percent, 50–100 in steps of 5 |
 | `menu.showAccentBorder` | `true` | Draws a two-point active-theme accent border around every menu |
 
 A timeout of `0` leaves Gearbox stopped and shows a configuration dialog.
@@ -408,7 +411,7 @@ effective configuration:
 
 | Menu | Values |
 | --- | --- |
-| Themes | outer frame visibility |
+| Themes | outer frame, window shadow, menu background opacity |
 | Menu Position | `top`, `bottom` |
 | Scratchpad | persistence, storage folder/filename, width, height |
 | Profile | save, reload, clear local overrides |
@@ -434,7 +437,9 @@ profile file.
   "schemaVersion": 1,
   "menu": {
     "position": "bottom",
-    "showAccentBorder": true
+    "showAccentBorder": true,
+    "showWindowShadow": true,
+    "backgroundOpacity": 85
   },
   "scratchpad": {
     "persistContent": true,
@@ -450,9 +455,9 @@ profile file.
 
 The profile is passive JSON, contains no executable Lua, and is read only at
 startup or after the explicit reload action. Gearbox creates its parent
-directory when saving but does not watch the file or commit changes. Existing
-version-one profiles without `menu.showAccentBorder` retain the value from
-`config.lua`; the field is written the next time the profile is saved.
+directory when saving but does not watch the file or commit changes. Older
+version-one profiles inherit missing appearance settings from `config.lua`.
+Saving the profile writes the current values.
 
 ## Theme persistence
 
