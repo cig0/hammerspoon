@@ -221,11 +221,17 @@ end
 function Validation.validateConfig(config)
     assertType(config.capsLockViaF18, "boolean", "capsLockViaF18")
     assertType(config.quickLaunch, "table", "quickLaunch")
-    for key, app in pairs(config.quickLaunch) do
+    for key, target in pairs(config.quickLaunch) do
         assert(type(key) == "string" and key:match("^[a-z]$"),
                "Gearbox: quickLaunch keys must be lowercase ASCII letters")
-        assert(type(app) == "string" and app:match("%S"),
-               "Gearbox: quickLaunch." .. key .. " requires an application name")
+        local location = "Gearbox: quickLaunch." .. key
+        if type(target) == "table" then
+            assert(target.type == "openMenu" and type(target.menu) == "string" and
+                   target.menu:match("%S"), location .. " requires an openMenu target with a menu ID")
+        else
+            assert(type(target) == "string" and target:match("%S"),
+                   location .. " requires an application name")
+        end
     end
 
     assertType(config.hotkey.modifiers, "table", "hotkey.modifiers")

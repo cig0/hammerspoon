@@ -313,7 +313,7 @@ function HUD:appendDivider(elements, y)
 end
 
 --- Display-only shortcuts, alphabetized down each column.
-function HUD:appendQuickLaunch(elements, keys)
+function HUD:appendQuickLaunch(elements, keys, labels)
     local layout = self.layout
     local font = resizedFont(self.theme.fonts.body, layout.legendFontSize)
     local y = layout.contentTop
@@ -333,7 +333,7 @@ function HUD:appendQuickLaunch(elements, keys)
     for index, key in ipairs(keys) do
         local column = math.floor((index - 1) / rows)
         local row = (index - 1) % rows
-        label("hyper-" .. key, key .. "   " .. self.config.quickLaunch[key],
+        label("hyper-" .. key, key .. "   " .. labels[key],
               layout.horizontalPadding + column * width / 2,
               y + row * layout.legendTextHeight, width / 2, self.theme.colors.primary)
     end
@@ -497,7 +497,7 @@ function HUD:show(menu, checkedRows)
     end
 
     if menu.quickLaunchKeys and #menu.quickLaunchKeys > 0 then
-        self:appendQuickLaunch(elements, menu.quickLaunchKeys)
+        self:appendQuickLaunch(elements, menu.quickLaunchKeys, menu.quickLaunchLabels)
     end
 
     if menu.legend then

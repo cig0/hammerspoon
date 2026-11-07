@@ -9,7 +9,7 @@
 | `programs.hammerspoon-spoons.spoons.gearbox.hotkey.modifiers` | non-empty (list of (one of "alt", "option", "cmd", "command", "ctrl", "control", "shift")) | `["ctrl","alt","cmd"]` | Modifiers held with hotkey.key to open or close Gearbox. |
 | `programs.hammerspoon-spoons.spoons.gearbox.menu.position` | one of "top", "bottom" | `"top"` | Shared vertical placement for the Gearbox menu and Scratchpad. Bottom mirrors the top offset from the opposite screen edge. |
 | `programs.hammerspoon-spoons.spoons.gearbox.menu.timeout` | signed integer or floating point number | `0` | Seconds before the menu closes. Zero disables timeout and intentionally leaves Gearbox stopped while showing its configuration dialog; normal use requires a positive value. |
-| `programs.hammerspoon-spoons.spoons.gearbox.quickLaunch` | null or (attribute set of non-empty string) | `null` | Hyper shortcut letters and application names. Use lowercase letters. Null uses hyperkeys.lua. An empty set disables Quick Launch. |
+| `programs.hammerspoon-spoons.spoons.gearbox.quickLaunch` | null or (attribute set of (non-empty string or (submodule))) | `null` | Hyper shortcuts to application names or openMenu targets. Use lowercase letters. Null uses hyperkeys.lua. An empty set disables Quick Launch. |
 | `programs.hammerspoon-spoons.spoons.gearbox.scratchpad.enable` | boolean | `true` | Whether to expose the editable scratchpad in the Gearbox root menu. |
 | `programs.hammerspoon-spoons.spoons.gearbox.scratchpad.fontSize` | signed integer or floating point number | `14` | Scratchpad editor font size in pixels. |
 | `programs.hammerspoon-spoons.spoons.gearbox.scratchpad.height` | signed integer | `480` | Scratchpad height in points. |

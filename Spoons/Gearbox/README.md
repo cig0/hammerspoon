@@ -112,17 +112,20 @@ Tab           → insert a tab while editing the scratchpad
 ### Hyperkey / Caps Lock
 
 While Gearbox is running, hold Hyper (Control + Option + Command + Shift) and
-press a letter to launch or focus its app. The root menu lists the bindings
-alphabetically under its title. The letters work with the HUD closed. With a
-menu open, a bound chord dismisses the menu and opens the app. Other Hyper
-letters pass through to their owners. Arrow navigation skips the reference.
+press a mapped letter from any app. Hyper+F opens Finder Folders directly.
+Release the chord, then press `d` for Downloads or `f` for Home. Escape
+returns to the main menu. Folder keys follow Gearbox's usual case rules.
+
+The root menu lists shortcuts alphabetically under its title. App shortcuts
+dismiss an open menu and launch or focus the app. Menu shortcuts switch to
+the target menu. Other Hyper letters pass through to their owners.
 
 Edit [hyperkeys.lua](./hyperkeys.lua) to change the bindings. Set it to
 `return {}` to disable Quick Launch. Home Manager can replace the shipped map
 with `spoons.gearbox.quickLaunch`. For dual-purpose Caps Lock, map the
 physical key to F18 in macOS and set `capsLockViaF18 = true`. While Gearbox
 is running, press and release Caps Lock alone to toggle capitalization. Hold
-it and press a mapped letter to launch the app. An unmapped letter passes
+it and press a mapped letter to use its shortcut. An unmapped letter passes
 through and cancels the toggle. The ordinary four-modifier shortcuts also work.
 With the system remap active, a standalone tap needs Gearbox running and
 keyboard input available to Hammerspoon. The

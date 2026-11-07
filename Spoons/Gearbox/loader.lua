@@ -506,7 +506,20 @@ local function assembleMenus(definitions, rootId, config, actions)
     end
 
     local quickLaunchKeys = {}
-    for key in pairs(config.quickLaunch) do table.insert(quickLaunchKeys, key) end
+    local labels = {}
+    for key, target in pairs(config.quickLaunch) do
+        if type(target) == "table" then
+            local menu = menus[target.menu]
+            if not menu then
+                fail("quickLaunch." .. key .. " references missing menu: " .. target.menu)
+            end
+            labels[key] = menu.title
+        else
+            labels[key] = target
+        end
+        table.insert(quickLaunchKeys, key)
+    end
+    menus[rootId].quickLaunchLabels = labels
     table.sort(quickLaunchKeys)
     menus[rootId].quickLaunchKeys = quickLaunchKeys
 

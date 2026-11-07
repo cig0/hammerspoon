@@ -183,7 +183,8 @@ applies the keyboard map on activation and at boot. Home Manager deploys
 Gearbox's handler. Both settings are required for the physical shortcut.
 
 Press and release Caps Lock alone to toggle capitalization. Hold it and press
-a letter from `hyperkeys.lua` to launch or focus its app. A chord preserves
+a mapped letter to open its app or menu. Caps Lock+F opens Finder Folders.
+Release the chord before selecting a folder. A chord preserves
 the existing capitalization state. An unmapped letter passes through and
 cancels the toggle. The four-modifier Hyper shortcuts remain available.
 
@@ -206,10 +207,12 @@ to restore native Caps Lock.
 
 [`Spoons/Gearbox/config.lua`](../../Spoons/Gearbox/config.lua) is Gearbox's
 runtime configuration contract. Standalone installations read it directly.
-Quick Launch defaults to the letter-to-app map in
+Quick Launch defaults to the shortcut map in
 [hyperkeys.lua](../../Spoons/Gearbox/hyperkeys.lua). Set
 `programs.hammerspoon-spoons.spoons.gearbox.quickLaunch` to replace that map,
-for example `{ f = "Finder"; m = "Mail"; }`. An empty set disables it.
+for example `{ f = { type = "openMenu"; menu = "finder"; }; m = "Mail"; }`.
+Only those two shortcuts are installed with this override. Use `f = "Finder";`
+for the original Finder app shortcut. An empty set disables Quick Launch.
 Nix delivery stages a copy with its `hotkey.modifiers`, `hotkey.key`,
 `menu.position`, `menu.timeout`, and
 Scratchpad values replaced by the corresponding

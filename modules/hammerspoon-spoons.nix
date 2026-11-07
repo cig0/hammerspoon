@@ -13,6 +13,10 @@ let
     let
       inherit (lib) mkEnableOption mkOption types;
 
+      menuTarget = types.submodule {
+        options.type = mkOption { type = types.enum [ "openMenu" ]; };
+        options.menu = mkOption { type = types.nonEmptyStr; };
+      };
       nonNegativeNumber = types.addCheck types.number (value: value >= 0);
       positiveNumber = types.addCheck types.number (value: value > 0);
       scratchpadWidth = types.addCheck types.int (value: value >= 360);
@@ -77,12 +81,12 @@ let
 
         quickLaunch = mkOption {
           type = types.nullOr (
-            types.addCheck (types.attrsOf types.nonEmptyStr) (
-              apps: lib.all (key: builtins.match "[a-z]" key != null) (builtins.attrNames apps)
+            types.addCheck (types.attrsOf (types.either types.nonEmptyStr menuTarget)) (
+              targets: lib.all (key: builtins.match "[a-z]" key != null) (builtins.attrNames targets)
             )
           );
           default = null;
-          description = "Hyper shortcut letters and application names. Use lowercase letters. Null uses hyperkeys.lua. An empty set disables Quick Launch.";
+          description = "Hyper shortcuts to application names or openMenu targets. Use lowercase letters. Null uses hyperkeys.lua. An empty set disables Quick Launch.";
         };
 
         menu.timeout = mkOption {
