@@ -19,9 +19,8 @@ HUD.__index = HUD
 
 local verticalPositions = {top = 0.25, center = 0.50, bottom = 0.75}
 
-{blurRadius = 44, offset = {w = 0, h = -8}, color = {white = 0, alpha = 0.24}},
-
 local windowShadows = {
+    {blurRadius = 44, offset = {w = 0, h = -8}, color = {white = 0, alpha = 0.24}},
     {blurRadius = 22, offset = {w = 0, h = -8}, color = {white = 0, alpha = 0.34}},
     {blurRadius = 3, offset = {w = 0, h = -1}, color = {white = 0, alpha = 0.16}}
 }
