@@ -30,7 +30,9 @@ Each theme owns:
 | `id` | Stable selection and persistence value |
 | `label`, `key` | Themes menu presentation |
 | `group` | `light` or `dark` menu section |
-| `selectionAlpha` | Highlight transparency |
+| `selectionAlpha` | Highlight alpha when using the accent color |
+| `selection` | Optional row highlight color, independent of the macOS accent |
+| `selectionText` | Optional selected-row text color |
 | `background` | HUD surface |
 | `primary` | Title and primary text |
 | `secondary` | Supporting text |
@@ -52,11 +54,20 @@ within `0...1`; IDs and menu keys must be unique.
 | Light | Gruvbox Light | `g` |
 | Dark | Catppuccin Mocha | `c` |
 | Dark | Dracula | `r` |
-| Dark | Gearbox Dark | `d` |
-| Dark | Gruvbox Dark Hard | `h` |
+| Dark | Gruvbox Dark Hard | `d` |
+| Dark | Gruvbox Dark | `h` |
 | Dark | Monokai | `m` |
 | Dark | Nord | `n` |
 | Dark | Tokyo Night | `t` |
+
+The two dark Gruvbox labels follow background darkness. The darker palette
+keeps ID `gearbox-dark` and key `d`, and displays Gruvbox Dark Hard.
+The lighter palette keeps ID `gruvbox-dark-hard` and key `h`, and displays
+Gruvbox Dark. Saved selections still refer to those IDs.
+
+All three Gruvbox variants use a gold `#d79921` selection with dark brown
+`#3c3836` text. Only the selected row switches text colors. This selection
+also applies when `theme.accentSource = "system"`.
 
 ## Selection flow
 

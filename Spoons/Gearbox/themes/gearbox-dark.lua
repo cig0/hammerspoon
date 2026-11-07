@@ -1,10 +1,13 @@
---- Gearbox Dark theme (dark).
+--- Gruvbox Dark Hard display name; gearbox-dark remains the saved theme ID.
 return {
     id = "gearbox-dark",
-    label = "Gearbox Dark",
+    label = "Gruvbox Dark Hard",
     key = "d",
     group = "dark",
 
+    -- Warm selection colors stay readable with either macOS or theme accents.
+    selection = {red = 0.843137, green = 0.6, blue = 0.129412, alpha = 1}, -- #d79921
+    selectionText = {red = 0.235294, green = 0.219608, blue = 0.211765, alpha = 1}, -- #3c3836
     selectionAlpha = 0.22,
     background = {white = 0.101961, alpha = 0.96},
     primary = {white = 0.960784, alpha = 1},

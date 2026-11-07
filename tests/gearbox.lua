@@ -212,6 +212,8 @@ local function newCanvas(frame)
     return self
   end
 
+  function canvas:transformation(matrix) self.matrix = matrix; return self end
+
   function canvas:wantsLayer() return self end
 
   function canvas:level(value)
@@ -398,6 +400,7 @@ hs = {
   },
 
   canvas = {
+    matrix = {translate = function(x,y) return {tX=x,tY=y} end},
     windowLevels = { desktopIcon = 10, floating = 20 },
     defaultTextStyle = function()
       defaultTextStyleCalls = defaultTextStyleCalls + 1
@@ -924,7 +927,7 @@ assert(not pcall(function()
   }, discoveredTheme)
 end), "passive menu legends must be non-empty strings")
 
-assert(rowShape(menus.themes) == "s,o,|,a,l,g,|,c,r,d,h,m,n,t,|,escape",
+assert(rowShape(menus.themes) == "s,o,w,|,a,l,g,|,c,r,h,d,m,n,t,|,p,|,escape",
   "Themes menu shape changed")
 assert(rowShape(menus.configuration) == "h,|,p,r,x,|,m,s,t,|,escape",
   "Gearbox Configuration menu shape changed")
@@ -946,7 +949,7 @@ for _, row in ipairs(menus.themes.rows) do
 end
 
 assert(themeLabels.l == "Gearbox Light", "light theme label changed")
-assert(themeLabels.d == "Gearbox Dark", "dark theme label changed")
+assert(themeLabels.d == "Gruvbox Dark Hard" and themeLabels.h == "Gruvbox Dark", "dark theme label changed")
 assert(menus.leader.rows[#menus.leader.rows].label:match("^Exit Gearbox"),
   "leader footer changed")
 
@@ -1332,10 +1335,10 @@ assert(runtime.hud.theme.colors.background.white == nil and
 assert(runtime.hud.theme.colors.background.alpha == 0.96,
   "color-model replacement must retain the default alpha")
 
-assert(runtime.hud.theme.colors.selection.white == 0.5 and
-  runtime.hud.theme.colors.selection.red == nil and
-  runtime.hud.theme.colors.selection.alpha == 0.22,
-  "selection colors must preserve grayscale accent overrides")
+assert(runtime.hud.theme.colors.selection.red == 0.843137 and
+  runtime.hud.theme.colors.selection.alpha == 1 and
+  runtime.hud.theme.colors.accent.white == 0.5,
+  "dedicated row colors must remain independent of accent overrides")
 
 assert(runtime.theme.activeThemeId == "gearbox-dark",
   "migrated dark selection must resolve the Gearbox dark theme")
@@ -1343,7 +1346,7 @@ assert(runtime.scratchpad.content == "restored draft",
   "scratchpad must restore persisted content")
 assert(#createdWebviews == 0 and #createdWebviewControllers == 0,
   "scratchpad must not allocate WebKit objects during startup")
-assert(runtime.hud.canvas.elements[1].roundedRectRadii.xRadius ==
+assert(elementById(runtime.hud.canvas,"menu-background").roundedRectRadii.xRadius ==
   runtime.theme.metrics.windowCornerRadius,
   "menu HUD and scratchpad must share the outer corner radius")
 
@@ -1360,10 +1363,10 @@ assert(assert(elementById(runtime.hud.canvas,
     "menu-accent-border").frame.y == 1 and
   elementById(runtime.hud.canvas,
     "menu-accent-border").frame.w ==
-  runtime.hud.canvas.currentFrame.w - 2 and
+  elementById(runtime.hud.canvas,"menu-background").frame.w - 2 and
   elementById(runtime.hud.canvas,
     "menu-accent-border").frame.h ==
-  runtime.hud.canvas.currentFrame.h - 2 and
+  elementById(runtime.hud.canvas,"menu-background").frame.h - 2 and
   elementById(runtime.hud.canvas,
     "menu-accent-border").roundedRectRadii.xRadius ==
   runtime.theme.metrics.windowCornerRadius - 1,
@@ -1762,7 +1765,7 @@ local function checkedThemeMenuKeys()
   return table.concat(keys, ",")
 end
 
-assert(checkedThemeMenuKeys() == "o,d",
+assert(checkedThemeMenuKeys() == "o,w,d",
   "Themes must check the outer frame and migrated theme")
 
 sendCharacterKeyDown("o")
@@ -1773,7 +1776,7 @@ assert(runtime.config.menu.showAccentBorder == false and
   "outer frame changes must apply immediately and persist locally")
 assert(elementById(runtime.hud.canvas, "menu-accent-border") == nil,
   "disabling the outer frame must redraw the open Themes menu")
-assert(checkedThemeMenuKeys() == "d",
+assert(checkedThemeMenuKeys() == "w,d",
   "a disabled outer frame must remove its left-side check")
 
 sendCharacterKeyDown("o")
@@ -1781,7 +1784,7 @@ sendCharacterKeyDown("o")
 assert(runtime.config.menu.showAccentBorder == true and
   elementById(runtime.hud.canvas, "menu-accent-border"),
   "enabling the outer frame must redraw the open Themes menu")
-assert(checkedThemeMenuKeys() == "o,d",
+assert(checkedThemeMenuKeys() == "o,w,d",
   "an enabled outer frame must restore its left-side check")
 
 local styleCallsBeforeThemePreview = interfaceStyleCalls
@@ -1796,7 +1799,7 @@ assert(runtime.theme.colors.accent.red == 0.796078,
   "theme accent source must use the selected preset")
 assert(interfaceStyleCalls == styleCallsBeforeThemePreview,
   "manual theme previews must not resolve system appearance")
-assert(checkedThemeMenuKeys() == "o,c",
+assert(checkedThemeMenuKeys() == "o,w,c",
   "the outer frame and selected theme must remain checked")
 assert(settings["Gearbox.theme.selection"].selection == "catppuccin-mocha",
   "theme selections must persist")
@@ -1807,7 +1810,7 @@ sendCharacterKeyDown("s")
 assert(runtime.theme.selection == "system", "system selection must be restored")
 assert(runtime.theme.activeThemeId == "gearbox-light",
   "system selection must resolve the light appearance")
-assert(checkedThemeMenuKeys() == "s,o",
+assert(checkedThemeMenuKeys() == "s,o,w",
   "system and the outer frame must retain their independent checks")
 
 interfaceStyle = "Dark"
@@ -2266,7 +2269,10 @@ local bottomRuntime = startGearbox({
 
 globalHotkeyPressed()
 
-local bottomMenuFrame = bottomRuntime.hud.canvas.currentFrame
+local bottomMenuFrame = {
+ y = bottomRuntime.hud.canvas.currentFrame.y + bottomRuntime.hud.canvas.matrix.tY,
+ h = elementById(bottomRuntime.hud.canvas,"menu-background").frame.h
+}
 local bottomMenuMargin = 1080 - bottomMenuFrame.y - bottomMenuFrame.h
 
 assert(bottomMenuMargin == (1080 - bottomMenuFrame.h) * 0.25,
@@ -2526,4 +2532,40 @@ function keys.checkCapsLock()
 end
 
 keys.checkCapsLock()
+function keys.checkGruvboxSelection()
+  for _, id in ipairs({"gearbox-dark", "gruvbox-dark-hard", "gruvbox-light"}) do
+    local quick = startGearbox({
+      menu = {timeout = 5}, loupe = {enabled = false},
+      theme = {name = id, persistSelection = false, accentSource = "system"}
+    })
+    globalHotkeyPressed()
+    local menu = quick.activeMenu
+    local first, second = menu.navigableRows[1], menu.navigableRows[2]
+    local original = menu.rowVisuals[first].labelColor
+    menu.modal.bindings.down()
+    local canvas = quick.hud.canvas
+    local visual = menu.rowVisuals[first]
+    assert(canvas.elements[menu.selectionElementIndex].fillColor.red == 0.843137)
+    assert(canvas.elements[visual.labelTextIndex].text.segments[1].attributes.color.red == 0.235294)
+    menu.modal.bindings.down()
+    assert(canvas.elements[visual.labelTextIndex].text.segments[1].attributes.color == original)
+    assert(canvas.elements[menu.rowVisuals[second].keyTextIndex].text.segments[1].attributes.color.red == 0.235294)
+    -- Group keycaps must not cover the selected yellow row with a system accent.
+    local group
+    for index, row in ipairs(menu.rows) do
+      if row.kind == "group" then group = index; break end
+    end
+    menu.selectedIndex = group
+    menu.selectedPosition = menu.rowVisuals[group].navigationPosition
+    quick.hud:select(menu)
+    assert(canvas.elements[menu.rowVisuals[group].keyBackgroundIndex].action == "skip")
+    menu.selectedIndex = first
+    menu.selectedPosition = 1
+    quick.hud:select(menu)
+    assert(canvas.elements[menu.rowVisuals[group].keyBackgroundIndex].action == "fill")
+    quick.menus.leader.modal.bindings.escape()
+    Gearbox.stop()
+  end
+end
+keys.checkGruvboxSelection()
 print("Gearbox smoke test passed")
