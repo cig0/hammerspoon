@@ -48,6 +48,10 @@ let
                   capsLockViaF18 = true;
                   quickLaunch = {
                     f = "Finder";
+                    g = {
+                      type = "openMenu";
+                      menu = "finder";
+                    };
                   };
                   menu = {
                     timeout = 5;
@@ -100,7 +104,7 @@ pkgs.runCommand "hammerspoon-delivery-check" { } ''
   test ! -L "$root/Spoons/Gearbox"
   test -w "$config"
   grep -Fqx '  capsLockViaF18 = true,' "$config"
-  ${pkgs.lua}/bin/lua -e 'local m = dofile(os.getenv("TEST_HOME") .. "/.hammerspoon/Spoons/Gearbox/hyperkeys.lua"); assert(m.f == "Finder" and m.a == nil)'
+  ${pkgs.lua}/bin/lua -e 'local m = dofile(os.getenv("TEST_HOME") .. "/.hammerspoon/Spoons/Gearbox/hyperkeys.lua"); assert(m.f == "Finder" and m.g.type == "openMenu" and m.g.menu == "finder" and m.a == nil)'
   grep -Fq 'require("Spoons.Gearbox").start()' "$root/nix-spoons.lua"
   grep -Fq 'require("nix-spoons")' "$root/init.lua"
   grep -Fq -- '-- delivery check' "$root/init.lua"

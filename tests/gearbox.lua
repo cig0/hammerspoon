@@ -12,7 +12,7 @@ local createdWebviews = {}
 local createdWebviewControllers = {}
 local shownAlerts = {}
 local keys = {
-  bindings = {}, hyper = {"ctrl", "alt", "cmd", "shift"}, launches = 0, bindCalls = 0, screenHeight = 1080
+  openedPaths = {}, bindings = {}, hyper = {"ctrl", "alt", "cmd", "shift"}, launches = 0, bindCalls = 0, screenHeight = 1080
 }
 function keys.chord(modifiers, key)
   local sorted = {table.unpack(modifiers)}
@@ -537,7 +537,10 @@ hs = {
 
   mouse = { getCurrentScreen = function() return nil end },
 
-  open = function() return true end,
+  open = function(path)
+    table.insert(keys.openedPaths, path)
+    return true
+  end,
 
   reload = function() reloadCalls = reloadCalls + 1 end,
 
@@ -2410,12 +2413,32 @@ function keys.checkQuickLaunch()
   assert(keys.press(keys.hyper, "s") and focused)
   hs.application.open = function() return nil end
   assert(keys.press(keys.hyper, "s") and shownAlerts[#shownAlerts].message:match("unavailable"))
-  assert(keys.press(keys.hyper, "f") and launchedApplication == "Finder" and not quick.activeMenu)
+  local finder = quick.menus.finder
+  assert(keys.press(keys.hyper, "f") and quick.activeMenu == finder)
+  local timer = quick.timeoutTimer
+  assert(keys.press(keys.hyper, "f") and quick.timeoutTimer == timer)
+  finder.modal.bindings.escape()
+  assert(quick.activeMenu == quick.menus.leader)
+  assert(keys.press(keys.hyper, "f") and quick.activeMenu == finder)
+  local beforeOpen = #keys.openedPaths
+  assert(sendCharacterKeyDown("d"))
+  assert(#keys.openedPaths == beforeOpen + 1 and keys.openedPaths[#keys.openedPaths] == os.getenv("HOME") .. "/Downloads")
+  assert(not quick.activeMenu and not quick.sessionInputTap.enabled)
+
+  assert(quick.scratchpad:show() and quick.scratchpad:isVisible())
+  quick.scratchpad.webview.contentResult = "draft"
+  assert(keys.press(keys.hyper, "f") and quick.activeMenu == finder)
+  globalHotkeyPressed()
+  assert(not quick.activeMenu and quick.scratchpad:isVisible())
+  globalHotkeyPressed()
+  assert(not quick.scratchpad:isVisible())
+
   globalHotkeyPressed()
   local menu = quick.activeMenu
   assert(menu.rows[menu.navigableRows[1]].label == "Calculator")
   assert(table.concat(menu.quickLaunchKeys) == "abcefklmnopstz")
   local canvas = quick.hud.canvas
+  assert(styledTextValue(elementById(canvas, "hyper-f").text) == "f   Finder Folders")
   local left = assert(elementById(canvas, "hyper-a")).frame
   local right = assert(elementById(canvas, "hyper-m")).frame
   assert(elementById(canvas, "hyper-heading") and left.y == right.y and left.x < right.x)
@@ -2432,6 +2455,14 @@ function keys.checkQuickLaunch()
   assert(not ok and tostring(err):match("Hyper%+f") and quick.started)
   for i = first, #keys.bindings do assert(keys.bindings[i].deleted) end
   assert(keys.press(keys.hyper, "m") and launchedApplication == "Mail")
+
+  local okTarget, targetError = pcall(startGearbox, {
+    menu = {timeout = 5}, quickLaunch = {f = {type = "openMenu", menu = "missing"}}
+  })
+  assert(not okTarget and tostring(targetError):find("quickLaunch.f references missing menu: missing", 1, true))
+  assert(keys.press(keys.hyper, "m") and launchedApplication == "Mail")
+  local custom = startGearbox({menu = {timeout = 5}, quickLaunch = {f = "Finder"}})
+  assert(keys.press(keys.hyper, "f") and launchedApplication == "Finder" and not custom.activeMenu)
 
   local disabled = startGearbox({menu = {timeout = 5}, quickLaunch = {}})
   assert(not keys.press(keys.hyper, "m"))
@@ -2465,8 +2496,26 @@ function keys.checkCapsLock()
   assert(keys.launches == count and launchedApplication == "Calendar" and not runtime.activeMenu)
   assert(capsLockRenderState.enabled, "a chord must preserve Caps Lock when already on")
   down()
+  assert(sendCharacterKeyDown("f", {eventTap = tap, capsLock = true}))
+  up()
+  assert(capsLockRenderState.enabled and runtime.activeMenu == runtime.menus.finder)
+  assert(not sendCharacterKeyDown("f", {eventTap = runtime.sessionInputTap, capsLock = true}))
+  assert(sendCharacterKeyDown("F", {eventTap = runtime.sessionInputTap, capsLock = true, flags = {shift = true}}))
+  assert(keys.openedPaths[#keys.openedPaths] == os.getenv("HOME") and not runtime.activeMenu)
+  down()
   up()
   assert(not capsLockRenderState.enabled)
+  local beforeOpen = #keys.openedPaths
+  down()
+  assert(sendCharacterKeyDown("f", {eventTap = tap}) and runtime.activeMenu == runtime.menus.finder)
+  assert(sendCharacterKeyDown("f", {eventTap = tap, autorepeat = 1}))
+  up()
+  assert(not capsLockRenderState.enabled)
+  assert(sendCharacterKeyDown("f", {eventTap = runtime.sessionInputTap, autorepeat = 1}))
+  assert(#keys.openedPaths == beforeOpen and runtime.activeMenu == runtime.menus.finder)
+  assert(sendCharacterKeyDown("f", {eventTap = runtime.sessionInputTap}))
+  assert(#keys.openedPaths == beforeOpen + 1 and keys.openedPaths[#keys.openedPaths] == os.getenv("HOME"))
+  assert(not runtime.activeMenu)
   down()
   assert(sendCharacterKeyDown("x", {eventTap = tap}) == nil)
   up()

@@ -263,9 +263,10 @@ function Runtime:switchMenu(currentMenu, targetId)
     target.modal:enter()
 end
 
---- Start session input observation and enter the root menu.
+--- Start session input observation and enter the requested menu (default: root).
+---@param targetId? string
 ---@return boolean
-function Runtime:beginMenuSession()
+function Runtime:beginMenuSession(targetId)
     if hs.eventtap.isSecureInputEnabled() then
         hs.alert.show("Gearbox cannot capture keys while Secure Input is active")
         return false
@@ -279,7 +280,7 @@ function Runtime:beginMenuSession()
         return false
     end
 
-    self.menus[self.rootId].modal:enter()
+    self.menus[targetId or self.rootId].modal:enter()
     return true
 end
 
@@ -479,9 +480,15 @@ function Runtime:registerMenu(menu)
     end
 end
 
-function Runtime:launchQuickApp(app)
-    if self.activeMenu then self:endMenuSession() end
-    self.actions.execute({type = "launchApp", name = app})
+function Runtime:dispatchQuickLaunch(target)
+    if type(target) == "string" then
+        if self.activeMenu then self:endMenuSession() end
+        self.actions.execute({type = "launchApp", name = target})
+    elseif not self.activeMenu then
+        self:beginMenuSession(target.menu)
+    elseif self.activeMenu.id ~= target.menu then
+        self:switchMenu(self.activeMenu, target.menu)
+    end
 end
 
 --- F18 supplies a physical down/up pair after macOS remaps Caps Lock.
@@ -499,10 +506,10 @@ function Runtime:bindCapsLock()
         used = true
         local flags = event:getFlags()
         if flags.cmd or flags.ctrl or flags.alt or flags.shift then return nil end
-        local app = self.config.quickLaunch[hs.keycodes.map[code]]
-        if not app then return nil end
+        local target = self.config.quickLaunch[hs.keycodes.map[code]]
+        if not target then return nil end
         if event:getProperty(events.properties.keyboardEventAutorepeat) == 0 then
-            self:launchQuickApp(app)
+            self:dispatchQuickLaunch(target)
         end
         return true
     end)
@@ -573,10 +580,10 @@ function Runtime:start()
 
         self.globalHotkey = hs.hotkey.bind(self.config.hotkey.modifiers,
                                            self.config.hotkey.key, function()
-            if self.scratchpad and self.scratchpad:isVisible() then
-                self.scratchpad:hide()
-            elseif self.activeMenu then
+            if self.activeMenu then
                 self:endMenuSession()
+            elseif self.scratchpad and self.scratchpad:isVisible() then
+                self.scratchpad:hide()
             else
                 self:beginMenuSession()
             end
@@ -593,9 +600,9 @@ function Runtime:start()
                 resolveHotkeyKeyCode(key) == self.globalHotkeyKeyCode then
                 error("Gearbox: Hyper+" .. key .. " is also the menu hotkey", 0)
             end
-            local app = self.config.quickLaunch[key]
+            local target = self.config.quickLaunch[key]
             local binding = hs.hotkey.bind(hyper, key, function()
-                self:launchQuickApp(app)
+                self:dispatchQuickLaunch(target)
             end)
             assert(binding, "Gearbox: failed to register Hyper+" .. key)
             table.insert(self.quickLaunchHotkeys, binding)
