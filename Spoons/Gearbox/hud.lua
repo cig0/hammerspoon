@@ -19,6 +19,11 @@ HUD.__index = HUD
 
 local verticalPositions = {top = 0.25, center = 0.50, bottom = 0.75}
 
+local windowShadows = {
+    {blurRadius = 22, offset = {w = 0, h = -8}, color = {white = 0, alpha = 0.34}},
+    {blurRadius = 3, offset = {w = 0, h = -1}, color = {white = 0, alpha = 0.16}}
+}
+
 local keyDisplayNames = {escape = "esc", ["return"] = "↩"}
 
 --- Round to the nearest integer.
@@ -400,12 +405,19 @@ function HUD:show(menu, checkedRows)
     local posY = screenFrame.y + availableHeight *
                      verticalPositions[self.config.menu.position]
 
+    -- Anchor the painted panel first. Only its transparent shadow margin may
+    -- shrink at a screen edge. Row and animation coordinates stay panel-local.
+    local margin = self.config.menu.showWindowShadow and 44 or 0
+    local side = math.min(margin, math.max(0, posX - screenFrame.x))
+    local top = math.min(margin, posY - screenFrame.y)
+    local bottom = math.min(margin, math.max(0, screenFrame.y + screenFrame.h - posY - height))
     self.canvas = hs.canvas.new({
-        x = posX,
-        y = posY,
-        w = self.config.menu.width,
-        h = height
+        x = posX - side,
+        y = posY - top,
+        w = self.config.menu.width + 2 * side,
+        h = height + top + bottom
     })
+    self.canvas:transformation(hs.canvas.matrix.translate(side, top))
 
     local colors = self.theme.colors
     local elements = {}
@@ -417,14 +429,30 @@ function HUD:show(menu, checkedRows)
         rootMenuCapsLockIsOn = hs.hid.capslock.get()
     end
 
+    local panel = {x = 0, y = 0, w = self.config.menu.width, h = height}
+    local radius = self.theme.metrics.windowCornerRadius
+    local corners = {xRadius = radius, yRadius = radius}
+    if self.config.menu.showWindowShadow then
+        -- A soft lower shadow gives the panel depth. A tighter shadow defines
+        -- the edge. NSShadow uses negative vertical offsets to cast downward.
+        for _, shadow in ipairs(windowShadows) do
+            appendElement(elements, {
+                type = "rectangle", action = "fill", frame = panel,
+                roundedRectRadii = corners, fillColor = {white = 0, alpha = 1},
+                withShadow = true, shadow = shadow
+            })
+        end
+    end
+
+    -- Replace the opaque shadow casters inside the panel. At 50% opacity
+    -- the desktop shows through without an extra layer of black underneath.
+    local background = {}
+    for key, value in pairs(colors.background) do background[key] = value end
+    background.alpha = self.config.menu.backgroundOpacity / 100
     appendElement(elements, {
-        type = "rectangle",
-        action = "fill",
-        fillColor = colors.background,
-        roundedRectRadii = {
-            xRadius = self.theme.metrics.windowCornerRadius,
-            yRadius = self.theme.metrics.windowCornerRadius
-        }
+        id = "menu-background",
+        type = "rectangle", action = "fill", frame = panel,
+        roundedRectRadii = corners, fillColor = background, compositeRule = "copy"
     })
 
     if self.config.menu.showAccentBorder then

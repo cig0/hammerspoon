@@ -7,7 +7,28 @@ local ConfigurationMenu = {}
 --- Return the passive Gearbox Configuration menu graph.
 ---@return table
 function ConfigurationMenu.definitions()
+  -- Use the number row from left to right for the eleven opacity presets.
+  local opacityRows = {}
+  local keys = "1234567890-"
+  for percent = 100, 50, -5 do
+    local index = #opacityRows + 1
+    opacityRows[index] = {
+      key = keys:sub(index, index),
+      label = percent .. "%",
+      kind = "action",
+      action = { type = "configure", operation = "setBackgroundOpacity", value = percent }
+    }
+  end
+
   return {
+    {
+      id = "menu-transparency",
+      title = "Transparency",
+      legend = "Menu background opacity",
+      parent = "themes",
+      entry = { key = "p", label = "Transparency" },
+      items = opacityRows
+    },
     {
       id = "configuration",
       title = "Gearbox Configuration",

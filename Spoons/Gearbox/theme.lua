@@ -168,7 +168,10 @@ end
 ---@return table
 local function loadThemes(directory)
     local themes = {}
-    local menuKeys = {s = "Follow macOS"}
+    local menuKeys = {
+        s = "Follow macOS", o = "Show Outer Frame",
+        w = "Show Window Shadow", p = "Transparency"
+    }
     local files = themeFiles(directory)
 
     if #files == 0 then fail("no theme modules found in " .. directory, 2) end
@@ -518,6 +521,11 @@ function Theme:menuDefinition()
             label = "Show Outer Frame",
             kind = "action",
             action = {type = "configure", operation = "toggleOuterFrame"}
+        }, {
+            key = "w",
+            label = "Show Window Shadow",
+            kind = "action",
+            action = {type = "configure", operation = "toggleWindowShadow"}
         }, {divider = true}
     }
 

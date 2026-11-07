@@ -2,8 +2,17 @@
 
 `themes/` contains passive visual definitions. Every visible `.lua` file is
 loaded, validated, and added to the generated Themes menu. Files beginning with
-`.` or `_` are ignored. The menu also provides the independent, checked
-`Show Outer Frame` preference immediately below `Follow macOS`.
+`.` or `_` are ignored. Gearbox Configuration → Themes also controls the menu's appearance:
+
+| Key | Control | What it changes |
+| --- | --- | --- |
+| `o` | Show Outer Frame | Accent outline around the panel |
+| `w` | Show Window Shadow | Soft drop shadow, enabled by default |
+| `p` | Transparency | Menu background opacity, from 100% to 50% in steps of 5 |
+
+The menu starts opaque. In Transparency, press `4` for 85%, `1` for 100%,
+or `-` for 50%. The selected row is checked and the preview updates immediately.
+Escape returns to Themes. Text, highlights, and Scratchpad use their own colors.
 
 ```text
 themes/*.lua
@@ -87,7 +96,8 @@ in the Themes menu or clear the saved selection as described above.
 To add a palette, copy `gearbox-dark.lua` to a new visible `.lua` file and
 change its ID, label, key, and colors. Choose a key unused across both theme
 groups and the generated controls (`s` for Follow macOS, `o` for Show Outer
-Frame, and the configured navigation keys). Reload Hammerspoon to discover it.
+Frame, `w` for Show Window Shadow, and `p` for Transparency). Navigation
+keys are also reserved. Reload Hammerspoon to discover the new palette.
 
 ## Palette provenance
 

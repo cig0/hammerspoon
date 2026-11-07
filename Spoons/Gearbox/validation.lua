@@ -216,6 +216,11 @@ function Validation.menuActivationIdentity(key)
     return Validation.hotkeyIdentity(key)
 end
 
+--- Accepted background opacity presets, shared by config, profiles, and menu actions.
+function Validation.isMenuOpacity(value)
+    return type(value) == "number" and value >= 50 and value <= 100 and value % 5 == 0
+end
+
 --- Validate the authoritative Gearbox configuration.
 ---@param config table
 function Validation.validateConfig(config)
@@ -257,6 +262,9 @@ function Validation.validateConfig(config)
     assert(config.menu.width >= 200, "Gearbox: menu.width must be at least 200")
     assertType(config.menu.showEmojis, "boolean", "menu.showEmojis")
     assertType(config.menu.highlightGroups, "boolean", "menu.highlightGroups")
+    assertType(config.menu.showWindowShadow, "boolean", "menu.showWindowShadow")
+    assert(Validation.isMenuOpacity(config.menu.backgroundOpacity),
+           "Gearbox: menu.backgroundOpacity must be 50 to 100 in steps of 5")
     assertType(config.menu.showAccentBorder, "boolean",
                "menu.showAccentBorder")
 

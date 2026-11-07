@@ -4,6 +4,7 @@
 -- `hs.settings` overrides. Output: the effective mutable configuration shared
 -- by the HUD and Scratchpad; `configuration_menu.lua` owns the passive UI data.
 local ConfigurationMenu = require("Spoons.Gearbox.configuration_menu")
+local Validation = require("Spoons.Gearbox.validation")
 local Preferences = {}
 Preferences.__index = Preferences
 
@@ -19,18 +20,22 @@ local configurableOperations = {
   saveProfile = true,
   setFilename = true,
   setHeight = true,
+  setBackgroundOpacity = true,
   setPosition = true,
   setWidth = true,
   toggleOuterFrame = true,
   togglePersistence = true,
+  toggleWindowShadow = true,
   useHammerspoonStorage = true
 }
 
 local checkableOperations = {
   chooseStorageFolder = true,
+  setBackgroundOpacity = true,
   setPosition = true,
   toggleOuterFrame = true,
   togglePersistence = true,
+  toggleWindowShadow = true,
   useHammerspoonStorage = true
 }
 
@@ -122,7 +127,9 @@ local function validateRecord(record, name, complete)
 
     rejectUnknown(record.menu, {
       position = true,
-      showAccentBorder = true
+      showAccentBorder = true,
+      showWindowShadow = true,
+      backgroundOpacity = true
     }, name .. ".menu")
 
     if complete and record.menu.position == nil then
@@ -131,6 +138,15 @@ local function validateRecord(record, name, complete)
 
     if record.menu.position ~= nil and not positions[record.menu.position] then
       fail(name .. ".menu.position must be top, center, or bottom")
+    end
+
+    if record.menu.backgroundOpacity ~= nil and
+        not Validation.isMenuOpacity(record.menu.backgroundOpacity) then
+      fail(name .. ".menu.backgroundOpacity must be 50 to 100 in steps of 5")
+    end
+
+    if record.menu.showWindowShadow ~= nil and type(record.menu.showWindowShadow) ~= "boolean" then
+      fail(name .. ".menu.showWindowShadow must be a boolean")
     end
 
     if record.menu.showAccentBorder ~= nil and
@@ -195,7 +211,9 @@ local function snapshot(config)
     schemaVersion = schemaVersion,
     menu = {
       position = config.menu.position,
-      showAccentBorder = config.menu.showAccentBorder
+      showAccentBorder = config.menu.showAccentBorder,
+      showWindowShadow = config.menu.showWindowShadow,
+      backgroundOpacity = config.menu.backgroundOpacity
     },
     scratchpad = {
       persistContent = config.scratchpad.persistContent,
@@ -207,12 +225,10 @@ local function snapshot(config)
 end
 
 local function applyRecord(config, record)
-  if record.menu and record.menu.position ~= nil then
-    config.menu.position = record.menu.position
-  end
-
-  if record.menu and record.menu.showAccentBorder ~= nil then
-    config.menu.showAccentBorder = record.menu.showAccentBorder
+  -- validateRecord allows only the portable menu fields. Missing fields in
+  -- older profiles inherit the settings applied by the preceding layer.
+  for key, value in pairs(record.menu or {}) do
+    config.menu[key] = value
   end
 
   local scratchpad = record.scratchpad
@@ -280,6 +296,10 @@ function Preferences.validateAction(action, location)
   if type(action.operation) ~= "string" or
       not configurableOperations[action.operation] then
     fail(location .. " has invalid configure operation")
+  end
+
+  if action.operation == "setBackgroundOpacity" and not Validation.isMenuOpacity(action.value) then
+    fail(location .. " background opacity must be 50 to 100 in steps of 5")
   end
 
   if action.operation == "setPosition" and
@@ -350,15 +370,9 @@ function Preferences:persistLocalOverrides()
   self:apply()
 end
 
-function Preferences:setMenuPosition(position)
+function Preferences:setMenuValue(name, value)
   self.localOverrides.menu = self.localOverrides.menu or {}
-  self.localOverrides.menu.position = position
-  self:persistLocalOverrides()
-end
-
-function Preferences:setOuterFrameVisibility(isVisible)
-  self.localOverrides.menu = self.localOverrides.menu or {}
-  self.localOverrides.menu.showAccentBorder = isVisible
+  self.localOverrides.menu[name] = value
   self:persistLocalOverrides()
 end
 
@@ -475,9 +489,13 @@ function Preferences:execute(action)
     local operation = action.operation
 
     if operation == "setPosition" then
-      self:setMenuPosition(action.value)
+      self:setMenuValue("position", action.value)
     elseif operation == "toggleOuterFrame" then
-      self:setOuterFrameVisibility(not self.config.menu.showAccentBorder)
+      self:setMenuValue("showAccentBorder", not self.config.menu.showAccentBorder)
+    elseif operation == "toggleWindowShadow" then
+      self:setMenuValue("showWindowShadow", not self.config.menu.showWindowShadow)
+    elseif operation == "setBackgroundOpacity" then
+      self:setMenuValue("backgroundOpacity", action.value)
     elseif operation == "togglePersistence" then
       self:setScratchpadValue("persistContent",
         not self.config.scratchpad.persistContent)
@@ -515,6 +533,10 @@ function Preferences:isSelected(action)
     return self.config.menu.position == action.value
   elseif action.operation == "toggleOuterFrame" then
     return self.config.menu.showAccentBorder
+  elseif action.operation == "toggleWindowShadow" then
+    return self.config.menu.showWindowShadow
+  elseif action.operation == "setBackgroundOpacity" then
+    return self.config.menu.backgroundOpacity == action.value
   elseif action.operation == "togglePersistence" then
     return self.config.scratchpad.persistContent
   elseif action.operation == "useHammerspoonStorage" then
