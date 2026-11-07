@@ -417,6 +417,8 @@ function Theme:restoredSelection()
 end
 
 --- Persist or clear stored selection records during startup.
+-- Constructor reads are reversible. Defer settings cleanup until the replacement
+-- runtime has registered its bindings successfully.
 function Theme:activate()
     if self.clearStoredSelectionOnActivation then
         hs.settings.clear(settingsKey)
@@ -455,6 +457,8 @@ function Theme:selectedThemeId()
 end
 
 --- Refresh the active semantic color set from the selected theme.
+-- Resolve the palette when a menu opens. System appearance can change between
+-- openings; the macOS accent and fonts were already resolved during startup.
 function Theme:refreshAppearance()
     local id = self:selectedThemeId()
     local definition = assert(self.themes[id],

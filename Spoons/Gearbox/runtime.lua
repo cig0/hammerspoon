@@ -318,6 +318,8 @@ end
 function Runtime:handleCharacterKeyDown(event)
     local menu = self.activeMenu
 
+    -- Until Caps Lock is released, its tap owns letters. This prevents the f
+    -- opening Finder Folders from also selecting the menu's Home row.
     if not menu or (self.capsLockTap and self.capsLockTap:isEnabled()) then
         return nil
     end
@@ -480,6 +482,9 @@ function Runtime:registerMenu(menu)
     end
 end
 
+--- Activate an app name or an already-validated openMenu target.
+-- Both four-modifier Hyper and the Caps Lock handler enter here.
+-- Menu targets retain the session; app launches close it before switching focus.
 function Runtime:dispatchQuickLaunch(target)
     if type(target) == "string" then
         if self.activeMenu then self:endMenuSession() end
@@ -495,6 +500,8 @@ end
 --- Only observe other keys while it is held. Modifier changes also cancel a tap.
 function Runtime:bindCapsLock()
     local events = hs.eventtap.event
+    -- F18 is a held key, not a modifier. Only an unused down/up pair toggles
+    -- capitalization; any intervening key or modifier makes this a chord.
     local used = false
     local tap = hs.eventtap.new({events.types.keyDown, events.types.flagsChanged}, function(event)
         if event:getType() == events.types.flagsChanged then
@@ -504,6 +511,8 @@ function Runtime:bindCapsLock()
         local code = event:getKeyCode()
         if code == hs.keycodes.map.f18 then return nil end
         used = true
+        -- Resolve by physical letter even when capitalization is already on.
+        -- Once the chord is released, menu rows resume their usual case rules.
         local flags = event:getFlags()
         if flags.cmd or flags.ctrl or flags.alt or flags.shift then return nil end
         local target = self.config.quickLaunch[hs.keycodes.map[code]]

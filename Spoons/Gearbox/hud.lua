@@ -2,8 +2,11 @@
 --
 -- Builds the visual menu with an optional accent border, header, passive legend,
 -- rows, dividers, selection highlight, and optional loupe scaling animation.
--- Input: menu definitions and theme colors from `theme.lua`. Output: an
--- `hs.canvas` shown by `runtime.lua`.
+-- Receives assembled menus from loader.lua and colors/fonts from theme.lua.
+-- Runtime owns key handling and selection; this module owns the canvas.
+-- To change section order or labels, edit menus/*.lua. Change spacing here.
+-- Geometry uses macOS points. Element frames are relative to the canvas;
+-- the canvas frame itself is positioned in screen coordinates.
 local HUD = {}
 
 ---@class HUD
@@ -76,6 +79,8 @@ function HUD.new(config, theme)
     self.canvas = nil
     self.animationTimer = nil
 
+    -- Font-dependent minimums keep keycaps and text aligned when fonts grow.
+    -- menuContentTop() must reserve any header space that show() draws.
     self.layout = {
         horizontalPadding = 28,
         keyGap = 14,
@@ -97,6 +102,8 @@ function HUD.new(config, theme)
         bottomPadding = math.max(16, round(config.font.size + 2))
     }
 
+    -- show() may compress the root on short screens. Preserve these values
+    -- so opening a submenu restores its usual spacing.
     self.normalRowHeight = self.layout.rowHeight
     self.normalDividerHeight = self.layout.dividerHeight
     self.layout.contentTop = self.layout.headerTop + self.layout.headerHeight
@@ -139,6 +146,8 @@ end
 ---@param menu table
 ---@return number
 function HUD:menuContentTop(menu)
+    -- The Hyper reference and optional legend sit above navigable rows.
+    -- Height calculation, row drawing, and the selection frame share this offset.
     local top = self.layout.contentTop
     if menu.quickLaunchKeys and #menu.quickLaunchKeys > 0 then
         local lines = 1 + math.ceil(#menu.quickLaunchKeys / 2)
@@ -251,6 +260,8 @@ function HUD:appendMenuRow(elements, menu, row, rowIndex, y, navigationPosition,
     local checkTextIndex
     local labelX = layout.labelX
 
+    -- Reserve this column for every row when any row is checkable.
+    -- Otherwise labels would shift sideways when a check changes.
     if menu.hasChecks then
         checkTextIndex = appendElement(elements, {
             type = "text",
@@ -278,6 +289,8 @@ function HUD:appendMenuRow(elements, menu, row, rowIndex, y, navigationPosition,
         text = styledText(row.label, font, labelColor, "left")
     })
 
+    -- Cache canvas element indices and unscaled geometry. Selection updates
+    -- these elements in place instead of rebuilding the menu on every arrow press.
     menu.rowVisuals[rowIndex] = {
         baseY = y,
         currentScale = 1,
@@ -313,6 +326,11 @@ function HUD:appendDivider(elements, y)
 end
 
 --- Display-only shortcuts, alphabetized down each column.
+-- Loader supplies sorted keys and resolved app/menu labels. These lines have
+-- no navigation positions, so arrow selection starts at the first menu row.
+---@param elements table
+---@param keys table Sorted shortcut letters.
+---@param labels table Display label indexed by shortcut letter.
 function HUD:appendQuickLaunch(elements, keys, labels)
     local layout = self.layout
     local font = resizedFont(self.theme.fonts.body, layout.legendFontSize)
@@ -329,6 +347,7 @@ function HUD:appendQuickLaunch(elements, keys, labels)
     label("hyper-heading", "Hyperkey / Caps Lock", layout.horizontalPadding, y,
           width, self.theme.colors.secondary)
     y = y + layout.legendTextHeight
+    -- Fill the left column first, then the right. This matches loader key order.
     local rows = math.ceil(#keys / 2)
     for index, key in ipairs(keys) do
         local column = math.floor((index - 1) / rows)
@@ -349,6 +368,8 @@ function HUD:show(menu, checkedRows)
     menu.rowVisuals = {}
     menu.selectionY = nil
 
+    -- rowIndex includes dividers; navigation positions count selectable rows.
+    -- Keep that distinction when changing row layout or loupe behavior.
     local navigationPositionByRow = {}
 
     for position, rowIndex in ipairs(menu.navigableRows) do
@@ -359,6 +380,8 @@ function HUD:show(menu, checkedRows)
 
     assert(screen, "Gearbox: no screen is available for the HUD")
 
+    -- frame() excludes the menu bar and Dock. Position within the unused height,
+    -- so top/bottom share the same margin even on screens with different origins.
     local screenFrame = screen:frame()
     local layout = self.layout
     layout.rowHeight = self.normalRowHeight
@@ -562,6 +585,8 @@ function HUD:renderRowScale(menu, rowIndex, scale)
     local fontSize = self.config.font.size * scale
     local scaledFont = resizedFont(visual.font, fontSize)
 
+    -- Scale around each row's original center. baseY and rowHeight stay fixed,
+    -- so magnification does not push neighboring rows or change navigation order.
     local keyX = layout.horizontalPadding - (keyWidth - layout.keyWidth) / 2
 
     local textY = visual.baseY + (layout.rowHeight - textHeight) / 2
@@ -624,6 +649,7 @@ function HUD:targetScale(menu, visual)
         return 1
     end
 
+    -- Distance follows selectable rows, ignoring divider gaps.
     local distance = math.abs(visual.navigationPosition - menu.selectedPosition)
 
     if distance == 0 then return self.config.loupe.selectedScale end
@@ -681,10 +707,12 @@ function HUD:select(menu)
             return
         end
 
+        -- absoluteTime() returns nanoseconds; loupe.duration is in seconds.
         local elapsed = (hs.timer.absoluteTime() - startedAt) / 1000000000
 
         local progress = math.min(elapsed / self.config.loupe.duration, 1)
 
+        -- Cubic ease-out slows the highlight as it reaches the selected row.
         local eased = 1 - ((1 - progress) ^ 3)
 
         self:setSelectionFrame(menu, startY + (targetY - startY) * eased)

@@ -107,6 +107,8 @@ function Gearbox.start(...)
     local candidateRuntime = Runtime.new(config, menus, rootId, Actions, theme,
                                          preferences, hud, scratchpad)
 
+    -- Start the replacement before retiring the old runtime. Failed validation
+    -- or binding setup must leave the previous working shortcuts available.
     candidateRuntime:start()
 
     if currentRuntime then currentRuntime:stop() end

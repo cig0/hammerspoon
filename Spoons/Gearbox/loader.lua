@@ -353,6 +353,8 @@ end
 --- Sort children inside each section, then sort the sections themselves.
 ---@param sections table
 ---@return table
+-- items[] keep their file order. This sorting applies only to child menus:
+-- sectionOrder, then entry.order within the section, then label and ID.
 local function sortedSections(sections)
     local result = {}
 
@@ -505,6 +507,8 @@ local function assembleMenus(definitions, rootId, config, actions)
         })
     end
 
+    -- Resolve menu labels after graph assembly, before creating any bindings.
+    -- Keep config.quickLaunch intact: it may be reused on the next start.
     local quickLaunchKeys = {}
     local labels = {}
     for key, target in pairs(config.quickLaunch) do

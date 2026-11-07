@@ -61,6 +61,34 @@ The stored choice is discarded when the configured default changes or the
 selected theme no longer exists. The detailed storage and Nix behavior are in
 the [Gearbox configuration](../README.md#theme-persistence) section.
 
+## Customize Nord
+
+Edit the existing `theme` table in `config.lua` to use Nord with a darker
+background:
+
+```lua
+theme = {
+  -- Keep the other existing theme settings.
+  name = "nord",
+  accentSource = "theme",
+  overrides = {
+    nord = {
+      background = {white = 0.08},
+      selectionAlpha = 0.18,
+    },
+  },
+},
+```
+
+Merge these fields into that table, then reload Hammerspoon. A saved theme
+choice can take precedence while `theme.name` stays the same; choose Nord
+in the Themes menu or clear the saved selection as described above.
+
+To add a palette, copy `gearbox-dark.lua` to a new visible `.lua` file and
+change its ID, label, key, and colors. Choose a key unused across both theme
+groups and the generated controls (`s` for Follow macOS, `o` for Show Outer
+Frame, and the configured navigation keys). Reload Hammerspoon to discover it.
+
 ## Palette provenance
 
 Bundled third-party presets map upstream palette roles onto Gearbox's semantic
