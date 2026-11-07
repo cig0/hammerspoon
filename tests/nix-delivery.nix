@@ -45,6 +45,9 @@ let
                     ];
                     key = "f12";
                   };
+                  quickLaunch = {
+                    f = "Finder";
+                  };
                   menu = {
                     timeout = 5;
                     position = "bottom";
@@ -95,6 +98,7 @@ pkgs.runCommand "hammerspoon-delivery-check" { } ''
   test -f "$root/Spoons/Gearbox/lib/RetroUI/package.json"
   test ! -L "$root/Spoons/Gearbox"
   test -w "$config"
+  ${pkgs.lua}/bin/lua -e 'local m = dofile(os.getenv("TEST_HOME") .. "/.hammerspoon/Spoons/Gearbox/hyperkeys.lua"); assert(m.f == "Finder" and m.a == nil)'
   grep -Fq 'require("Spoons.Gearbox").start()' "$root/nix-spoons.lua"
   grep -Fq 'require("nix-spoons")' "$root/init.lua"
   grep -Fq -- '-- delivery check' "$root/init.lua"

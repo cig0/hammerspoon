@@ -219,6 +219,14 @@ end
 --- Validate the authoritative Gearbox configuration.
 ---@param config table
 function Validation.validateConfig(config)
+    assertType(config.quickLaunch, "table", "quickLaunch")
+    for key, app in pairs(config.quickLaunch) do
+        assert(type(key) == "string" and key:match("^[a-z]$"),
+               "Gearbox: quickLaunch keys must be lowercase ASCII letters")
+        assert(type(app) == "string" and app:match("%S"),
+               "Gearbox: quickLaunch." .. key .. " requires an application name")
+    end
+
     assertType(config.hotkey.modifiers, "table", "hotkey.modifiers")
     assert(#config.hotkey.modifiers > 0,
            "Gearbox: hotkey.modifiers cannot be empty")

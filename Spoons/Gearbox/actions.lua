@@ -99,6 +99,39 @@ local function setCaffeinateMode(mode)
     end
 end
 
+--- Open the standalone Siri conversation window and focus its editable composer.
+local function openSiri()
+    local app = hs.application.open("com.apple.campo", 2, true)
+    local window = app and app:mainWindow()
+    if not window or not window:isStandard() then
+        hs.alert.show("Gearbox: the standalone Siri conversation window is unavailable")
+        return
+    end
+    if not app:isFrontmost() then
+        hs.alert.show("Gearbox: Siri did not gain focus")
+        return
+    end
+    local function isComposer(element)
+        local role = element:attributeValue("AXRole")
+        return (role == "AXTextArea" or role == "AXTextField") and
+               element:attributeValue("AXSubrole") ~= "AXSearchField" and
+               element:isAttributeSettable("AXValue") and
+               element:isAttributeSettable("AXFocused")
+    end
+
+    local axApp = hs.axuielement.applicationElement(app)
+    local focused = axApp:attributeValue("AXFocusedUIElement")
+    if focused and isComposer(focused) then return end
+
+    local axWindow = hs.axuielement.windowElement(window)
+    local editors = axWindow and axWindow:elementSearch(nil, isComposer,
+                                  {noCallback = true, count = 2})
+    if not editors or #editors ~= 1 or
+        not editors[1]:setAttributeValue("AXFocused", true) then
+        hs.alert.show("Gearbox: could not focus the Siri message field")
+    end
+end
+
 --- Execute an action and tell the runtime how the menu should react.
 --
 -- Return flags:
@@ -110,7 +143,11 @@ end
 ---@return table
 function M.execute(action, context)
     if action.type == "launchApp" then
-        hs.application.launchOrFocus(action.name)
+        if action.name == "Siri" then
+            openSiri()
+        elseif not hs.application.launchOrFocus(action.name) then
+            hs.alert.show("Gearbox: could not open " .. action.name)
+        end
         return {close = true}
     end
 

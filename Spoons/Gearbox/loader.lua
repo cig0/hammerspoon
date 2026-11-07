@@ -505,6 +505,11 @@ local function assembleMenus(definitions, rootId, config, actions)
         })
     end
 
+    local quickLaunchKeys = {}
+    for key in pairs(config.quickLaunch) do table.insert(quickLaunchKeys, key) end
+    table.sort(quickLaunchKeys)
+    menus[rootId].quickLaunchKeys = quickLaunchKeys
+
     for _, menu in pairs(menus) do menu.modal = hs.hotkey.modal.new() end
 
     return menus

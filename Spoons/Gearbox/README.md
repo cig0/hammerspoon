@@ -109,6 +109,26 @@ g             → open Gearbox configuration from the root menu
 Tab           → insert a tab while editing the scratchpad
 ```
 
+### Hyperkey / Caps Lock
+
+While Gearbox is running, hold Hyper (Control + Option + Command + Shift) and
+press a letter to launch or focus its app. The root menu lists the bindings
+alphabetically under its title. The letters work with the HUD closed. With a
+menu open, a bound chord dismisses the menu and opens the app. Other Hyper
+letters pass through to their owners. Arrow navigation skips the reference.
+
+Edit [hyperkeys.lua](./hyperkeys.lua) to change the bindings. Set it to
+`return {}` to disable Quick Launch. Home Manager can replace the shipped map
+with `spoons.gearbox.quickLaunch`. To use the physical Caps Lock key, configure
+your keyboard or remapper to emit all four modifiers while held. Gearbox also
+accepts the physical four-modifier chord.
+
+The `Siri` entry targets the standalone macOS Siri AI conversation app and
+focuses its editable message field. It requires the dedicated app and Siri AI
+to be available. Gearbox reports when the window or editor is unavailable.
+
+### Menu navigation
+
 The first arrow press selects the first or last entry. Selection wraps by
 default. Loupe scaling is immediate, so key repeat does not wait for an
 animation.
@@ -291,8 +311,9 @@ frame visibility, and the documented Scratchpad fields.
 
 Nix delivery creates a derived copy of the Spoon and substitutes `hotkey.*`,
 `menu.{timeout,position}`, and the exposed `scratchpad.*` settings from
-`programs.hammerspoon-spoons.spoons.gearbox.*`. Other settings come directly
-from `config.lua`; no Lua override table is passed at startup. See [configuration ownership](../../assets/docs/NIX.md#configuration-ownership).
+`programs.hammerspoon-spoons.spoons.gearbox.*`. A non-null `quickLaunch`
+option replaces the shipped `hyperkeys.lua`. Gearbox reads the deployed files
+at startup. See [configuration ownership](../../assets/docs/NIX.md#configuration-ownership).
 
 ### Hotkey and menu
 
@@ -383,7 +404,8 @@ Bundled IDs and semantic palette fields are documented beside the
 
 Displayed character shortcuts accept either no Command, Option, or Control
 modifier, or the exact subset used by the Gearbox hotkey. This permits an
-immediate choice before the opening modifiers are released. Shift always
+immediate choice before the opening modifiers are released. With Quick Launch
+enabled, Hyper+letter bypasses menu dispatch. Otherwise Shift always
 selects the resulting character, even when Shift belongs to the opening
 hotkey. Escape, Up, Down, and Return remain bare controls, preserving modified
 macOS shortcuts such as `alt+cmd+escape`.

@@ -97,6 +97,8 @@ function HUD.new(config, theme)
         bottomPadding = math.max(16, round(config.font.size + 2))
     }
 
+    self.normalRowHeight = self.layout.rowHeight
+    self.normalDividerHeight = self.layout.dividerHeight
     self.layout.contentTop = self.layout.headerTop + self.layout.headerHeight
 
     self.layout.labelX = self.layout.horizontalPadding + self.layout.keyWidth +
@@ -137,10 +139,15 @@ end
 ---@param menu table
 ---@return number
 function HUD:menuContentTop(menu)
-    if not menu.legend then return self.layout.contentTop end
-
-    return self.layout.contentTop + self.layout.legendTextHeight +
-               self.layout.legendBottomSpacing
+    local top = self.layout.contentTop
+    if menu.quickLaunchKeys and #menu.quickLaunchKeys > 0 then
+        local lines = 1 + math.ceil(#menu.quickLaunchKeys / 2)
+        top = top + lines * self.layout.legendTextHeight + self.layout.dividerHeight
+    end
+    if menu.legend then
+        top = top + self.layout.legendTextHeight + self.layout.legendBottomSpacing
+    end
+    return top
 end
 
 --- Calculate the total canvas height for `menu`.
@@ -287,6 +294,52 @@ function HUD:appendMenuRow(elements, menu, row, rowIndex, y, navigationPosition,
     }
 end
 
+function HUD:appendDivider(elements, y)
+    appendElement(elements, {
+        type = "segments",
+        action = "stroke",
+        coordinates = {
+            {
+                x = self.layout.horizontalPadding,
+                y = y + self.layout.dividerHeight / 2
+            }, {
+                x = self.config.menu.width - self.layout.horizontalPadding,
+                y = y + self.layout.dividerHeight / 2
+            }
+        },
+        strokeColor = self.theme.colors.divider,
+        strokeWidth = 1
+    })
+end
+
+--- Display-only shortcuts, alphabetized down each column.
+function HUD:appendQuickLaunch(elements, keys)
+    local layout = self.layout
+    local font = resizedFont(self.theme.fonts.body, layout.legendFontSize)
+    local y = layout.contentTop
+    local function label(id, text, x, top, width, color)
+        appendElement(elements, {
+            id = id, type = "text",
+            frame = {x = x, y = top, w = width, h = layout.legendTextHeight},
+            text = styledText(text, font, color)
+        })
+    end
+
+    local width = self.config.menu.width - 2 * layout.horizontalPadding
+    label("hyper-heading", "Hyperkey / Caps Lock", layout.horizontalPadding, y,
+          width, self.theme.colors.secondary)
+    y = y + layout.legendTextHeight
+    local rows = math.ceil(#keys / 2)
+    for index, key in ipairs(keys) do
+        local column = math.floor((index - 1) / rows)
+        local row = (index - 1) % rows
+        label("hyper-" .. key, key .. "   " .. self.config.quickLaunch[key],
+              layout.horizontalPadding + column * width / 2,
+              y + row * layout.legendTextHeight, width / 2, self.theme.colors.primary)
+    end
+    self:appendDivider(elements, y + rows * layout.legendTextHeight)
+end
+
 --- Build and display the canvas for `menu`.
 ---@param menu table
 ---@param checkedRows table
@@ -302,12 +355,21 @@ function HUD:show(menu, checkedRows)
         navigationPositionByRow[rowIndex] = position
     end
 
-    local height = self:calculateHeight(menu)
     local screen = self:targetScreen()
 
     assert(screen, "Gearbox: no screen is available for the HUD")
 
     local screenFrame = screen:frame()
+    local layout = self.layout
+    layout.rowHeight = self.normalRowHeight
+    layout.dividerHeight = self.normalDividerHeight
+    local height = self:calculateHeight(menu)
+    if height > screenFrame.h and menu.quickLaunchKeys and #menu.quickLaunchKeys > 0 then
+        -- Reclaim row padding on short screens so the root footer stays visible.
+        layout.rowHeight = math.max(layout.textHeight, layout.keyBackgroundHeight)
+        layout.dividerHeight = math.ceil(self.normalDividerHeight / 2)
+        height = self:calculateHeight(menu)
+    end
     local availableHeight = math.max(0, screenFrame.h - height)
 
     local posX = screenFrame.x + (screenFrame.w - self.config.menu.width) / 2
@@ -322,7 +384,6 @@ function HUD:show(menu, checkedRows)
         h = height
     })
 
-    local layout = self.layout
     local colors = self.theme.colors
     local elements = {}
     local rootMenuCapsLockIsOn = false
@@ -435,13 +496,17 @@ function HUD:show(menu, checkedRows)
         })
     end
 
+    if menu.quickLaunchKeys and #menu.quickLaunchKeys > 0 then
+        self:appendQuickLaunch(elements, menu.quickLaunchKeys)
+    end
+
     if menu.legend then
         appendElement(elements, {
             id = "menu-legend",
             type = "text",
             frame = {
                 x = layout.horizontalPadding,
-                y = layout.contentTop,
+                y = self:menuContentTop(menu) - layout.legendTextHeight - layout.legendBottomSpacing,
                 w = self.config.menu.width - (layout.horizontalPadding * 2),
                 h = layout.legendTextHeight
             },
@@ -456,21 +521,7 @@ function HUD:show(menu, checkedRows)
 
     for rowIndex, row in ipairs(menu.rows) do
         if row.divider then
-            appendElement(elements, {
-                type = "segments",
-                action = "stroke",
-                coordinates = {
-                    {
-                        x = layout.horizontalPadding,
-                        y = y + layout.dividerHeight / 2
-                    }, {
-                        x = self.config.menu.width - layout.horizontalPadding,
-                        y = y + layout.dividerHeight / 2
-                    }
-                },
-                strokeColor = colors.divider,
-                strokeWidth = 1
-            })
+            self:appendDivider(elements, y)
 
             y = y + layout.dividerHeight
         else

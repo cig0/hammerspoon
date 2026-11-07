@@ -73,6 +73,16 @@ let
           description = "Hammerspoon key name or raw #keycode used to open or close Gearbox.";
         };
 
+        quickLaunch = mkOption {
+          type = types.nullOr (
+            types.addCheck (types.attrsOf types.nonEmptyStr) (
+              apps: lib.all (key: builtins.match "[a-z]" key != null) (builtins.attrNames apps)
+            )
+          );
+          default = null;
+          description = "Hyper shortcut letters and application names. Use lowercase letters. Null uses hyperkeys.lua. An empty set disables Quick Launch.";
+        };
+
         menu.timeout = mkOption {
           type = nonNegativeNumber;
           default = 0;
@@ -181,6 +191,9 @@ let
           configuredGearbox =
             pkgs.runCommand "gearbox-configured"
               {
+                quickLaunchFile = lib.optionalString (gb.quickLaunch != null) (
+                  pkgs.writeText "hyperkeys.lua" ("return " + lib.generators.toLua { } gb.quickLaunch + "\n")
+                );
                 hotkeyModifiers = lib.generators.toLua { multiline = false; } gb.hotkey.modifiers;
                 hotkeyKey = builtins.toJSON gb.hotkey.key;
                 timeout = builtins.toJSON gb.menu.timeout;
@@ -196,6 +209,10 @@ let
               ''
                 mkdir -p "$out"
                 cp -R "${gearboxSource}/." "$out/"
+                if [[ -n "$quickLaunchFile" ]]; then
+                  chmod u+w "$out/hyperkeys.lua"
+                  cp "$quickLaunchFile" "$out/hyperkeys.lua"
+                fi
                 chmod u+w "$out/config.lua"
                 substituteInPlace "$out/config.lua" \
                   --replace-fail '  hotkey = { modifiers = { "ctrl", "alt", "cmd" }, key = "space" },' "  hotkey = { modifiers = $hotkeyModifiers, key = $hotkeyKey }," \

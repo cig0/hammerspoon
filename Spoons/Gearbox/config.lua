@@ -5,6 +5,8 @@
 return {
   hotkey = { modifiers = { "ctrl", "alt", "cmd" }, key = "space" },
 
+  quickLaunch = require("Spoons.Gearbox.hyperkeys"),
+
   menu = {
     timeout = 0,          -- Zero disables timeout and intentionally aborts startup.
     position = "top",     -- "top", "center", "bottom"

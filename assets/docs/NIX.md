@@ -154,6 +154,10 @@ export a system-level module that writes directly into a user's home directory.
 
 [`Spoons/Gearbox/config.lua`](../../Spoons/Gearbox/config.lua) is Gearbox's
 runtime configuration contract. Standalone installations read it directly.
+Quick Launch defaults to the letter-to-app map in
+[hyperkeys.lua](../../Spoons/Gearbox/hyperkeys.lua). Set
+`programs.hammerspoon-spoons.spoons.gearbox.quickLaunch` to replace that map,
+for example `{ f = "Finder"; m = "Mail"; }`. An empty set disables it.
 Nix delivery stages a copy with its `hotkey.modifiers`, `hotkey.key`,
 `menu.position`, `menu.timeout`, and
 Scratchpad values replaced by the corresponding
@@ -171,7 +175,7 @@ repository Spoons/Gearbox/config.lua
 ```
 
 No runtime override table is generated or passed to `Gearbox.start()`. All
-other Gearbox values remain owned by the repository file, so a flake input
+other Gearbox values remain owned by the repository files, so a flake input
 update deploys their changes. Shortcut, placement, timeout, and Scratchpad options are
 deployment-time exceptions: the shipped timeout `0` intentionally prevents
 startup until an installation chooses a positive duration, while shared
