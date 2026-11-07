@@ -19,6 +19,8 @@ HUD.__index = HUD
 
 local verticalPositions = {top = 0.25, center = 0.50, bottom = 0.75}
 
+{blurRadius = 44, offset = {w = 0, h = -8}, color = {white = 0, alpha = 0.24}},
+
 local windowShadows = {
     {blurRadius = 22, offset = {w = 0, h = -8}, color = {white = 0, alpha = 0.34}},
     {blurRadius = 3, offset = {w = 0, h = -1}, color = {white = 0, alpha = 0.16}}
@@ -407,7 +409,7 @@ function HUD:show(menu, checkedRows)
 
     -- Anchor the painted panel first. Only its transparent shadow margin may
     -- shrink at a screen edge. Row and animation coordinates stay panel-local.
-    local margin = self.config.menu.showWindowShadow and 44 or 0
+    local margin = self.config.menu.showWindowShadow and 88 or 0
     local side = math.min(margin, math.max(0, posX - screenFrame.x))
     local top = math.min(margin, posY - screenFrame.y)
     local bottom = math.min(margin, math.max(0, screenFrame.y + screenFrame.h - posY - height))
