@@ -5,6 +5,7 @@
 return {
   hotkey = { modifiers = { "ctrl", "alt", "cmd" }, key = "space" },
 
+  capsLockViaF18 = false,
   quickLaunch = require("Spoons.Gearbox.hyperkeys"),
 
   menu = {

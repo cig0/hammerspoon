@@ -317,7 +317,9 @@ end
 function Runtime:handleCharacterKeyDown(event)
     local menu = self.activeMenu
 
-    if not menu then return nil end
+    if not menu or (self.capsLockTap and self.capsLockTap:isEnabled()) then
+        return nil
+    end
 
     local flags = event:getFlags()
 
@@ -477,8 +479,57 @@ function Runtime:registerMenu(menu)
     end
 end
 
+function Runtime:launchQuickApp(app)
+    if self.activeMenu then self:endMenuSession() end
+    self.actions.execute({type = "launchApp", name = app})
+end
+
+--- F18 supplies a physical down/up pair after macOS remaps Caps Lock.
+--- Only observe other keys while it is held. Modifier changes also cancel a tap.
+function Runtime:bindCapsLock()
+    local events = hs.eventtap.event
+    local used = false
+    local tap = hs.eventtap.new({events.types.keyDown, events.types.flagsChanged}, function(event)
+        if event:getType() == events.types.flagsChanged then
+            used = true
+            return nil
+        end
+        local code = event:getKeyCode()
+        if code == hs.keycodes.map.f18 then return nil end
+        used = true
+        local flags = event:getFlags()
+        if flags.cmd or flags.ctrl or flags.alt or flags.shift then return nil end
+        local app = self.config.quickLaunch[hs.keycodes.map[code]]
+        if not app then return nil end
+        if event:getProperty(events.properties.keyboardEventAutorepeat) == 0 then
+            self:launchQuickApp(app)
+        end
+        return true
+    end)
+    assert(tap, "Gearbox: could not create Caps Lock input tap")
+    self.capsLockTap = tap
+    local binding = hs.hotkey.bind({}, "f18", function()
+        used = false
+        if hs.eventtap.isSecureInputEnabled() then return end
+        tap:start()
+        if not tap:isEnabled() then hs.alert.show("Gearbox could not capture Caps Lock") end
+    end, function()
+        local toggle = tap:isEnabled() and not used and not hs.eventtap.isSecureInputEnabled()
+        tap:stop()
+        if toggle then
+            hs.hid.capslock.toggle()
+            if self.activeMenu == self.menus[self.rootId] then
+                self.hud:refresh(self.activeMenu, self:checkedRows(self.activeMenu))
+            end
+        end
+    end)
+    assert(binding, "Gearbox: failed to register F18 for Caps Lock")
+    table.insert(self.quickLaunchHotkeys, binding)
+end
+
 --- Delete the global hotkey and all modal bindings.
 function Runtime:deleteBindings()
+    if self.capsLockTap then self.capsLockTap:stop() end
     if self.sessionInputTap then
         self.sessionInputTap:stop()
         self.sessionInputTap = nil
@@ -544,13 +595,13 @@ function Runtime:start()
             end
             local app = self.config.quickLaunch[key]
             local binding = hs.hotkey.bind(hyper, key, function()
-                if self.activeMenu then self:endMenuSession() end
-                self.actions.execute({type = "launchApp", name = app})
+                self:launchQuickApp(app)
             end)
             assert(binding, "Gearbox: failed to register Hyper+" .. key)
             table.insert(self.quickLaunchHotkeys, binding)
         end
 
+        if self.config.capsLockViaF18 then self:bindCapsLock() end
         self.theme:activate()
     end, debug.traceback)
 

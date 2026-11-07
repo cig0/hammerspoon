@@ -3,6 +3,7 @@
 | `programs.hammerspoon-spoons.enable` | boolean | `false` | Whether to enable the Hammerspoon Spoons integration. |
 | `programs.hammerspoon-spoons.extraConfig` | strings concatenated with "\n" | `""` | Lua appended to the managed init.lua after the enabled Spoons load. |
 | `programs.hammerspoon-spoons.manageInit` | boolean | `true` | Whether to manage ~/.hammerspoon/init.lua. Disable this when an existing init.lua should remain authoritative, then require "nix-spoons" from that file. |
+| `programs.hammerspoon-spoons.spoons.gearbox.capsLockViaF18` | boolean | `false` | Whether to enable handling a Caps Lock key remapped to F18 for tap-to-toggle and app shortcuts. |
 | `programs.hammerspoon-spoons.spoons.gearbox.enable` | boolean | `true` | Whether to install and load Gearbox. |
 | `programs.hammerspoon-spoons.spoons.gearbox.hotkey.key` | non-empty string | `"space"` | Hammerspoon key name or raw #keycode used to open or close Gearbox. |
 | `programs.hammerspoon-spoons.spoons.gearbox.hotkey.modifiers` | non-empty (list of (one of "alt", "option", "cmd", "command", "ctrl", "control", "shift")) | `["ctrl","alt","cmd"]` | Modifiers held with hotkey.key to open or close Gearbox. |

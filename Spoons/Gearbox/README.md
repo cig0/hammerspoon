@@ -119,9 +119,15 @@ letters pass through to their owners. Arrow navigation skips the reference.
 
 Edit [hyperkeys.lua](./hyperkeys.lua) to change the bindings. Set it to
 `return {}` to disable Quick Launch. Home Manager can replace the shipped map
-with `spoons.gearbox.quickLaunch`. To use the physical Caps Lock key, configure
-your keyboard or remapper to emit all four modifiers while held. Gearbox also
-accepts the physical four-modifier chord.
+with `spoons.gearbox.quickLaunch`. For dual-purpose Caps Lock, map the
+physical key to F18 in macOS and set `capsLockViaF18 = true`. While Gearbox
+is running, press and release Caps Lock alone to toggle capitalization. Hold
+it and press a mapped letter to launch the app. An unmapped letter passes
+through and cancels the toggle. The ordinary four-modifier shortcuts also work.
+With the system remap active, a standalone tap needs Gearbox running and
+keyboard input available to Hammerspoon. The
+[flake usage guide](../../assets/docs/NIX.md#caps-lock-shortcuts) includes the
+Home Manager and nix-darwin settings, activation order, and reversal steps.
 
 The `Siri` entry targets the standalone macOS Siri AI conversation app and
 focuses its editable message field. It requires the dedicated app and Siri AI
