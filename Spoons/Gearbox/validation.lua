@@ -219,6 +219,7 @@ end
 --- Validate the authoritative Gearbox configuration.
 ---@param config table
 function Validation.validateConfig(config)
+    assertType(config.capsLockViaF18, "boolean", "capsLockViaF18")
     assertType(config.quickLaunch, "table", "quickLaunch")
     for key, app in pairs(config.quickLaunch) do
         assert(type(key) == "string" and key:match("^[a-z]$"),

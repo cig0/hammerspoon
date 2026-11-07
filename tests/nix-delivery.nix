@@ -45,6 +45,7 @@ let
                     ];
                     key = "f12";
                   };
+                  capsLockViaF18 = true;
                   quickLaunch = {
                     f = "Finder";
                   };
@@ -98,6 +99,7 @@ pkgs.runCommand "hammerspoon-delivery-check" { } ''
   test -f "$root/Spoons/Gearbox/lib/RetroUI/package.json"
   test ! -L "$root/Spoons/Gearbox"
   test -w "$config"
+  grep -Fqx '  capsLockViaF18 = true,' "$config"
   ${pkgs.lua}/bin/lua -e 'local m = dofile(os.getenv("TEST_HOME") .. "/.hammerspoon/Spoons/Gearbox/hyperkeys.lua"); assert(m.f == "Finder" and m.a == nil)'
   grep -Fq 'require("Spoons.Gearbox").start()' "$root/nix-spoons.lua"
   grep -Fq 'require("nix-spoons")' "$root/init.lua"

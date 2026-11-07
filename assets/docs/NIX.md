@@ -150,6 +150,58 @@ Without Home Manager, use the standalone installation documented in the
 [Gearbox README](../../Spoons/Gearbox/README.md#standalone). The flake does not
 export a system-level module that writes directly into a user's home directory.
 
+## Caps Lock shortcuts
+
+Enable the Gearbox F18 handler in Home Manager:
+
+```nix
+programs.hammerspoon-spoons = {
+  enable = true;
+  spoons.gearbox = {
+    menu.timeout = 60;
+    capsLockViaF18 = true;
+  };
+};
+```
+
+Map the physical Caps Lock key to F18 in the native nix-darwin configuration:
+
+```nix
+system.keyboard = {
+  enableKeyMapping = true;
+  userKeyMapping = [
+    {
+      HIDKeyboardModifierMappingSrc = 30064771129; # Caps Lock
+      HIDKeyboardModifierMappingDst = 30064771181; # F18
+    }
+  ];
+};
+```
+
+Activate nix-darwin and Home Manager, then reload Hammerspoon. nix-darwin
+applies the keyboard map on activation and at boot. Home Manager deploys
+Gearbox's handler. Both settings are required for the physical shortcut.
+
+Press and release Caps Lock alone to toggle capitalization. Hold it and press
+a letter from `hyperkeys.lua` to launch or focus its app. A chord preserves
+the existing capitalization state. An unmapped letter passes through and
+cancels the toggle. The four-modifier Hyper shortcuts remain available.
+
+The physical remap applies system-wide. Tap-to-toggle requires Gearbox running
+and keyboard input available to Hammerspoon. Quitting Hammerspoon leaves the
+key mapped to F18. To return to native Caps Lock, remove its mapping and
+activate nix-darwin again with `enableKeyMapping = true` so it applies the
+remaining mapping table, including an empty table when appropriate.
+
+Hoagie's integration defaults `capsLockViaF18` on for Darwin-enabled hosts
+when the Hammerspoon input exposes the option. Its Darwin output supplies the
+physical mapping when Gearbox and the handler are enabled and the menu timeout
+is positive. After publishing the Hammerspoon change, update that input in
+Hoagie, run `hoagie hs`, and reload Hammerspoon. Setting
+`programs.hammerspoon-spoons.spoons.gearbox.capsLockViaF18 = false` disables
+the handler and omits the generated mapping. Use the reversal procedure above
+to restore native Caps Lock.
+
 ## Configuration ownership
 
 [`Spoons/Gearbox/config.lua`](../../Spoons/Gearbox/config.lua) is Gearbox's

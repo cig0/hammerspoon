@@ -20,12 +20,12 @@ function keys.chord(modifiers, key)
   return table.concat(sorted, "+") .. "+" .. key
 end
 
-function keys.press(modifiers, key)
+function keys.press(modifiers, key, release)
   local id = keys.chord(modifiers, key)
   for i = #keys.bindings, 1, -1 do
     local binding = keys.bindings[i]
     if not binding.deleted and binding.id == id then
-      binding.callback()
+      if release then binding.release() else binding.callback() end
       return true
     end
   end
@@ -477,7 +477,7 @@ hs = {
   },
 
   hotkey = {
-    bind = function(modifiers, key, callback)
+    bind = function(modifiers, key, callback, release)
       keys.bindCalls = keys.bindCalls + 1
 
       if failNextGlobalHotkey == true or failNextGlobalHotkey == key then
@@ -485,7 +485,7 @@ hs = {
         return nil
       end
 
-      local binding = {id = keys.chord(modifiers, key), callback = callback,
+      local binding = {id = keys.chord(modifiers, key), callback = callback, release = release,
         delete = function(self) self.deleted = true end}
       table.insert(keys.bindings, binding)
       return binding
@@ -508,6 +508,7 @@ hs = {
 
   hid = {
     capslock = {
+      toggle = function() capsLockRenderState.enabled = not capsLockRenderState.enabled end,
       get = function()
         capsLockRenderState.reads = capsLockRenderState.reads + 1
         return capsLockRenderState.enabled
@@ -2442,4 +2443,38 @@ function keys.checkQuickLaunch()
 end
 
 keys.checkQuickLaunch()
+
+function keys.checkCapsLock()
+  local runtime = startGearbox({menu = {timeout = 5}, capsLockViaF18 = true})
+  local tap = runtime.capsLockTap
+  local function down() assert(keys.press({}, "f18")) end
+  local function up() assert(keys.press({}, "f18", true)) end
+
+  capsLockRenderState.enabled = false
+  down()
+  assert(not capsLockRenderState.enabled and tap:isEnabled())
+  up()
+  assert(capsLockRenderState.enabled and not tap:isEnabled())
+  globalHotkeyPressed()
+  down()
+  assert(sendCharacterKeyDown("c", {eventTap = runtime.sessionInputTap}) == nil)
+  assert(sendCharacterKeyDown("C", {eventTap = tap, capsLock = true}))
+  local count = keys.launches
+  assert(sendCharacterKeyDown("C", {eventTap = tap, autorepeat = 1}))
+  up()
+  assert(keys.launches == count and launchedApplication == "Calendar" and not runtime.activeMenu)
+  assert(capsLockRenderState.enabled, "a chord must preserve Caps Lock when already on")
+  down()
+  up()
+  assert(not capsLockRenderState.enabled)
+  down()
+  assert(sendCharacterKeyDown("x", {eventTap = tap}) == nil)
+  up()
+  assert(not capsLockRenderState.enabled, "unmapped chords must not toggle capitalization")
+  down()
+  Gearbox.stop()
+  assert(not tap:isEnabled() and not keys.press({}, "f18") and not capsLockRenderState.enabled)
+end
+
+keys.checkCapsLock()
 print("Gearbox smoke test passed")

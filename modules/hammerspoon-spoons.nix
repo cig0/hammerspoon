@@ -73,6 +73,8 @@ let
           description = "Hammerspoon key name or raw #keycode used to open or close Gearbox.";
         };
 
+        capsLockViaF18 = mkEnableOption "handling a Caps Lock key remapped to F18 for tap-to-toggle and app shortcuts";
+
         quickLaunch = mkOption {
           type = types.nullOr (
             types.addCheck (types.attrsOf types.nonEmptyStr) (
@@ -196,6 +198,7 @@ let
                 );
                 hotkeyModifiers = lib.generators.toLua { multiline = false; } gb.hotkey.modifiers;
                 hotkeyKey = builtins.toJSON gb.hotkey.key;
+                capsLockViaF18 = builtins.toJSON gb.capsLockViaF18;
                 timeout = builtins.toJSON gb.menu.timeout;
                 menuPosition = builtins.toJSON gb.menu.position;
                 scratchpadEnable = builtins.toJSON gb.scratchpad.enable;
@@ -216,6 +219,7 @@ let
                 chmod u+w "$out/config.lua"
                 substituteInPlace "$out/config.lua" \
                   --replace-fail '  hotkey = { modifiers = { "ctrl", "alt", "cmd" }, key = "space" },' "  hotkey = { modifiers = $hotkeyModifiers, key = $hotkeyKey }," \
+                  --replace-fail "  capsLockViaF18 = false," "  capsLockViaF18 = $capsLockViaF18," \
                   --replace-fail "    timeout = 0," "    timeout = $timeout," \
                   --replace-fail '    position = "top",' "    position = $menuPosition," \
                   --replace-fail "    enable = true," "    enable = $scratchpadEnable," \
