@@ -409,6 +409,7 @@ end
 function Scratchpad:ensureView()
     if self.webview then return end
 
+    -- usercontent wraps the JavaScript payload in message.body.
     self.controller = hs.webview.usercontent.new("gearboxScratchpad")
     self.controller:setCallback(
         function(message) self:handleMessage(message.body) end)
@@ -475,6 +476,8 @@ function Scratchpad:show()
     return true
 end
 
+-- Fetch the latest text before hiding; autosave may lag behind typing.
+-- Keep the editor visible if saving fails so the draft is recoverable.
 function Scratchpad:hide()
     if not self.webview then return end
 

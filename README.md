@@ -9,9 +9,8 @@
 
 This repository contains independent Hammerspoon Spoons and reusable Lua
 libraries. Each Spoon owns its
-Lua runtime, configuration, data, tests, and detailed documentation; optional
-Home Manager delivery loads those files and provides Gearbox's required
-timeout, shortcut, shared placement, and Scratchpad settings.
+Lua runtime, configuration, menu data, and documentation. Optional Home
+Manager delivery configures its shortcuts, timeout, placement, and Scratchpad.
 
 ## Spoons
 
@@ -38,6 +37,15 @@ Gearbox intentionally ships with its timeout disabled, so set a positive
 `menu.timeout` before loading it. The [Gearbox README](./Spoons/Gearbox/README.md)
 contains installation, configuration, controls, and architecture details.
 [Nix delivery](./assets/docs/NIX.md) is available through Home Manager.
+
+## Customize Gearbox
+
+- [Menus and sections](./Spoons/Gearbox/menus/README.md#customize-sections)
+  — add apps, reorder groups, or change Finder destinations.
+- [Hyper / Caps Lock](./Spoons/Gearbox/README.md#hyperkey--caps-lock)
+  — global app and menu shortcuts.
+- [Flake settings](./assets/docs/NIX.md)
+  — Home Manager delivery and the native Caps Lock mapping.
 
 ## License
 

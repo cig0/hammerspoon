@@ -1,27 +1,18 @@
 # Nix delivery
 
-The repository exports one optional Home Manager module. Nix owns delivery,
-loader wiring, Gearbox's shortcut, required timeout and shared placement, and Scratchpad
-settings; the Spoon owns every other runtime setting.
+The Home Manager module copies Gearbox into `~/.hammerspoon/Spoons/Gearbox`
+and generates `nix-spoons.lua`. A managed `init.lua` loads that file before
+appending `extraConfig`.
 
-```text
-Spoons/Gearbox
-  └ lib/RetroUI (private, byte-identical shipped copy)
-  + programs.hammerspoon-spoons.spoons.gearbox.hotkey.{modifiers,key}
-  + programs.hammerspoon-spoons.spoons.gearbox.menu.{position,timeout}
-  + programs.hammerspoon-spoons.spoons.gearbox.scratchpad.*
-  → Nix-derived Gearbox copy
-  → ~/.hammerspoon/Spoons/Gearbox/lib/RetroUI (private bundled copy)
-
-enabled Spoon set
-  → ~/.hammerspoon/nix-spoons.lua
-  → require("Spoons.Gearbox").start()
-  → deployed Spoons/Gearbox/config.lua
-```
-
-`nix-spoons.lua` is the Nix-owned loader for enabled Spoons. A managed
-`~/.hammerspoon/init.lua` requires that loader before appending `extraConfig`;
-an externally owned entrypoint must require the loader itself.
+| Setting | Owner |
+| --- | --- |
+| Loader, activation, backups | Home Manager module |
+| Menu toggle, timeout, placement, Scratchpad options | Home Manager options substituted into `config.lua` |
+| Global shortcuts | `hyperkeys.lua`, replaced when `quickLaunch` is non-null |
+| Caps Lock tap/hold handler | `capsLockViaF18` option |
+| Physical Caps Lock → F18 mapping | Native nix-darwin configuration |
+| Menu rows, section order, palettes | Gearbox Lua files in this repository |
+| Saved position, frame visibility, Scratchpad preferences | Profile and local settings applied after `config.lua` |
 
 ## Change the Gearbox shortcut
 
@@ -40,11 +31,8 @@ for complete manual, Home Manager, and Hoagie examples and reload instructions.
 | `interfaces.homeManagerOptions` | Reusable Home Manager delivery, Gearbox shortcut, placement and timeout, and Scratchpad schema |
 | `interfaces.homeManagerOptionDocs` | Markdown-ready option documentation metadata |
 
-The flake uses `flake-parts` with an explicit feature module import.
-`modules/hammerspoon-spoons.nix` owns the Home Manager module, its option
-schema, and the documentation interface together. Keep that boundary until a
-second Spoon needs its own staging path or activation needs a third distinct
-deployment case; then split by responsibility rather than file length.
+[`modules/hammerspoon-spoons.nix`](../../modules/hammerspoon-spoons.nix)
+defines the module, option schema, activation script, and docs interface.
 
 ## Home Manager
 
@@ -78,9 +66,10 @@ Scratchpad placement, the shortcut, the required timeout, and Scratchpad setting
 }
 ```
 
-The module stages the self-contained Gearbox Spoon with `menu.position`,
-`menu.timeout`, and the seven `scratchpad.*` values substituted into its
-`config.lua`, then deploys it as regular user-writable files at
+The module substitutes the toggle hotkey, `capsLockViaF18`, `menu.position`,
+`menu.timeout`, and the seven exposed `scratchpad.*` values into `config.lua`.
+A non-null `quickLaunch` replaces `hyperkeys.lua`. Activation deploys the Spoon
+as regular user-writable files at
 `~/.hammerspoon/Spoons/Gearbox` during Home Manager activation; the same
 copy semantics apply to `nix-spoons.lua`, and to `init.lua` when managed.
 `menu.position` is the enum `"top"` or `"bottom"` and applies to both
@@ -130,7 +119,7 @@ user's Home Manager configuration imports the same module:
 
 ```nix
 {
-  home-manager.users.jane = {
+  home-manager.users.cig0 = {
     imports = [ inputs.hammerspoon.homeModules.default ];
 
     programs.hammerspoon-spoons = {
@@ -197,8 +186,15 @@ remaining mapping table, including an empty table when appropriate.
 Hoagie's integration defaults `capsLockViaF18` on for Darwin-enabled hosts
 when the Hammerspoon input exposes the option. Its Darwin output supplies the
 physical mapping when Gearbox and the handler are enabled and the menu timeout
-is positive. After publishing the Hammerspoon change, update that input in
-Hoagie, run `hoagie hs`, and reload Hammerspoon. Setting
+is positive. After publishing edits to this repository, run these commands
+from the Hoagie checkout, then reload Hammerspoon:
+
+```sh
+nix flake update hammerspoon
+hoagie hs
+```
+
+Setting
 `programs.hammerspoon-spoons.spoons.gearbox.capsLockViaF18 = false` disables
 the handler and omits the generated mapping. Use the reversal procedure above
 to restore native Caps Lock.
@@ -213,29 +209,17 @@ Quick Launch defaults to the shortcut map in
 for example `{ f = { type = "openMenu"; menu = "finder"; }; m = "Mail"; }`.
 Only those two shortcuts are installed with this override. Use `f = "Finder";`
 for the original Finder app shortcut. An empty set disables Quick Launch.
-Nix delivery stages a copy with its `hotkey.modifiers`, `hotkey.key`,
-`menu.position`, `menu.timeout`, and
-Scratchpad values replaced by the corresponding
-`programs.hammerspoon-spoons.spoons.gearbox.*` options, then deploys it as
-user-writable files whose content activation re-asserts on every rebuild.
 
-```text
-repository Spoons/Gearbox/config.lua
-  + Spoons/Gearbox/lib/RetroUI/package.json (shipped version record)
-  + Nix hotkey.{modifiers,key}, menu.{position,timeout}, and scratchpad.*
-  → deployed Spoons/Gearbox/{config.lua,lib/RetroUI}
-  → Gearbox.start()
-  → validation
-  → theme, loader, runtime, HUD, and scratchpad
-```
+To customize sections or folder destinations, edit the repository's
+[`menus/*.lua`](../../Spoons/Gearbox/menus/README.md#customize-sections).
+There is no Nix option for menu rows. Deploy the updated flake input, activate
+Home Manager, and reload Hammerspoon. Keep experiments made in the installed
+copy in the repository before rebuilding; activation replaces that copy.
 
-No runtime override table is generated or passed to `Gearbox.start()`. All
-other Gearbox values remain owned by the repository files, so a flake input
-update deploys their changes. Shortcut, placement, timeout, and Scratchpad options are
-deployment-time exceptions: the shipped timeout `0` intentionally prevents
-startup until an installation chooses a positive duration, while shared
-placement and Scratchpad policy, sizing, and editor font size remain
-host-configurable.
+`Gearbox.start()` accepts no override argument. The deployed `config.lua`
+loads first, then the versioned profile and local preferences apply their
+supported fields. Use Reset Local Overrides and check the profile if a saved
+position or Scratchpad setting masks a new Nix default.
 
 The generated option snapshot is
 [`ALL-OPTIONS.md`](./ALL-OPTIONS.md).

@@ -335,6 +335,8 @@ function Preferences:readLocalOverrides()
   return copy(record)
 end
 
+-- Rebuild from defaults so removing an override restores its base value.
+-- Profile values win over config; local choices win over the profile.
 function Preferences:apply()
   applyRecord(self.config, self.defaults)
 

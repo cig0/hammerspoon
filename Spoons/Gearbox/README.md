@@ -114,21 +114,37 @@ Tab           → insert a tab while editing the scratchpad
 While Gearbox is running, hold Hyper (Control + Option + Command + Shift) and
 press a mapped letter from any app. Hyper+F opens Finder Folders directly.
 Release the chord, then press `d` for Downloads or `f` for Home. Escape
-returns to the main menu. Folder keys follow Gearbox's usual case rules.
+returns to the main menu. With capitalization on, use Shift+`d` or Shift+`f`
+to produce those lowercase folder keys.
 
 The root menu lists shortcuts alphabetically under its title. App shortcuts
 dismiss an open menu and launch or focus the app. Menu shortcuts switch to
 the target menu. Other Hyper letters pass through to their owners.
 
-Edit [hyperkeys.lua](./hyperkeys.lua) to change the bindings. Set it to
-`return {}` to disable Quick Launch. Home Manager can replace the shipped map
-with `spoons.gearbox.quickLaunch`. For dual-purpose Caps Lock, map the
+Edit [hyperkeys.lua](./hyperkeys.lua) to change the bindings. For example,
+replace its `return` table to keep just Finder Folders, Mail, and Zed:
+
+```lua
+return {
+  f = {type = "openMenu", menu = "finder"},
+  m = "Mail",
+  z = "Zed",
+}
+```
+
+Keys are lowercase letters. A string launches or focuses an app. An
+`openMenu` table references an existing menu ID; its title supplies the
+shortcut label. Siri opens its standalone text conversation window.
+
+Set it to `return {}` to disable Quick Launch. Home Manager can replace the
+shipped map with `spoons.gearbox.quickLaunch`. For dual-purpose Caps Lock, map the
 physical key to F18 in macOS and set `capsLockViaF18 = true`. While Gearbox
 is running, press and release Caps Lock alone to toggle capitalization. Hold
 it and press a mapped letter to use its shortcut. An unmapped letter passes
 through and cancels the toggle. The ordinary four-modifier shortcuts also work.
 With the system remap active, a standalone tap needs Gearbox running and
-keyboard input available to Hammerspoon. The
+keyboard input available to Hammerspoon. A menu shortcut can open while the
+Scratchpad stays visible; the Gearbox toggle closes the menu first. The
 [flake usage guide](../../assets/docs/NIX.md#caps-lock-shortcuts) includes the
 Home Manager and nix-darwin settings, activation order, and reversal steps.
 
@@ -174,100 +190,29 @@ back to Hammerspoon's
 [`checkKeyboardModifiers()`](https://www.hammerspoon.org/docs/hs.eventtap.html#checkKeyboardModifiers)
 poll.
 
-## Menu map
+## Customize menus
 
-```text
-Gearbox
-├── Calculator
-├── ForkLift
-├── KeePassXC
-├── Obsidian
-├── Passwords
-├── Scratchpad
-├── Agenda
-│   ├── Calendar
-│   ├── Mail
-│   └── Reminders
-├── AI
-│   ├── ChatGPT
-│   └── Gemini
-├── Applications
-│   ├── Communications
-│   │   ├── Discord
-│   │   └── WhatsApp
-│   ├── Omni Software Suite
-│   │   ├── OmniFocus
-│   │   └── OmniOutliner
-│   └── Photo & Video
-│       ├── Affinity
-│       ├── Photos
-│       └── PowerPhotos
-├── Developer Tools
-│   ├── Codex
-│   ├── Sublime Merge
-│   ├── VirtualBuddy
-│   └── Zed
-├── Finder Folders
-│   ├── I SHOOT RAW
-│   ├── Desktop
-│   ├── Documents
-│   ├── Downloads
-│   ├── Home
-│   ├── iCloud
-│   ├── Pictures
-│   ├── Projects
-│   ├── tmp
-│   └── Sync
-├── Web Browsers
-│   ├── Brave Origin
-│   ├── ChatGPT Atlas
-│   ├── Comet Browser
-│   ├── Firefox
-│   └── Safari
-├── macOS Utilities
-│   ├── System Settings
-│   ├── Keep Display Awake
-│   ├── Prevent Idle Sleep
-│   ├── Allow Normal Sleep
-│   └── Sleep
-└── Gearbox Configuration
-    ├── Reload Hammerspoon
-    ├── Save Versioned Profile
-    ├── Reload Versioned Profile
-    ├── Reset Local Overrides
-    ├── Menu Position
-    │   ├── Top
-    │   └── Bottom
-    ├── Scratchpad
-    │   ├── Persist Content
-    │   ├── Hammerspoon Settings
-    │   ├── External File
-    │   ├── Filename
-    │   ├── Width
-    │   └── Height
-    └── Themes
-        ├── Follow macOS
-        ├── Show Outer Frame
-        ├── Light: Catppuccin, Gearbox, Gruvbox
-        └── Dark: Catppuccin, Dracula, Gearbox, Gruvbox, Monokai, Nord, Tokyo Night
-```
+| Change | Edit |
+| --- | --- |
+| Root app rows, Scratchpad key, Exit divider | [menus/leader.lua](./menus/leader.lua) |
+| Finder destinations | [menus/finder.lua](./menus/finder.lua) |
+| Developer app rows | [menus/developer.lua](./menus/developer.lua) |
+| Global Hyper / Caps Lock shortcuts | [hyperkeys.lua](./hyperkeys.lua) |
+| App groups, order, and dividers | [menu recipes](./menus/README.md#customize-sections) |
+| Theme palettes and selection | [themes/README.md](./themes/README.md) |
 
-Ordinary child menus are sorted by displayed label. `macOS Utilities` and
-`Gearbox Configuration` occupy separate root sections. The root footer follows
-Gearbox Configuration without another divider. Themes retain separate Light
-and Dark sections and sort alphabetically within each.
+Menu files load automatically. Save the file and reload Hammerspoon.
+The menu README covers adding a submenu, moving it between parents, and
+ordering sections. Finder Folders uses the same definition through the main
+menu and Hyper+F.
 
-The root header samples Caps Lock when the menu opens and refreshes immediately
-when Caps Lock changes while it remains visible. The inverse-color `CAPS LOCK`
-warning requires no polling timer or stored Caps Lock state. Gearbox
-Configuration begins with the smaller, subdued memory aid “See Spoon
-documentation to customize the menu shortcut.” An eight-point gap separates
-the caption from the first option.
+Ordinary child menus sort by label. macOS Utilities and Gearbox Configuration
+share the root's `utilities` section, with macOS Utilities first. A divider
+precedes that section and another precedes Exit. Set `showFooterDivider = false`
+in `menus/leader.lua` to remove the divider before Exit.
 
-When `menu.showAccentBorder` is enabled, every menu draws a two-point outline
-inside its canvas using the active theme accent. The shared corner radius keeps
-the outline aligned with the menu background. The checked `Show Outer Frame`
-item in Themes toggles the outline for the current preference profile.
+The root header shows the current Caps Lock state. Themes → Show Outer Frame
+toggles the accent border through the local preference layer.
 
 The macOS power modes behave as one checked selection:
 
@@ -281,7 +226,8 @@ Hammerspoon releases those assertions when its configuration reloads.
 
 | Path | Owns |
 | --- | --- |
-| [`config.lua`](./config.lua) | Runtime configuration contract; Nix derives only `menu.timeout` |
+| [`config.lua`](./config.lua) | Runtime defaults; Nix substitutes the exposed delivery options |
+| [`hyperkeys.lua`](./hyperkeys.lua) | Global shortcut targets, independent of menu-row keys |
 | [`menus/`](./menus/README.md) | Passive, file-backed menu graph and action descriptors |
 | [`themes/`](./themes/README.md) | Passive palettes and generated Themes-menu metadata |
 | [`loader.lua`](./loader.lua) | Discovery, validation, ordering, dividers, and footers |
@@ -338,21 +284,9 @@ at startup. See [configuration ownership](../../assets/docs/NIX.md#configuration
 | `menu.highlightGroups` | `true` | Uses the active accent behind group shortcut key caps at every submenu depth |
 | `menu.showAccentBorder` | `true` | Draws a two-point active-theme accent border around every menu |
 
-The zero timeout is a deliberate disabled sentinel, not a usable runtime
-setting. `Gearbox.start()` opens a Borland-style RetroUI dialog that dismisses
-after 30 seconds or immediately after pressing Return or clicking Accept, then
-returns without failing Hammerspoon configuration loading or allocating
-Gearbox menus, hotkeys, the HUD, or the scratchpad. Set a positive timeout in
-`config.lua`, or in the Nix option that derives the deployed copy, to start
-Gearbox normally.
-
-The warning's 30-second legend and Accept button share a footer row. Return or
-the `A` mnemonic presses and releases Accept; Tab and Shift-Tab move button
-focus; only a left click that begins and ends on Accept activates it. A right
-click, releasing over a different target, or dragging out of the button does
-nothing. The button face shifts down-right over its shadow while held. Each
-dismissal first releases its timer, modal bindings, canvas callback, and canvas;
-repeated reloads or `Gearbox.stop()` cannot leave a warning behind.
+A timeout of `0` leaves Gearbox stopped and shows a configuration dialog.
+Set a positive number of seconds to enable it. The dialog closes after 30
+seconds, Return, or Accept. Reload Hammerspoon after changing the timeout.
 
 ### Fonts and loupe
 

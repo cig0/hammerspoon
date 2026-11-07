@@ -100,6 +100,8 @@ local function setCaffeinateMode(mode)
 end
 
 --- Open the standalone Siri conversation window and focus its editable composer.
+-- Siri AI supplies the text conversation window. The legacy Siri launcher
+-- opens voice input, so this path has its own window and composer focus steps.
 local function openSiri()
     local app = hs.application.open("com.apple.campo", 2, true)
     local window = app and app:mainWindow()

@@ -14,7 +14,71 @@ menus/*.lua
 Files beginning with `.` or `_` are ignored. Every other `.lua` file enters the
 same validated graph.
 
-## Definition shape
+## Customize sections
+
+Save changes in the repository and reload Hammerspoon after deploying them.
+For Nix installations, edits under `~/.hammerspoon` are temporary; the next
+activation deploys the flake's copy again.
+
+### Add an app to Developer Tools
+
+Append this row to `items` in `developer.lua` to launch Ghostty with uppercase
+`G` while that menu is open:
+
+```lua
+{
+  key = "G",
+  label = "Ghostty",
+  kind = "application",
+  action = {type = "launchApp", name = "Ghostty"},
+},
+```
+
+Keep commas between rows. `items` stay in written order. Insert
+`{divider = true},` between rows to separate groups. Back and Exit are added
+by the loader.
+
+### Move Developer Tools before the other app groups
+
+Replace its `entry` in `developer.lua` with:
+
+```lua
+entry = {
+  key = "d",
+  label = "Developer Tools",
+  section = "groups",
+  sectionOrder = 100,
+  order = 10,
+},
+```
+
+| Field | Ordering rule |
+| --- | --- |
+| `section` | Groups sibling menus under one divider; defaults to `"groups"` |
+| `sectionOrder` | Lower numbers appear first; defaults to `100` |
+| `order` | Position inside the section; explicit numbers precede unnumbered entries |
+
+Sibling menus in the same section must use the same `sectionOrder`. Ties
+sort by label, then menu ID. macOS Utilities and Gearbox Configuration use
+`section = "utilities"` and `sectionOrder = 200`. Give another child those
+same values to place it in that section.
+
+To move Developer Tools inside Applications, change its `parent` to
+`"applications"`. Its `entry.key` must be unique in that parent.
+Application rows can use uppercase keys alongside lowercase submenu keys.
+
+### Change a Finder destination
+
+In `finder.lua`, change the Projects row's `path` to
+`home .. "/Projects/hoagie"` to open the Hoagie checkout. Paths are passed to
+`hs.open`; use `home .. "/..."` for a home-relative folder.
+Both main-menu `f` and Hyper+F use these rows.
+
+## Add a submenu
+
+The existing `web-browsers.lua` illustrates a submenu with Safari. To add a
+different group, copy that file and change its `id`, title, entry key, and
+app rows. Every menu needs a unique `id` and a parent except the single root.
 
 ```lua
 return {
@@ -98,14 +162,14 @@ character itself for those entries.
 | `photo-and-video.lua` | `applications` | `p` | Photo and video applications |
 
 Ordinary child definitions are sorted by their displayed label. Explicit root
-sections place `macOS Utilities` after ordinary groups, then add a divider
-before the generated `Gearbox Configuration` entry. The root definition omits
-the otherwise-default divider before its Exit footer.
+sections place `macOS Utilities` and the generated `Gearbox Configuration`
+entry together after ordinary groups. The root definition enables the divider
+before Exit. Set `showFooterDivider = false` there to remove it.
 
 `menus/` intentionally contains only passive, file-backed definitions. Two
-state-dependent definitions join that graph during startup: `theme.lua`
-generates `Themes` from the discovered palettes, and `preferences.lua`
-generates `Gearbox Configuration` from the supported preference operations.
+generated menu sets join that graph during startup: `theme.lua` supplies
+Themes, and `preferences.lua` supplies the definitions from
+`configuration_menu.lua`.
 Themes is a child of Gearbox Configuration.
 
 ## Action descriptors

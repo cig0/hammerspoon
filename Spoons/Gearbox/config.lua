@@ -1,7 +1,8 @@
 --- Gearbox configuration.
 --
--- The sole source of Gearbox behavior. This module contains no Hammerspoon
--- calls; `Gearbox.start()` loads and validates it without external overrides.
+-- Defaults for standalone use. Nix substitutes its exposed options when staging
+-- this file; preferences.lua then applies the profile and local overrides.
+-- Menu rows live in menus/*.lua; global app/menu shortcuts live in hyperkeys.lua.
 return {
   hotkey = { modifiers = { "ctrl", "alt", "cmd" }, key = "space" },
 
