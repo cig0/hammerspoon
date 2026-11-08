@@ -597,7 +597,7 @@ function Theme:matchingMenuDefinition()
 
   return {
     id = "matching-themes",
-    entry = { key = "f", label = "Set matching themes", order = 200 },
+    entry = { key = "F", label = "Set matching themes", order = 200 },
     title = "Set matching themes",
     legend = "Choose a light and a dark theme",
     parent = "themes",
@@ -643,7 +643,7 @@ function Theme:menuDefinition()
     parent = "configuration",
 
     entry = {
-      key = "t",
+      key = "T",
       label = "Themes"
     },
 

@@ -101,11 +101,11 @@ external `init.lua` ownership, and the Home Manager integration boundary.
 ```text
 ctrl+alt+cmd+space → open or close Gearbox and its scratchpad
 shown key     → run or open the entry with that exact character
-↑ / ↓         → select an entry
+↑ / ↓         → select an entry (also for arrow-only rows)
 Return        → activate the selection
 Esc           → return to the parent or exit
 s             → open the scratchpad from the root menu
-g             → open Gearbox configuration from the root menu
+G             → open Gearbox configuration from the root menu (uppercase)
 Tab           → insert a tab while editing the scratchpad
 ```
 
@@ -134,23 +134,17 @@ return {
 
 Keys are lowercase letters. A string launches or focuses an app. An
 `openMenu` table references an existing menu ID; its title supplies the
-shortcut label. Siri opens its standalone text conversation window.
+shortcut label. Keys are free choice — display is alphabetical by label
+(see `menus/README.md#layout`). For example, keep just Finder Folders,
+Mail, and Zed:
 
-Set it to `return {}` to disable Quick Launch. Home Manager can replace the
-shipped map with `spoons.gearbox.quickLaunch`. For dual-purpose Caps Lock, map the
-physical key to F18 in macOS and set `capsLockViaF18 = true`. While Gearbox
-is running, press and release Caps Lock alone to toggle capitalization. Hold
-it and press a mapped letter to use its shortcut. An unmapped letter passes
-through and cancels the toggle. The ordinary four-modifier shortcuts also work.
-With the system remap active, a standalone tap needs Gearbox running and
-keyboard input available to Hammerspoon. A menu shortcut can open while the
-Scratchpad stays visible; the Gearbox toggle closes the menu first. The
-[flake usage guide](../../assets/docs/NIX.md#caps-lock-shortcuts) includes the
-Home Manager and nix-darwin settings, activation order, and reversal steps.
-
-The `Siri` entry targets the standalone macOS Siri AI conversation app and
-focuses its editable message field. It requires the dedicated app and Siri AI
-to be available. Gearbox reports when the window or editor is unavailable.
+```lua
+return {
+  { key = "f", target = {type = "openMenu", menu = "finder"} },
+  { key = "m", target = "Mail" },
+  { key = "z", target = "Zed" },
+}
+```
 
 ### Menu navigation
 
@@ -207,9 +201,11 @@ ordering sections. Finder Folders uses the same definition through the main
 menu and Hyper+F.
 
 Ordinary child menus sort by label. macOS Utilities and Gearbox Configuration
-share the root's `utilities` section, with macOS Utilities first. A divider
-precedes that section and another precedes Exit. Set `showFooterDivider = false`
-in `menus/leader.lua` to remove the divider before Exit.
+share the root's `utilities` section, with macOS Utilities first. Gearbox
+Configuration's profile/scratchpad rows and theme palettes are arrow-only
+(no key cap — use ↑↓+return); navigation submenus keep letter keys. The
+Scratchpad submenu uses an inline `Size` header for Width/Height. A divider
+precedes the utilities section and another precedes Exit.
 
 The root header shows the current Caps Lock state. Themes → Show Outer Frame
 toggles the accent border. Show Window Shadow controls the drop shadow.
@@ -228,25 +224,25 @@ Hammerspoon releases those assertions when its configuration reloads.
 
 ## Directory map
 
-| Path                                                 | Owns                                                                              |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------- |
-| [`config.lua`](./config.lua)                         | Runtime defaults; Nix substitutes the exposed delivery options                    |
-| [`hyperkeys.lua`](./hyperkeys.lua)                   | Hyper/Caps Lock Quick Launch — list of `{key, target}`, alphabetical by label     |
-| [`menus/`](./menus/README.md)                        | Passive, file-backed menu graph and action descriptors                            |
-| [`themes/`](./themes/README.md)                      | Passive palettes and generated Themes-menu metadata                               |
-| [`loader.lua`](./loader.lua)                         | Discovery, validation, ordering, dividers, and footers                            |
-| [`actions.lua`](./actions.lua)                       | Application, filesystem, power, and theme operations                              |
-| [`runtime.lua`](./runtime.lua)                       | Modal lifecycle, session input, timeout, selection, and rollback                  |
-| [`hud.lua`](./hud.lua)                               | Canvas geometry, text, checks, selection, and loupe rendering                     |
-| [`scratchpad.lua`](./scratchpad.lua)                 | Editable webview, keyboard handling, persistence, and focus                       |
-| [`scratchpad_storage.lua`](./scratchpad_storage.lua) | Scratchpad settings/file persistence and atomic file replacement                  |
-| [`configuration_menu.lua`](./configuration_menu.lua) | Generated Gearbox Configuration submenus (arrow-only rows for profile/scratchpad) |
-| [`preferences.lua`](./preferences.lua)               | Profile/local preference layering and configuration actions                       |
-| [`theme.lua`](./theme.lua)                           | Theme loading, persistence, colors, and generated arrow-only Themes menu          |
-| [`validation.lua`](./validation.lua)                 | Configuration, color, and hotkey validation                                       |
-| [`dependencies.lua`](./dependencies.lua)             | Resolves the packaged RetroUI copy, then a development checkout                   |
-| [`init.lua`](./init.lua)                             | Public `start()` and `stop()` boundary                                            |
-| [`tests/`](../../tests/README.md)                    | Mocked-Hammerspoon smoke and regression coverage                                  |
+| Path                                                 | Owns                                                                            |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------- |
+| [`config.lua`](./config.lua)                         | Runtime defaults; Nix substitutes the exposed delivery options                  |
+| [`hyperkeys.lua`](./hyperkeys.lua)                   | Hyper/Caps Lock Quick Launch — list of `{key, target}`, alphabetical by label   |
+| [`menus/`](./menus/README.md)                        | Passive, file-backed menu graph and action descriptors (supports `header` rows) |
+| [`themes/`](./themes/README.md)                      | Passive palettes and generated Themes-menu metadata                             |
+| [`loader.lua`](./loader.lua)                         | Discovery, validation, ordering, dividers, and footers                          |
+| [`actions.lua`](./actions.lua)                       | Application, filesystem, power, and theme operations                            |
+| [`runtime.lua`](./runtime.lua)                       | Modal lifecycle, session input, timeout, selection, and rollback                |
+| [`hud.lua`](./hud.lua)                               | Canvas geometry, text, checks, selection, and loupe rendering                   |
+| [`scratchpad.lua`](./scratchpad.lua)                 | Editable webview, keyboard handling, persistence, and focus                     |
+| [`scratchpad_storage.lua`](./scratchpad_storage.lua) | Scratchpad settings/file persistence and atomic file replacement                |
+| [`configuration_menu.lua`](./configuration_menu.lua) | Generated Gearbox Configuration submenus (arrow-only rows + `header` labels)    |
+| [`preferences.lua`](./preferences.lua)               | Profile/local preference layering and configuration actions                     |
+| [`theme.lua`](./theme.lua)                           | Theme loading, persistence, colors, and generated arrow-only Themes menu        |
+| [`validation.lua`](./validation.lua)                 | Configuration, color, and hotkey validation                                     |
+| [`dependencies.lua`](./dependencies.lua)             | Resolves the packaged RetroUI copy, then a development checkout                 |
+| [`init.lua`](./init.lua)                             | Public `start()` and `stop()` boundary                                          |
+| [`tests/`](../../tests/README.md)                    | Mocked-Hammerspoon smoke and regression coverage                                |
 
 ```text
 config.lua + preferences.json + local hs.settings + menus/*.lua + themes/*.lua

@@ -189,6 +189,8 @@ function HUD:calculateHeight(menu)
   for _, row in ipairs(menu.rows) do
     if row.divider then
       height = height + self.layout.dividerHeight
+    elseif row.header then
+      height = height + self.layout.legendTextHeight + 6
     else
       height = height + self.layout.rowHeight
     end
@@ -344,6 +346,22 @@ function HUD:appendDivider(elements, y)
     },
     strokeColor = self.theme.colors.divider,
     strokeWidth = 1
+  })
+end
+
+function HUD:appendHeader(elements, header, y)
+  local layout = self.layout
+  local font = resizedFont(self.theme.fonts.body, layout.legendFontSize)
+  local textY = y + 3
+  appendElement(elements, {
+    type = "text",
+    frame = {
+      x = layout.horizontalPadding,
+      y = textY,
+      w = self.config.menu.width - layout.horizontalPadding * 2,
+      h = layout.legendTextHeight
+    },
+    text = styledText(header, font, self.theme.colors.secondary, "left")
   })
 end
 
@@ -619,6 +637,9 @@ function HUD:show(menu, checkedRows)
       self:appendDivider(elements, y)
 
       y = y + layout.dividerHeight
+    elseif row.header then
+      self:appendHeader(elements, row.header, y)
+      y = y + layout.legendTextHeight + 6
     else
       self:appendMenuRow(elements, menu, row, rowIndex, y,
         navigationPositionByRow[rowIndex],

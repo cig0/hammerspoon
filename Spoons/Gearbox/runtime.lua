@@ -9,6 +9,32 @@ local Validation = require("Spoons.Gearbox.validation")
 local hotkeyIdentity = Validation.hotkeyIdentity
 local isCharacterActivationKey = Validation.isCharacterActivationKey
 
+--- Resolve quickLaunch target for both map { [key]=target } and tuple list {{key,target}}.
+---@param config table
+---@param key string
+---@return any
+local function quickLaunchTarget(config, key)
+  local ql = config.quickLaunch
+  if not ql then return nil end
+  if ql[1] ~= nil and type(ql[1]) == "table" and ql[1].key ~= nil then
+    for _, entry in ipairs(ql) do
+      if entry.key == key then return entry.target end
+    end
+    return nil
+  end
+  return ql[key]
+end
+
+--- Return true when quickLaunch has any entries (map or tuple list).
+---@param config table
+---@return boolean
+local function hasQuickLaunch(config)
+  local ql = config.quickLaunch
+  if not ql then return false end
+  if ql[1] ~= nil and type(ql[1]) == "table" then return #ql > 0 end
+  return next(ql) ~= nil
+end
+
 local hotkeyModifierAliases = {
   alt = "alt",
   option = "alt",
@@ -346,7 +372,7 @@ function Runtime:handleCharacterKeyDown(event)
 
   -- Hyper letters belong to global shortcuts, including those owned by other apps.
   if flags.ctrl and flags.alt and flags.cmd and flags.shift and
-      next(self.config.quickLaunch) and character:match("^[A-Za-z]$") then
+      hasQuickLaunch(self.config) and character:match("^[A-Za-z]$") then
     return nil
   end
 
@@ -442,7 +468,7 @@ function Runtime:registerMenu(menu)
   menu.navigableRows = {}
 
   for index, row in ipairs(menu.rows) do
-    if not row.divider then
+    if not row.divider and not row.header then
       local callback = function() self:runAction(menu, row) end
 
       -- Character rows are dispatched by the eventtap, not the modal.
@@ -527,7 +553,7 @@ function Runtime:bindCapsLock()
     -- Once the chord is released, menu rows resume their usual case rules.
     local flags = event:getFlags()
     if flags.cmd or flags.ctrl or flags.alt or flags.shift then return nil end
-    local target = self.config.quickLaunch[hs.keycodes.map[code]]
+    local target = quickLaunchTarget(self.config, hs.keycodes.map[code])
     if not target then return nil end
     if event:getProperty(events.properties.keyboardEventAutorepeat) == 0 then
       self:dispatchQuickLaunch(target)
@@ -621,7 +647,7 @@ function Runtime:start()
           resolveHotkeyKeyCode(key) == self.globalHotkeyKeyCode then
         error("Gearbox: Hyper+" .. key .. " is also the menu hotkey", 0)
       end
-      local target = self.config.quickLaunch[key]
+      local target = quickLaunchTarget(self.config, key)
       local binding = hs.hotkey.bind(hyper, key, function()
         self:dispatchQuickLaunch(target)
       end)

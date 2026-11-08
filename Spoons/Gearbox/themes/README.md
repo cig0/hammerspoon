@@ -46,20 +46,21 @@ Colors: `{ white, alpha }` or `{ red, green, blue, alpha }` (`0…1`). Partial o
 
 ## Bundled themes
 
-| Group | Theme             | ID                  |
-| ----- | ----------------- | ------------------- |
-| Light | Catppuccin Latte  | `catppuccin-latte`  |
-| Light | Gearbox Light     | `gearbox-light`     |
-| Light | Gruvbox Light     | `gruvbox-light`     |
-| Dark  | Catppuccin Mocha  | `catppuccin-mocha`  |
-| Dark  | Dracula           | `dracula`           |
-| Dark  | Gruvbox Dark Hard | `gearbox-dark`      |
-| Dark  | Gruvbox Dark      | `gruvbox-dark-hard` |
-| Dark  | Monokai           | `monokai`           |
-| Dark  | Nord              | `nord`              |
-| Dark  | Tokyo Night       | `tokyo-night`       |
+| Group | Theme              | ID                  |
+| ----- | ------------------ | ------------------- |
+| Light | acidbox Light      | `acidbox-light`     |
+| Light | Catppuccin Latte   | `catppuccin-latte`  |
+| Light | Catppuccin Mocha\* | `catppuccin-mocha`  |
+| Light | Gruvbox Light      | `gruvbox-light`     |
+| Dark  | Catppuccin Mocha   | `catppuccin-mocha`  |
+| Dark  | Dracula            | `dracula`           |
+| Dark  | Gruvbox Dark Hard  | `gruvbox-dark-hard` |
+| Dark  | Gruvbox Dark       | `gruvbox-dark`      |
+| Dark  | Monokai            | `monokai`           |
+| Dark  | Nord               | `nord`              |
+| Dark  | Tokyo Night        | `tokyo-night`       |
 
-The two dark Gruvbox labels follow darkness. Saved selections refer to IDs above.
+\*Catppuccin Mocha is dark despite being listed in both groups in legacy docs — keep the dark row as canonical. Saved selections refer to IDs above.
 
 Frame exceptions: Gruvbox Light uses `#72553c`; both dark Gruvbox use `#665c54`; others use accent. Show Outer Frame toggles for all.
 
@@ -85,7 +86,7 @@ theme = {
 
 Reload. If a saved choice overrides `theme.name`, pick Nord in the menu or clear saved selection.
 
-To add a palette: copy `gearbox-dark.lua` → new visible `.lua`, change `id`/`label`/colors. No key needed. Reload to discover.
+To add a palette: copy `gruvbox-dark-hard.lua` → new visible `.lua`, change `id`/`label`/colors. No key needed. Reload to discover.
 
 ## Palette provenance
 

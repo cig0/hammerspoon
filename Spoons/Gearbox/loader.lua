@@ -282,7 +282,16 @@ local function validateDefinitions(definitions, config, actions, theme)
     local seenKeys = {}
 
     for index, item in ipairs(definition.items or {}) do
-      if not item.divider then
+      if item.divider then
+      elseif item.header ~= nil then
+        local location = ("%s item %d"):format(id, index)
+        if type(item.header) ~= "string" or item.header == "" then
+          fail(location .. " header must be a non-empty string")
+        end
+        if item.key ~= nil or item.label ~= nil or item.kind ~= nil or item.action ~= nil then
+          fail(location .. " header rows must not have key/label/kind/action")
+        end
+      else
         local location = ("%s item %d"):format(id, index)
 
         if item.key ~= nil then
@@ -452,6 +461,8 @@ local function assembleMenus(definitions, rootId, config, actions)
 
       if row.divider then
         appendDivider(menu.rows)
+      elseif row.header ~= nil then
+        table.insert(menu.rows, row)
       else
         table.insert(menu.rows, row)
         row.checkable = actions.isCheckable(row.action)
