@@ -24,6 +24,7 @@ local document = [[
       --background: rgba(32, 32, 32, 1);
       --primary: rgba(255, 255, 255, 1);
       --secondary: rgba(255, 255, 255, 0.6);
+      --footer: rgba(255, 255, 255, 0.65);
       --divider: rgba(255, 255, 255, 0.15);
       --accent: rgba(10, 122, 255, 1);
       --selection: rgba(10, 122, 255, 0.25);
@@ -96,12 +97,15 @@ local document = [[
     #instructions {
       flex: 0 0 auto;
       margin: 0 26px;
-      padding: 12px 0 15px;
-      color: var(--secondary);
+      padding: 10px 0 12px;
+      color: var(--footer);
       border-top: 1px solid var(--divider);
       font-family: var(--interface-font);
       font-size: var(--footer-size);
       line-height: 1.25;
+      letter-spacing: 0.02em;
+      text-align: center;
+      text-wrap: balance;
       user-select: none;
     }
 
@@ -123,7 +127,7 @@ local document = [[
       wrap="soft"
     ></textarea>
     <footer id="instructions">
-      Cursor keys move · Tab inserts tabs
+      Arrows to move · Tab to indent
     </footer>
   </main>
 
@@ -187,6 +191,7 @@ local document = [[
           root.style.setProperty("--background", colors.background);
           root.style.setProperty("--primary", colors.primary);
           root.style.setProperty("--secondary", colors.secondary);
+          root.style.setProperty("--footer", colors.footer);
           root.style.setProperty("--divider", colors.divider);
           root.style.setProperty("--accent", colors.accent);
           root.style.setProperty("--selection", colors.selection);
@@ -240,6 +245,31 @@ local function cssColor(color)
   return ("rgba(%d, %d, %d, %.4f)"):format(round(color.red * 255),
     round(color.green * 255),
     round(color.blue * 255), alpha)
+end
+
+local modifierGlyphs = {
+  ctrl = "⌃",
+  alt = "⌥",
+  cmd = "⌘",
+  shift = "⇧"
+}
+
+local function formatHotkey(modifiers, key)
+  local glyphs = {}
+
+  for _, modifier in ipairs(modifiers or {}) do
+    glyphs[#glyphs + 1] = modifierGlyphs[modifier] or modifier
+  end
+
+  local keyLabel = key
+
+  if key == "space" then
+    keyLabel = "Space"
+  elseif key ~= nil and key ~= "" then
+    keyLabel = key:sub(1, 1):upper() .. key:sub(2)
+  end
+
+  return table.concat(glyphs) .. keyLabel
 end
 
 function Scratchpad.new(config, theme)
@@ -305,25 +335,41 @@ function Scratchpad:state(includeContent)
   for key, value in pairs(colors.background) do background[key] = value end
   background.alpha = self.config.menu.backgroundOpacity / 100
 
+  local footerColor = {}
+  for key, value in pairs(colors.secondary) do footerColor[key] = value end
+  footerColor.alpha = math.max(colors.secondary.alpha or 0.6, 0.68)
+
+  local hotkeyLabel = formatHotkey(self.config.hotkey.modifiers,
+    self.config.hotkey.key)
+  local contentLength = self.content and #self.content or 0
+  local instructions
+
+  if contentLength > 0 then
+    instructions = hotkeyLabel .. " to close · " .. contentLength .. " / " ..
+        self.config.scratchpad.maxCharacters
+  else
+    instructions = "Arrows to move · Tab to indent · " .. hotkeyLabel ..
+        " to close"
+  end
+
   local state = {
     title = self.config.menu.showEmojis and "📝  Scratchpad" or
         "Scratchpad",
     editorFontFamily = bodyFont.name or "-apple-system",
     bodySize = self.config.scratchpad.fontSize,
     titleSize = titleFont.size or self.config.font.titleSize,
-    footerSize = math.max(11, self.config.scratchpad.fontSize - 1),
+    footerSize = math.max(10, round(self.config.scratchpad.fontSize * 0.71)),
     bodyWeight = self.config.font.bodyWeight == "bold" and 700 or 400,
     titleWeight = self.config.font.titleWeight == "bold" and 700 or 400,
     cornerRadius = self.theme.metrics.windowCornerRadius,
     showInstructions = self.config.scratchpad.showInstructions,
     maxCharacters = self.config.scratchpad.maxCharacters,
-    instructions = "Cursor keys move · Tab inserts tabs · " ..
-        table.concat(self.config.hotkey.modifiers, "+") .. "+" ..
-        self.config.hotkey.key .. " closes scratchpad",
+    instructions = instructions,
     colors = {
       background = cssColor(background),
       primary = cssColor(colors.primary),
       secondary = cssColor(colors.secondary),
+      footer = cssColor(footerColor),
       divider = cssColor(colors.divider),
       accent = cssColor(colors.accent),
       selection = cssColor(colors.selection)
