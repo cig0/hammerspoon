@@ -577,6 +577,15 @@ function Runtime:registerMenu(menu)
 
     self.theme:refreshAppearance()
     self.preferences:refreshMenu(menu)
+    -- Scratchpad label reflects warm-up state: slow first launch → ready.
+    if menu.id == self.rootId and self.scratchpad then
+      for _, row in ipairs(menu.rows) do
+        if row.action and row.action.type == "openScratchpad" then
+          row.label = self.scratchpad:menuLabel()
+          break
+        end
+      end
+    end
     self.hud:show(menu, self:checkedRows(menu))
     if menu.selectedPosition then self.hud:select(menu) end
     self:resetTimeout(menu)
