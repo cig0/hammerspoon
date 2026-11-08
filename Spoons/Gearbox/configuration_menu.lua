@@ -64,7 +64,7 @@ function ConfigurationMenu.definitions()
       legend = "Choices saved automatically in Hammerspoon preferences:\n" ..
           "~/Library/Preferences/" .. hs.settings.bundleID .. ".plist",
       entry = {
-        key = "g",
+        key = "G",
         label = "Gearbox Configuration",
         section = "utilities",
         sectionOrder = 200
@@ -78,19 +78,16 @@ function ConfigurationMenu.definitions()
         },
         { divider = true },
         {
-          key = "p",
           label = "Save Versioned Profile",
           kind = "action",
           action = { type = "configure", operation = "saveProfile" }
         },
         {
-          key = "r",
           label = "Reload Versioned Profile",
           kind = "action",
           action = { type = "configure", operation = "reloadProfile" }
         },
         {
-          key = "x",
           label = "Reset Local Overrides",
           kind = "action",
           action = { type = "configure", operation = "resetLocal" }
@@ -139,7 +136,6 @@ function ConfigurationMenu.definitions()
       entry = { key = "s", label = "Scratchpad" },
       items = {
         {
-          key = "p",
           label = "Persist Content",
           kind = "action",
           action = {
@@ -148,7 +144,6 @@ function ConfigurationMenu.definitions()
           }
         },
         {
-          key = "h",
           label = "Hammerspoon Settings",
           kind = "action",
           action = {
@@ -157,7 +152,6 @@ function ConfigurationMenu.definitions()
           }
         },
         {
-          key = "f",
           label = "External File…",
           kind = "action",
           action = {
@@ -166,20 +160,17 @@ function ConfigurationMenu.definitions()
           }
         },
         {
-          key = "n",
           label = "Filename: scratchpad.txt",
           kind = "action",
           action = { type = "configure", operation = "setFilename" }
         },
         { divider = true },
         {
-          key = "w",
           label = "Width",
           kind = "action",
           action = { type = "configure", operation = "setWidth" }
         },
         {
-          key = "e",
           label = "Height",
           kind = "action",
           action = { type = "configure", operation = "setHeight" }

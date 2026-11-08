@@ -1,23 +1,28 @@
 --- Communications submenu: Discord, WhatsApp.
 return {
-    id = "comms",
-    title = "Communications",
-    emoji = "📞",
-    parent = "applications",
+  id = "comms",
+  title = "Communications",
+  emoji = "📞",
+  parent = "leader",
 
-    entry = {key = "c", label = "Communications"},
+  entry = { key = "C", label = "Communications" },
 
-    items = {
-        {
-            key = "D",
-            label = "Discord",
-            kind = "application",
-            action = {type = "launchApp", name = "Discord"}
-        }, {
-            key = "W",
-            label = "WhatsApp",
-            kind = "application",
-            action = {type = "launchApp", name = "WhatsApp"}
-        }
-    }
+  items = {
+    {
+      key = "d",
+      label = "Discord",
+      kind = "application",
+      action = { type = "launchApp", name = "Discord" }
+    }, {
+    key = "s",
+    label = "Swiftcord",
+    kind = "application",
+    action = { type = "launchApp", name = "Swiftcord" }
+  }, {
+    key = "w",
+    label = "WhatsApp",
+    kind = "application",
+    action = { type = "launchApp", name = "WhatsApp Web" }
+  }
+  }
 }

@@ -10,20 +10,20 @@ return {
   quickLaunch = require("Spoons.Gearbox.hyperkeys"),
 
   menu = {
-    timeout = 0,          -- Zero is invalid and prevents Gearbox from starting; set a positive value (for example, 5) in Spoons/Gearbox/config.lua or via Gearbox Configuration → Menu Timeout (presets: 5, 10, 15, 20, 30, 60s).
-    position = "top",     -- "top", "center", "bottom"
-    screen = "main",      -- "main", "mouse"
-    width = 420,
+    timeout = 0,      -- Zero is invalid and prevents Gearbox from starting; set a positive value (for example, 5) in Spoons/Gearbox/config.lua or via Gearbox Configuration → Menu Timeout (presets: 5, 10, 15, 20, 30, 60s).
+    position = "top", -- "top", "center", "bottom"
+    screen = "main",  -- "main", "mouse"
+    width = 620,
 
     showEmojis = true,
-    highlightGroups = true,     -- Applies at every submenu depth.
+    highlightGroups = true, -- Applies at every submenu depth.
     showAccentBorder = true,
     showWindowShadow = true,
-    backgroundOpacity = 100      -- Menu background only, from 50 to 100 in steps of 5.
+    backgroundOpacity = 100 -- Menu background only, from 50 to 100 in steps of 5.
   },
 
   font = {
-    family = nil,     -- nil uses the macOS system font.
+    family = nil, -- nil uses the macOS system font.
     size = 14,
     titleSize = 20,
 
@@ -45,7 +45,7 @@ return {
 
     system = { dark = "gruvbox-dark-hard", light = "acidbox-light" },
 
-    accentSource = "system",     -- "system", "theme"
+    accentSource = "system", -- "system", "theme"
 
     fallbackAccent = { red = 0.04, green = 0.48, blue = 1, alpha = 1 },
 

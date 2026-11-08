@@ -6,7 +6,7 @@ return {
   parent = "leader",
 
   entry = {
-    key = "m",
+    key = "M",
     label = "macOS Utilities",
     section = "utilities",
     sectionOrder = 200,
@@ -15,7 +15,7 @@ return {
 
   items = {
     {
-      key = "E",
+      key = "e",
       label = "System Settings",
       kind = "application",
       action = { type = "launchApp", name = "System Settings" }

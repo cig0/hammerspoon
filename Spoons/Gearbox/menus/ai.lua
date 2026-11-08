@@ -1,23 +1,11 @@
---- AI submenu: ChatGPT, Gemini.
+--- AI submenu.
 return {
-    id = "ai",
-    title = "AI",
-    emoji = "🤖",
-    parent = "leader",
+  id = "ai",
+  title = "AI",
+  emoji = "🤖",
+  parent = "leader",
 
-    entry = {key = "i", label = "AI"},
+  entry = { key = "I", label = "AI" },
 
-    items = {
-        {
-            key = "C",
-            label = "ChatGPT",
-            kind = "application",
-            action = {type = "launchApp", name = "ChatGPT"}
-        }, {
-            key = "G",
-            label = "Gemini",
-            kind = "application",
-            action = {type = "launchApp", name = "Gemini"}
-        }
-    }
+  items = {},
 }
