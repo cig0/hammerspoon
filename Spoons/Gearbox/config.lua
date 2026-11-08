@@ -10,7 +10,7 @@ return {
   quickLaunch = require("Spoons.Gearbox.hyperkeys"),
 
   menu = {
-    timeout = 0,          -- Zero disables timeout and intentionally aborts startup.
+    timeout = 0,          -- Zero is invalid and prevents Gearbox from starting; set a positive value (for example, 5) in Spoons/Gearbox/config.lua or via Gearbox Configuration → Menu Timeout (presets: 5, 10, 15, 20, 30, 60s).
     position = "top",     -- "top", "center", "bottom"
     screen = "main",      -- "main", "mouse"
     width = 420,

@@ -30,6 +30,16 @@ function ConfigurationMenu.definitions()
     }
   end
 
+  local timeoutRows = {}
+  for index, seconds in ipairs({ 5, 10, 15, 20, 30, 60 }) do
+    timeoutRows[index] = {
+      key = tostring(index),
+      label = seconds .. " seconds",
+      kind = "action",
+      action = { type = "configure", operation = "setMenuTimeout", value = seconds }
+    }
+  end
+
   return {
     {
       id = "font-size",
@@ -114,6 +124,13 @@ function ConfigurationMenu.definitions()
           }
         }
       }
+    },
+    {
+      id = "menu-timeout",
+      title = "Menu Timeout",
+      parent = "configuration",
+      entry = { key = "o", label = "Menu Timeout" },
+      items = timeoutRows
     },
     {
       id = "scratchpad-settings",

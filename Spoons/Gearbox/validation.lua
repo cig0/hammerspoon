@@ -221,6 +221,11 @@ function Validation.isMenuOpacity(value)
     return type(value) == "number" and value >= 50 and value <= 100 and value % 5 == 0
 end
 
+--- Accepted menu timeout presets for the runtime submenu.
+function Validation.isMenuTimeoutPreset(value)
+    return type(value) == "number" and ({[5]=true,[10]=true,[15]=true,[20]=true,[30]=true,[60]=true})[value] == true
+end
+
 --- Validate the authoritative Gearbox configuration.
 ---@param config table
 function Validation.validateConfig(config)

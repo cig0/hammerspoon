@@ -26,6 +26,7 @@ local configurableOperations = {
   setHeight = true,
   setBackgroundOpacity = true,
   setFontSize = true,
+  setMenuTimeout = true,
   setPosition = true,
   setWidth = true,
   toggleOuterFrame = true,
@@ -38,6 +39,7 @@ local checkableOperations = {
   chooseStorageFolder = true,
   setBackgroundOpacity = true,
   setFontSize = true,
+  setMenuTimeout = true,
   setPosition = true,
   toggleOuterFrame = true,
   togglePersistence = true,
@@ -137,10 +139,11 @@ local function validateRecord(record, name, complete)
     if type(record.menu) ~= "table" then fail(name .. ".menu must be an object") end
 
     rejectUnknown(record.menu, {
+      backgroundOpacity = true,
       position = true,
       showAccentBorder = true,
       showWindowShadow = true,
-      backgroundOpacity = true
+      timeout = true
     }, name .. ".menu")
 
     if complete and record.menu.position == nil then
@@ -163,6 +166,12 @@ local function validateRecord(record, name, complete)
     if record.menu.showAccentBorder ~= nil and
         type(record.menu.showAccentBorder) ~= "boolean" then
       fail(name .. ".menu.showAccentBorder must be a boolean")
+    end
+
+    if record.menu.timeout ~= nil then
+      if type(record.menu.timeout) ~= "number" or record.menu.timeout <= 0 then
+        fail(name .. ".menu.timeout must be a positive number")
+      end
     end
   end
 
@@ -221,10 +230,11 @@ local function snapshot(config)
   return {
     schemaVersion = schemaVersion,
     menu = {
+      backgroundOpacity = config.menu.backgroundOpacity,
       position = config.menu.position,
       showAccentBorder = config.menu.showAccentBorder,
       showWindowShadow = config.menu.showWindowShadow,
-      backgroundOpacity = config.menu.backgroundOpacity
+      timeout = config.menu.timeout
     },
     scratchpad = {
       persistContent = config.scratchpad.persistContent,
@@ -315,6 +325,10 @@ function Preferences.validateAction(action, location)
 
   if action.operation == "setBackgroundOpacity" and not Validation.isMenuOpacity(action.value) then
     fail(location .. " background opacity must be 50 to 100 in steps of 5")
+  end
+
+  if action.operation == "setMenuTimeout" and not Validation.isMenuTimeoutPreset(action.value) then
+    fail(location .. " menu timeout must be one of 5, 10, 15, 20, 30, 60")
   end
 
   if action.operation == "setPosition" and
@@ -528,6 +542,8 @@ function Preferences:execute(action)
       self:setMenuValue("showWindowShadow", not self.config.menu.showWindowShadow)
     elseif operation == "setBackgroundOpacity" then
       self:setMenuValue("backgroundOpacity", action.value)
+    elseif operation == "setMenuTimeout" then
+      self:setMenuValue("timeout", action.value)
     elseif operation == "togglePersistence" then
       self:setScratchpadValue("persistContent",
         not self.config.scratchpad.persistContent)
@@ -571,6 +587,8 @@ function Preferences:isSelected(action)
     return self.config.menu.showWindowShadow
   elseif action.operation == "setBackgroundOpacity" then
     return self.config.menu.backgroundOpacity == action.value
+  elseif action.operation == "setMenuTimeout" then
+    return self.config.menu.timeout == action.value
   elseif action.operation == "togglePersistence" then
     return self.config.scratchpad.persistContent
   elseif action.operation == "useHammerspoonStorage" then
