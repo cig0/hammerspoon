@@ -29,8 +29,8 @@ local function showDisabledTimeoutDialog()
         title = "Gearbox configuration error",
         titleAlignment = "left",
         content = {
-            {text = "Gearbox cannot start because `menu.timeout` is set to `0` (disabled).", role = "body"},
-            {text = "Set `menu.timeout` to a positive number of seconds, then reload Hammerspoon.", role = "body"}
+            {text = "Gearbox cannot start because `menu.timeout` is set to `0` (invalid).", role = "body"},
+            {text = "Set `menu.timeout` to a positive number of seconds (for example, 5) in `Spoons/Gearbox/config.lua`, then reload Hammerspoon.", role = "body"}
         },
         footer = {
             text = "This dialog will be dismissed in 30 seconds.",

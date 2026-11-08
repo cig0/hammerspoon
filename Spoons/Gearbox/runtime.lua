@@ -365,6 +365,7 @@ end
 ---@param menu table
 ---@param row table
 function Runtime:runAction(menu, row)
+    local previousTimeout = self.config.menu.timeout
     local result = self.actions.execute(row.action, {
         openMenu = function(targetId) self:switchMenu(menu, targetId) end,
         exit = function() self:endMenuSession() end,
@@ -383,11 +384,14 @@ function Runtime:runAction(menu, row)
     if result.refresh then
         self.preferences:refreshMenu(menu)
         self.hud:refresh(menu, self:checkedRows(menu))
+    end
 
-        if self.config.navigation.resetTimeoutOnInput then
-            self:resetTimeout(menu)
-        end
-    elseif result.close then
+    if self.config.menu.timeout ~= previousTimeout or
+        (result.refresh and self.config.navigation.resetTimeoutOnInput) then
+        self:resetTimeout(menu)
+    end
+
+    if result.close then
         self:endMenuSession()
     end
 end
