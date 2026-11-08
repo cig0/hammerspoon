@@ -173,7 +173,9 @@ function HUD:menuContentTop(menu)
         top = top + lines * self.layout.legendTextHeight + self.layout.dividerHeight
     end
     if menu.legend then
-        top = top + self.layout.legendTextHeight + self.layout.legendBottomSpacing
+        local _, newlines = menu.legend:gsub("\n", "")
+        top = top + (newlines + 1) * self.layout.legendTextHeight +
+            self.layout.legendBottomSpacing
     end
     return top
 end
@@ -561,14 +563,17 @@ function HUD:show(menu, checkedRows)
     end
 
     if menu.legend then
+        local _, newlines = menu.legend:gsub("\n", "")
+        local legendHeight = (newlines + 1) * layout.legendTextHeight
+
         appendElement(elements, {
             id = "menu-legend",
             type = "text",
             frame = {
                 x = layout.horizontalPadding,
-                y = self:menuContentTop(menu) - layout.legendTextHeight - layout.legendBottomSpacing,
+                y = self:menuContentTop(menu) - legendHeight - layout.legendBottomSpacing,
                 w = self.config.menu.width - (layout.horizontalPadding * 2),
-                h = layout.legendTextHeight
+                h = legendHeight
             },
             text = styledText(menu.legend,
                               resizedFont(self.theme.fonts.body,
