@@ -43,7 +43,7 @@ return {
     name = "system",
     persistSelection = true,
 
-    system = { dark = "gearbox-dark", light = "gearbox-light" },
+    system = { dark = "gruvbox-dark-hard", light = "gruvbox-light" },
 
     accentSource = "system",     -- "system", "theme"
 
