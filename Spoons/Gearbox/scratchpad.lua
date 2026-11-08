@@ -293,6 +293,7 @@ function Scratchpad.new(config, theme)
 
   self.content = type(stored) == "string" and stored or ""
   self.persistedContent = stored
+  self.hasEverShown = false
 
   return self
 end
@@ -453,6 +454,19 @@ function Scratchpad:applyState(includeContent, focusEditor)
   self.appliedThemeId = self.theme.activeThemeId
 end
 
+function Scratchpad:isWarmedUp() return self.hasEverShown end
+
+function Scratchpad:menuLabel()
+  local showEmojis = self.config.menu.showEmojis
+
+  if self.hasEverShown then
+    return showEmojis and "Scratchpad • ready ⚡" or "Scratchpad • ready"
+  end
+
+  return showEmojis and "Scratchpad • slow first launch ⏳" or
+      "Scratchpad • slow first launch"
+end
+
 function Scratchpad:focusWindow()
   if not self.webview or not self.ready then return end
 
@@ -479,6 +493,7 @@ function Scratchpad:ensureView()
     false):navigationCallback(function(action)
     if action == "didFinishNavigation" then
       self.ready = true
+      self.hasEverShown = true
 
       if self:isVisible() then
         self:focusWindow()
