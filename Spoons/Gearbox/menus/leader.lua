@@ -11,7 +11,7 @@ return {
       key = "f",
       label = "ForkLift",
       kind = "application",
-      action = { type = "launchApp", name = "ForkLift" }
+      action = { type = "launchApp", name = "ForkLift", bundleID = "com.binarynights.ForkLift" }
     }, {
     key = "s",
     label = "Scratchpad",
@@ -22,7 +22,7 @@ return {
     key = "i",
     label = "SimpleMind",
     kind = "application",
-    action = { type = "launchApp", name = "SimpleMind" }
+    action = { type = "launchApp", name = "SimpleMind", bundleID = "com.modelmakertools.simplemind" }
   }
   }
 }

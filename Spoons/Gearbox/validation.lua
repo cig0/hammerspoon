@@ -247,6 +247,8 @@ function Validation.validateConfig(config)
         if target.type == "openMenu" then
           assert(type(target.menu) == "string" and target.menu:match("%S"),
             location .. " requires an openMenu target with a menu ID")
+        elseif target.type == "openSiri" then
+          -- no additional fields required, optionally ensure no name/bundleID
         elseif type(target.name) == "string" then
           assert(target.name:match("%S"), location .. " requires an application name")
           if target.bundleID ~= nil then
@@ -254,7 +256,7 @@ function Validation.validateConfig(config)
               location .. " bundleID must be a non-empty string when provided")
           end
         else
-          error(location .. " requires an application name or openMenu target", 2)
+          error(location .. " requires an application name, openMenu or openSiri target", 2)
         end
       else
         assert(type(target) == "string" and target:match("%S"),
@@ -270,6 +272,8 @@ function Validation.validateConfig(config)
         if target.type == "openMenu" then
           assert(type(target.menu) == "string" and target.menu:match("%S"),
             location .. " requires an openMenu target with a menu ID")
+        elseif target.type == "openSiri" then
+          -- no additional fields required, optionally ensure no name/bundleID
         elseif type(target.name) == "string" then
           assert(target.name:match("%S"), location .. " requires an application name")
           if target.bundleID ~= nil then
@@ -277,7 +281,7 @@ function Validation.validateConfig(config)
               location .. " bundleID must be a non-empty string when provided")
           end
         else
-          error(location .. " requires an application name or openMenu target", 2)
+          error(location .. " requires an application name, openMenu or openSiri target", 2)
         end
       else
         assert(type(target) == "string" and target:match("%S"),

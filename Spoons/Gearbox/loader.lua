@@ -570,6 +570,8 @@ local function assembleMenus(definitions, rootId, config, actions)
             fail("quickLaunch." .. key .. " references missing menu: " .. target.menu)
           end
           labels[key] = menu.title
+        elseif target.type == "openSiri" then
+          labels[key] = "Siri"
         elseif target.name then
           labels[key] = target.name
         else
@@ -589,6 +591,8 @@ local function assembleMenus(definitions, rootId, config, actions)
             fail("quickLaunch." .. key .. " references missing menu: " .. target.menu)
           end
           labels[key] = menu.title
+        elseif target.type == "openSiri" then
+          labels[key] = "Siri"
         elseif target.name then
           labels[key] = target.name
         else

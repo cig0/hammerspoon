@@ -18,7 +18,7 @@ return {
       key = "e",
       label = "System Settings",
       kind = "application",
-      action = { type = "launchApp", name = "System Settings" }
+      action = { type = "launchApp", name = "System Settings", bundleID = "com.apple.systempreferences" }
     }, { divider = true }, {
     key = "a",
     label = "Keep Display Awake",

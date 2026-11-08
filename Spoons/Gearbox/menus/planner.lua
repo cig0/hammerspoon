@@ -12,12 +12,12 @@ return {
       key = "r",
       label = "Reminders",
       kind = "application",
-      action = { type = "launchApp", name = "Reminders" }
+      action = { type = "launchApp", name = "Reminders", bundleID = "com.apple.reminders" }
     }, {
     key = "s",
     label = "Structured",
     kind = "application",
-    action = { type = "launchApp", name = "Structured" }
+    action = { type = "launchApp", name = "Structured", bundleID = "com.structured.mac" }
   }
   }
 }

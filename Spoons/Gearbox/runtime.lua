@@ -616,6 +616,9 @@ function Runtime:dispatchQuickLaunch(target)
     elseif self.activeMenu.id ~= target.menu then
       self:switchMenu(self.activeMenu, target.menu)
     end
+  elseif target and target.type == "openSiri" then
+    if self.activeMenu then self:endMenuSession() end
+    self.actions.execute({ type = "openSiri" })
   elseif type(target) == "table" and target.name then
     if self.activeMenu then self:endMenuSession() end
     self.actions.execute({ type = "launchApp", name = target.name, bundleID = target.bundleID })

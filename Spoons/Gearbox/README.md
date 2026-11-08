@@ -132,11 +132,7 @@ return {
 }
 ```
 
-Keys are lowercase letters. A string launches or focuses an app. An
-`openMenu` table references an existing menu ID; its title supplies the
-shortcut label. Keys are free choice — display is alphabetical by label
-(see `menus/README.md#layout`). For example, keep just Finder Folders,
-Mail, and Zed:
+Keys are lowercase letters. A string target launches or focuses an app by name. A table target can be `{type="openSiri"}` or `{name=..., bundleID=...}` for an app (where `bundleID` is preferred and `name` is the required fallback), or `{type="openMenu", menu="finder"}` which references an existing menu ID; its title supplies the shortcut label. Keys are free choice — display is alphabetical by label (see `menus/README.md#layout`). By default, hyperkey `s` is bound to `openSiri`. For example, keep just Finder Folders, Mail, and Zed:
 
 ```lua
 return {
