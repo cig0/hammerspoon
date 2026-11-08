@@ -71,7 +71,7 @@ function ConfigurationMenu.definitions()
       },
       items = {
         {
-          key = "h",
+          key = "r",
           label = "Reload Hammerspoon",
           kind = "action",
           action = { type = "reload" }
