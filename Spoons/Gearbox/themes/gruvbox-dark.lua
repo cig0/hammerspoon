@@ -5,7 +5,7 @@ return {
     key = "h",
     group = "dark",
 
-    frame = {red = 0.4, green = 0.360784, blue = 0.329412, alpha = 1}, -- #665c54
+    frame = {red = 0.788235, green = 0.725490, blue = 0.584314, alpha = 1}, -- #C9B995
 
     -- Warm selection colors stay readable with either macOS or theme accents.
     selection = {red = 0.984314, green = 0.945098, blue = 0.780392, alpha = 1}, -- #fbf1c7
