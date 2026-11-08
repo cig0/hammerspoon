@@ -123,9 +123,9 @@ function HUD:refreshLayout()
     end
   end
 
-  -- Hyperkey chart / legend should stay close to body text: gap-fixed, not
-  -- ratio-fixed (14→12, 18→16 vs 14→12, 18→15). Keeps 14 baseline, scales more.
-  self.layout.legendFontSize = round(self.config.font.size - 2)
+  -- Bottom legends (HUD footer, legend, hyperkey chart) + scratchpad
+  -- share size: unified 71% of body, floored 10 for readability.
+  self.layout.legendFontSize = math.max(10, round(self.config.font.size * 0.71))
   self.layout.legendTextHeight = round(self.layout.legendFontSize * 1.5)
 
   -- show() may compress the root on short screens. Preserve these values
@@ -244,6 +244,7 @@ function HUD:appendMenuRow(elements, menu, row, rowIndex, y, navigationPosition,
   local shouldHighlightGroupKey = self.config.menu.highlightGroups and isGroup
 
   local font = isGroup and self.theme.fonts.group or self.theme.fonts.body
+  if isFooter then font = resizedFont(font, layout.legendFontSize) end
 
   local labelColor = isFooter and colors.secondary or colors.primary
 
