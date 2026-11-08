@@ -49,6 +49,7 @@ local accentScript = [[
 local themeGroups = {light = true, dark = true}
 
 local visualFields = {
+    frame = true,
     selection = true,
     selectionText = true,
     selectionAlpha = true,
@@ -157,7 +158,7 @@ local function validateDefinition(definition, source)
         fail(definition.id .. " group must be light or dark", 2)
     end
 
-    for _, field in ipairs({"selection", "selectionText"}) do
+    for _, field in ipairs({"selection", "selectionText", "frame"}) do
         if definition[field] ~= nil then
             validateColor(definition[field], definition.id .. "." .. field,
                           {requireAlpha = true})
@@ -497,6 +498,7 @@ function Theme:refreshAppearance()
         secondary = definition.secondary,
         divider = definition.divider,
         accent = accent,
+        frame = definition.frame or accent,
         accentText = accentText,
         selection = selection,
         selectionText = definition.selectionText
