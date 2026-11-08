@@ -955,7 +955,7 @@ for _, row in ipairs(menus.themes.rows) do
   if not row.divider and row.label then themeLabels[row.label] = row.label end
 end
 
-assert(themeLabels["acidbox Light"] or themeLabels["Catppuccin Latte"], "light theme label changed")
+assert(themeLabels["Purple Tentacle"] or themeLabels["Catppuccin Latte"], "light theme label changed")
 assert(themeLabels["Gruvbox Dark Hard"] and themeLabels["Gruvbox Dark"], "dark theme label changed")
 assert(menus.leader.rows[#menus.leader.rows].label:match("^Exit Gearbox"),
   "leader footer changed")
@@ -1815,8 +1815,8 @@ interfaceStyle = nil
 runtime.theme:select("system")
 
 assert(runtime.theme.selection == "system", "system selection must be restored")
--- light appearance resolves to acidbox-light (renamed from gearbox-light)
-assert(runtime.theme.activeThemeId == "acidbox-light" or runtime.theme.activeThemeId == "catppuccin-latte",
+-- light appearance resolves to purple-tentacle (renamed from gearbox-light)
+assert(runtime.theme.activeThemeId == "purple-tentacle" or runtime.theme.activeThemeId == "catppuccin-latte",
   "system selection must resolve the light appearance: " .. tostring(runtime.theme.activeThemeId))
 
 interfaceStyle = "Dark"
@@ -2161,7 +2161,7 @@ failNextGlobalHotkey = true
 local unavailableHotkeyAccepted = pcall(function()
   startGearbox({
     menu = { timeout = 5 },
-    theme = { name = "acidbox-light", accentSource = "theme" }
+    theme = { name = "purple-tentacle", accentSource = "theme" }
   })
 end)
 
@@ -2201,44 +2201,44 @@ assert(not validRuntime.started,
 
 local configuredRuntime = startGearbox({
   menu = { timeout = 5 },
-  theme = { name = "acidbox-light", accentSource = "theme" }
+  theme = { name = "purple-tentacle", accentSource = "theme" }
 })
 
-assert(configuredRuntime.theme.selection == "acidbox-light",
+assert(configuredRuntime.theme.selection == "purple-tentacle",
   "a changed configured default must invalidate persisted selection")
 assert(settings["Gearbox.theme.selection"] == nil,
   "invalidated persisted selection must be cleared")
 
 settings["Gearbox.theme.selection"] = {
   selection = "removed-theme",
-  configuredDefault = "acidbox-light"
+  configuredDefault = "purple-tentacle"
 }
 
 local missingThemeRuntime = startGearbox({
   menu = { timeout = 5 },
-  theme = { name = "acidbox-light", accentSource = "theme" }
+  theme = { name = "purple-tentacle", accentSource = "theme" }
 })
 
-assert(missingThemeRuntime.theme.selection == "acidbox-light",
+assert(missingThemeRuntime.theme.selection == "purple-tentacle",
   "a missing persisted theme must fall back to configuration")
 assert(settings["Gearbox.theme.selection"] == nil,
   "a missing persisted theme must be cleared")
 
 settings["Gearbox.theme.selection"] = {
   selection = "dracula",
-  configuredDefault = "acidbox-light"
+  configuredDefault = "purple-tentacle"
 }
 
 local nonPersistentRuntime = startGearbox({
   menu = { timeout = 5 },
   theme = {
-    name = "acidbox-light",
+    name = "purple-tentacle",
     persistSelection = false,
     accentSource = "theme"
   }
 })
 
-assert(nonPersistentRuntime.theme.selection == "acidbox-light",
+assert(nonPersistentRuntime.theme.selection == "purple-tentacle",
   "disabled persistence must use configured selection")
 assert(settings["Gearbox.theme.selection"] == nil,
   "disabled persistence must clear stored selection")

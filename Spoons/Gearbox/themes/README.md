@@ -48,7 +48,7 @@ Colors: `{ white, alpha }` or `{ red, green, blue, alpha }` (`0…1`). Partial o
 
 | Group | Theme              | ID                  |
 | ----- | ------------------ | ------------------- |
-| Light | acidbox Light      | `acidbox-light`     |
+| Light | Purple Tentacle    | `purple-tentacle`   |
 | Light | Catppuccin Latte   | `catppuccin-latte`  |
 | Light | Catppuccin Mocha\* | `catppuccin-mocha`  |
 | Light | Gruvbox Light      | `gruvbox-light`     |

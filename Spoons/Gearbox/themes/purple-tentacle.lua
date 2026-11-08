@@ -1,7 +1,7 @@
---- Gearbox Light theme (light).
+--- Gearbox Light theme — Purple Tentacle (Day of the Tentacle).
 return {
-  id = "acidbox-light",
-  label = "acidbox Light",
+  id = "purple-tentacle",
+  label = "Purple Tentacle",
   key = "l",
   group = "light",
 
@@ -13,6 +13,6 @@ return {
   primary = { white = 0, alpha = 1 },
   secondary = { white = 0.4, alpha = 1 },
   divider = { white = 0, alpha = 0.14 },
-  accent = { red = 0.039216, green = 0.478431, blue = 1, alpha = 1 },
+  accent = { red = 0.76, green = 0.18, blue = 0.78, alpha = 1 },
   accentText = { white = 1, alpha = 1 }
 }
