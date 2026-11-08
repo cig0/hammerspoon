@@ -168,8 +168,8 @@ before Exit. Set `showFooterDivider = false` there to remove it.
 
 `menus/` intentionally contains only passive, file-backed definitions. Two
 generated menu sets join that graph during startup: `theme.lua` supplies
-Themes, and `preferences.lua` supplies the definitions from
-`configuration_menu.lua`.
+Themes and its Set matching themes child. `preferences.lua` supplies the
+definitions from `configuration_menu.lua`.
 Themes and Font Size are children of Gearbox Configuration.
 
 ## Action descriptors
@@ -181,6 +181,7 @@ Themes and Font Size are children of Gearbox Configuration.
 | `openMenu` | Runtime menu transition |
 | `setCaffeinateMode` | Mutually exclusive Hammerspoon caffeinate assertions |
 | `setTheme` | Theme selection and HUD refresh |
+| `setMatchingTheme` | Light/dark palette assignment and HUD refresh |
 | `configure` | Validated preferences, profile operations, and HUD refresh |
 | `openScratchpad` | Scratchpad display and menu dismissal |
 | `reload` | `hs.reload` |

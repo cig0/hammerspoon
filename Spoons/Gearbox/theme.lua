@@ -20,6 +20,7 @@ local validateColor = Validation.validateColor
 ---@field systemAccent table
 ---@field fonts table
 ---@field selection string
+---@field systemThemes table
 ---@field activeThemeId string|nil
 ---@field colors table|nil
 Theme.__index = Theme
@@ -179,7 +180,7 @@ local function loadThemes(directory)
     local themes = {}
     local menuKeys = {
         s = "Follow macOS", o = "Show Outer Frame",
-        w = "Show Window Shadow", p = "Transparency"
+        w = "Show Window Shadow", p = "Transparency", f = "Set matching themes"
     }
     local files = themeFiles(directory)
 
@@ -349,6 +350,7 @@ function Theme.new(config, rootDirectory)
     self.config = config
     self.themes = themes
     self.configuredDefault = config.theme.name
+    self.systemThemes = copyTable(config.theme.system)
     self.clearLegacySelectionOnActivation = false
     self.clearStoredSelectionOnActivation = false
     self.selectionToPersistOnActivation = nil
@@ -425,7 +427,23 @@ function Theme:restoredSelection()
 
     if type(stored) == "table" and stored.configuredDefault ==
         self.configuredDefault and self:isValidSelection(stored.selection) then
-        if usingLegacy then self.selectionToPersistOnActivation = stored end
+        if type(stored.system) == "table" and
+            type(stored.configuredSystem) == "table" then
+            for group in pairs(themeGroups) do
+                local id = stored.system[group]
+                local definition = self.themes[id]
+
+                if stored.configuredSystem[group] ==
+                    self.config.theme.system[group] and definition and
+                    definition.group == group then
+                    self.systemThemes[group] = id
+                end
+            end
+        end
+
+        if usingLegacy or stored.system ~= nil then
+            self.selectionToPersistOnActivation = self:selectionRecord(stored.selection)
+        end
 
         return stored.selection
     end
@@ -453,26 +471,35 @@ function Theme:activate()
     end
 end
 
---- Store the current selection under `hs.settings`.
+--- Snapshot the selection and matching pair without changing configured defaults.
+---@param selection string
+---@return table
+function Theme:selectionRecord(selection)
+    return {
+        selection = selection,
+        configuredDefault = self.configuredDefault,
+        system = copyTable(self.systemThemes),
+        configuredSystem = copyTable(self.config.theme.system)
+    }
+end
+
+--- Store the current selection and matching pair under `hs.settings`.
 function Theme:persistSelection()
     if not self.config.theme.persistSelection then return end
 
-    hs.settings.set(settingsKey, {
-        selection = self.selection,
-        configuredDefault = self.configuredDefault
-    })
+    hs.settings.set(settingsKey, self:selectionRecord(self.selection))
 end
 
---- Resolve "system" to the configured light or dark theme id.
+--- Resolve "system" to the matching light or dark theme id.
 ---@return string
 function Theme:selectedThemeId()
     if self.selection ~= "system" then return self.selection end
 
     if hs.host.interfaceStyle() == "Dark" then
-        return self.config.theme.system.dark
+        return self.systemThemes.dark
     end
 
-    return self.config.theme.system.light
+    return self.systemThemes.light
 end
 
 --- Refresh the active semantic color set from the selected theme.
@@ -527,6 +554,52 @@ end
 ---@param selection string
 ---@return boolean
 function Theme:isSelected(selection) return self.selection == selection end
+
+--- Assign a discovered palette to its light or dark appearance slot.
+---@param id string
+function Theme:setMatchingTheme(id)
+    local definition = assert(self.themes[id],
+                              "Gearbox: unknown matching theme: " .. tostring(id))
+    self.systemThemes[definition.group] = id
+    self:persistSelection()
+    if self.selection == "system" then self:refreshAppearance() end
+end
+
+--- Return true when this palette is assigned to its appearance slot.
+---@param id string
+---@return boolean
+function Theme:isMatchingTheme(id)
+    local definition = self.themes[id]
+    return definition ~= nil and self.systemThemes[definition.group] == id
+end
+
+--- Build the matching picker from the same light and dark palette groups.
+---@return table
+function Theme:matchingMenuDefinition()
+    local items = {}
+
+    for groupIndex, group in ipairs({"light", "dark"}) do
+        if groupIndex > 1 then table.insert(items, {divider = true}) end
+
+        for _, definition in ipairs(sortedThemes(self.themes, group)) do
+            table.insert(items, {
+                key = definition.key,
+                label = definition.label,
+                kind = "action",
+                action = {type = "setMatchingTheme", theme = definition.id}
+            })
+        end
+    end
+
+    return {
+        id = "matching-themes",
+        title = "Set matching themes",
+        legend = "Choose one light and one dark theme",
+        parent = "themes",
+        entry = {key = "f", label = "Set matching themes", order = 200},
+        items = items
+    }
+end
 
 --- Build the generated "Themes" menu definition for `loader.lua`.
 ---@return table

@@ -214,6 +214,9 @@ in `menus/leader.lua` to remove the divider before Exit.
 The root header shows the current Caps Lock state. Themes → Show Outer Frame
 toggles the accent border. Show Window Shadow controls the drop shadow.
 Open Transparency to adjust the menu background in five-point steps.
+Set matching themes assigns one palette to light macOS appearance and another
+to dark appearance. Each group has its own checked choice; Follow macOS uses
+the saved pair.
 
 The macOS power modes behave as one checked selection:
 
@@ -326,9 +329,9 @@ Scratchpad's editor keeps its separate `scratchpad.fontSize` setting.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `theme.name` | `"system"` | Fixed theme ID or automatic macOS light/dark selection |
-| `theme.persistSelection` | `true` | Restores valid Themes-menu choices after reload |
-| `theme.system.light` | `"gearbox-light"` | Palette used by light macOS appearance |
-| `theme.system.dark` | `"gearbox-dark"` | Palette used by dark macOS appearance |
+| `theme.persistSelection` | `true` | Restores the selection and matching pair after reload |
+| `theme.system.light` | `"gearbox-light"` | Default palette for light macOS appearance |
+| `theme.system.dark` | `"gearbox-dark"` | Default palette for dark macOS appearance |
 | `theme.accentSource` | `"system"` | `"system"` accent or the selected theme's accent |
 | `theme.fallbackAccent` | macOS blue | RGB accent used when AppKit lookup fails |
 | `theme.systemAccentText` | white | Text rendered over the macOS accent |
@@ -484,6 +487,8 @@ Hammerspoon:
 hs.settings.set("Gearbox.theme.selection", {
   selection = "nord",
   configuredDefault = "system",
+  system = { light = "gruvbox-light", dark = "nord" },
+  configuredSystem = { light = "gearbox-light", dark = "gearbox-dark" },
 })
 ```
 
@@ -498,6 +503,13 @@ while its `configuredDefault` still matches `theme.name` and the selected theme
 still exists. Otherwise it is cleared after the replacement runtime starts
 successfully.
 
+The `system` pair stores Set matching themes choices; `configuredSystem` tracks
+the defaults they were chosen against. Changing a configured slot resets only
+that slot. A missing palette or one from the wrong appearance group also falls
+back to its configured slot. Older records without a pair use the configured
+defaults. Editing the pair leaves a fixed theme active; Follow macOS enables
+the assignments.
+
 The first successful Gearbox startup also migrates a valid legacy
 `Shift7.theme.selection` record, including the former `shift7-light` and
 `shift7-dark` IDs, then removes the legacy key.
@@ -511,7 +523,8 @@ hs.settings.clear("Gearbox.theme.selection")
 
 Setting `theme.persistSelection = false` in `config.lua` clears any stored
 choice after successful startup and returns every reload to the configured
-`theme.name`. The Nix delivery boundary is documented in
+`theme.name` and configured light/dark pair. The Nix delivery boundary is
+documented in
 [`assets/docs/NIX.md`](../../assets/docs/NIX.md#configuration-ownership).
 
 ## Appearance lifecycle

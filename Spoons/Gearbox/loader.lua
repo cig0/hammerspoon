@@ -324,6 +324,13 @@ local function validateDefinitions(definitions, config, actions, theme)
                              item.action.theme)
                 end
 
+                if item.action.type == "setMatchingTheme" and
+                    (not theme or item.action.theme == "system" or
+                        not theme:isValidSelection(item.action.theme)) then
+                    fail(location .. " references missing matching theme: " ..
+                             item.action.theme)
+                end
+
                 seenKeys[identity] = true
             end
         end

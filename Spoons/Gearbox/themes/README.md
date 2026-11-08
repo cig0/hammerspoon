@@ -9,10 +9,17 @@ loaded, validated, and added to the generated Themes menu. Files beginning with
 | `o` | Show Outer Frame | Accent outline around the panel |
 | `w` | Show Window Shadow | Soft drop shadow, enabled by default |
 | `p` | Transparency | Menu background opacity, from 100% to 50% in steps of 5 |
+| `f` | Set matching themes | Independent light and dark palettes for Follow macOS |
 
 The menu starts opaque. In Transparency, press `4` for 85%, `1` for 100%,
 or `-` for 50%. The selected row is checked and the preview updates immediately.
 Escape returns to Themes. Text, highlights, and Scratchpad use their own colors.
+
+Set matching themes lists the same palettes in light and dark groups. Each
+group has one checked choice. Choosing a palette assigns its appearance slot
+without switching Follow macOS on or off. When Follow macOS is active, changing
+the current appearance's palette updates the open menu immediately. Escape
+returns to Themes.
 
 ```text
 themes/*.lua
@@ -80,13 +87,17 @@ for every theme.
 ## Selection flow
 
 `theme.name = "system"` maps the current macOS appearance to
-`theme.system.light` or `theme.system.dark` whenever a menu opens. A fixed
-theme ID bypasses that appearance query.
+the matching light or dark palette whenever a menu opens. The pair defaults to
+`theme.system.light` and `theme.system.dark`; Set matching themes changes either
+slot. A fixed theme ID bypasses that appearance query.
 
 With `theme.persistSelection = true`, menu choices are stored under
 `hs.settings["Gearbox.theme.selection"]` and restored after a Hammerspoon reload.
-The stored choice is discarded when the configured default changes or the
-selected theme no longer exists. The detailed storage and Nix behavior are in
+The saved record includes both matching choices. A removed or wrong-group
+palette falls back to its configured slot; changing a configured slot resets
+that slot's saved choice. The record is discarded when `theme.name` changes or
+the selected theme no longer exists. Disabling persistence resets the selection
+and pair on reload. The detailed storage and Nix behavior are in
 the [Gearbox configuration](../README.md#theme-persistence) section.
 
 ## Customize Nord
@@ -115,8 +126,9 @@ in the Themes menu or clear the saved selection as described above.
 To add a palette, copy `gearbox-dark.lua` to a new visible `.lua` file and
 change its ID, label, key, and colors. Choose a key unused across both theme
 groups and the generated controls (`s` for Follow macOS, `o` for Show Outer
-Frame, `w` for Show Window Shadow, and `p` for Transparency). Navigation
-keys are also reserved. Reload Hammerspoon to discover the new palette.
+Frame, `w` for Show Window Shadow, `p` for Transparency, and `f` for Set matching
+themes). Navigation keys are also reserved. Reload Hammerspoon to discover the
+new palette.
 
 ## Palette provenance
 
