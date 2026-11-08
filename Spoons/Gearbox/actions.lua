@@ -42,12 +42,13 @@ function M.validate(action, location)
             error(location .. " has invalid caffeinate mode: " ..
                       tostring(action.mode), 2)
         end
-    elseif action.type == "setTheme" then
+    elseif action.type == "setTheme" or action.type == "setMatchingTheme" then
         expect(action.theme, "string",
-               location .. " setTheme action requires theme")
+               location .. " " .. action.type .. " action requires theme")
 
         if action.theme == "" then
-            error(location .. " setTheme action requires a non-empty theme", 2)
+            error(location .. " " .. action.type ..
+                      " action requires a non-empty theme", 2)
         end
     elseif action.type == "configure" then
         Preferences.validateAction(action, location)
@@ -68,6 +69,7 @@ end
 function M.isCheckable(action)
     return action and
                (action.type == "setCaffeinateMode" or action.type == "setTheme" or
+                   action.type == "setMatchingTheme" or
                    Preferences.isCheckableAction(action))
 end
 
@@ -175,6 +177,11 @@ function M.execute(action, context)
 
     if action.type == "setTheme" then
         context.setTheme(action.theme)
+        return {refresh = true}
+    end
+
+    if action.type == "setMatchingTheme" then
+        context.setMatchingTheme(action.theme)
         return {refresh = true}
     end
 

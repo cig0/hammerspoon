@@ -762,7 +762,9 @@ do
 end
 
 local discoveredPreferences = Preferences.new(config)
-local supplementalMenus = { discoveredTheme:menuDefinition() }
+local supplementalMenus = {
+  discoveredTheme:menuDefinition(), discoveredTheme:matchingMenuDefinition()
+}
 
 for _, definition in ipairs(discoveredPreferences:menuDefinitions()) do
   table.insert(supplementalMenus, definition)
@@ -927,7 +929,7 @@ assert(not pcall(function()
   }, discoveredTheme)
 end), "passive menu legends must be non-empty strings")
 
-assert(rowShape(menus.themes) == "s,o,w,|,a,l,g,|,c,r,h,d,m,n,t,|,p,|,escape",
+assert(rowShape(menus.themes) == "s,o,w,|,a,l,g,|,c,r,h,d,m,n,t,|,p,f,|,escape",
   "Themes menu shape changed")
 assert(rowShape(menus.configuration) == "h,|,p,r,x,|,f,m,s,t,|,escape",
   "Gearbox Configuration menu shape changed")
@@ -2646,4 +2648,99 @@ function keys.checkFontSize()
   keys.screenHeight = 1080
 end
 keys.checkFontSize()
+function keys.checkMatchingThemes()
+  settings["Gearbox.theme.selection"] = nil
+  interfaceStyle = nil
+  local quick = startGearbox({menu = {timeout = 5}, theme = {accentSource = "theme"}})
+  globalHotkeyPressed()
+  assert(sendCharacterKeyDown("g") and sendCharacterKeyDown("t") and sendCharacterKeyDown("f"))
+  local picker = quick.activeMenu
+  assert(picker.id == "matching-themes" and picker.parentId == "themes")
+  assert(rowShape(picker) == "a,l,g,|,c,r,h,d,m,n,t,|,escape")
+
+  local function checkedKeys()
+    local checked = quick:checkedRows(picker)
+    local result = {}
+    for index, row in ipairs(picker.rows) do
+      if checked[index] then result[#result + 1] = row.key end
+    end
+    return table.concat(result, ",")
+  end
+
+  assert(checkedKeys() == "l,d", "matching slots need independent default checks")
+  assert(sendCharacterKeyDown("g"))
+  assert(quick.theme.selection == "system" and quick.theme.activeThemeId == "gruvbox-light")
+  assert(checkedKeys() == "g,d" and quick.activeMenu == picker)
+  assert(elementById(quick.hud.canvas, "menu-background").fillColor.red ==
+    quick.theme.themes["gruvbox-light"].background.red,
+    "changing the current slot must redraw the palette immediately")
+  assert(sendCharacterKeyDown("h"))
+  assert(quick.theme.activeThemeId == "gruvbox-light" and checkedKeys() == "g,h")
+  assert(quick.config.theme.system.light == "gearbox-light" and
+    quick.config.theme.system.dark == "gearbox-dark",
+    "menu assignments must preserve configured defaults")
+  local stored = settings["Gearbox.theme.selection"]
+  assert(stored.system.light == "gruvbox-light" and stored.system.dark == "gruvbox-dark-hard")
+  assert(sendCharacterKeyDown("a"))
+  assert(stored.system.light == "gruvbox-light", "persisted pairs must be snapshots")
+
+  interfaceStyle = "Dark"
+  picker.modal.bindings.escape()
+  assert(quick.activeMenu.id == "themes" and quick.theme.activeThemeId == "gruvbox-dark-hard")
+  assert(sendCharacterKeyDown("r") and sendCharacterKeyDown("f"))
+  local queries = interfaceStyleCalls
+  assert(sendCharacterKeyDown("n"))
+  assert(quick.theme.selection == "dracula" and quick.theme.activeThemeId == "dracula")
+  assert(interfaceStyleCalls == queries and checkedKeys() == "a,n",
+    "editing the pair must leave a fixed theme active without querying macOS")
+
+  quick = startGearbox({menu = {timeout = 5}, theme = {accentSource = "theme"}})
+  assert(quick.theme.selection == "dracula" and quick.theme.systemThemes.light == "catppuccin-latte" and
+    quick.theme.systemThemes.dark == "nord", "both assignments must survive reload and fixed selection")
+  globalHotkeyPressed()
+  assert(sendCharacterKeyDown("g") and sendCharacterKeyDown("t") and sendCharacterKeyDown("s"))
+  assert(quick.theme.activeThemeId == "nord")
+  interfaceStyle = nil
+  assert(sendCharacterKeyDown("f"))
+  assert(quick.theme.activeThemeId == "catppuccin-latte")
+
+  quick = startGearbox({menu = {timeout = 5}, theme = {system = {light = "gruvbox-light"}}})
+  assert(quick.theme.systemThemes.light == "gruvbox-light" and quick.theme.systemThemes.dark == "nord",
+    "changing one configured default must reset only that slot")
+  stored = settings["Gearbox.theme.selection"]
+  stored.system.dark = "removed-theme"
+  failNextModalBind = true
+  assert(not pcall(function()
+    startGearbox({menu = {timeout = 5}, theme = {system = {light = "gruvbox-light"}}})
+  end))
+  assert(quick.started and settings["Gearbox.theme.selection"] == stored and
+    stored.system.dark == "removed-theme", "failed startup must not rewrite saved pairs")
+  quick = startGearbox({menu = {timeout = 5}, theme = {system = {light = "gruvbox-light"}}})
+  assert(quick.theme.systemThemes.light == "gruvbox-light" and
+    quick.theme.systemThemes.dark == "gearbox-dark", "removed palettes must reset only their slot")
+  assert(settings["Gearbox.theme.selection"].system.dark == "gearbox-dark")
+  settings["Gearbox.theme.selection"].system.light = "dracula"
+  quick = startGearbox({menu = {timeout = 5}, theme = {system = {light = "gruvbox-light"}}})
+  assert(quick.theme.systemThemes.light == "gruvbox-light", "wrong-group saved palettes must fall back")
+
+  for _, id in ipairs({"missing", "system"}) do
+    local invalidMenus = copyFixture(supplementalMenus)
+    invalidMenus[2].items[1].action.theme = id
+    assert(not pcall(function()
+      Loader.load(root .. "/Spoons/Gearbox", config, Actions, invalidMenus, discoveredTheme)
+    end), "matching actions require a discovered palette")
+  end
+
+  quick = startGearbox({menu = {timeout = 5}, theme = {persistSelection = false}})
+  globalHotkeyPressed()
+  assert(sendCharacterKeyDown("g") and sendCharacterKeyDown("t") and sendCharacterKeyDown("f"))
+  assert(sendCharacterKeyDown("a") and sendCharacterKeyDown("n"))
+  assert(quick.theme.systemThemes.light == "catppuccin-latte" and quick.theme.systemThemes.dark == "nord")
+  assert(settings["Gearbox.theme.selection"] == nil)
+  quick = startGearbox({menu = {timeout = 5}, theme = {persistSelection = false}})
+  assert(quick.theme.systemThemes.light == "gearbox-light" and quick.theme.systemThemes.dark == "gearbox-dark",
+    "disabled persistence must restore the configured pair on reload")
+  Gearbox.stop()
+end
+keys.checkMatchingThemes()
 print("Gearbox smoke test passed")

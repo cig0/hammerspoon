@@ -43,7 +43,7 @@ function ConfigurationMenu.definitions()
       title = "Transparency",
       legend = "Menu background opacity",
       parent = "themes",
-      entry = { key = "p", label = "Transparency" },
+      entry = { key = "p", label = "Transparency", order = 100 },
       items = opacityRows
     },
     {

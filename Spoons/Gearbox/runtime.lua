@@ -242,6 +242,8 @@ function Runtime:checkedRows(menu)
                 checked[index] = row.action.mode == caffeinateMode
             elseif row.action.type == "setTheme" then
                 checked[index] = self.theme:isSelected(row.action.theme)
+            elseif row.action.type == "setMatchingTheme" then
+                checked[index] = self.theme:isMatchingTheme(row.action.theme)
             elseif row.action.type == "configure" then
                 checked[index] = self.preferences:isSelected(row.action)
             end
@@ -367,6 +369,7 @@ function Runtime:runAction(menu, row)
         openMenu = function(targetId) self:switchMenu(menu, targetId) end,
         exit = function() self:endMenuSession() end,
         setTheme = function(selection) self.theme:select(selection) end,
+        setMatchingTheme = function(id) self.theme:setMatchingTheme(id) end,
         configure = function(action) self.preferences:execute(action) end,
         openScratchpad = function()
             assert(self.scratchpad, "Gearbox: scratchpad is disabled")

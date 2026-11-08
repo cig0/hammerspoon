@@ -34,7 +34,7 @@ rollback without touching the real `~/.hammerspoon`.
 | Concern | Assertions |
 | --- | --- |
 | Menu graph | Discovery, ordering, dividers, parent links, reserved and duplicate keys |
-| Themes | All bundled IDs, grouped ordering, overrides, color models, system/manual selection |
+| Themes | All bundled IDs, grouped ordering, overrides, color models, system/manual selection, independent matching choices, pair restoration and fallback |
 | Preferences | Config/profile/local precedence, generated configuration menus, outer-frame toggle, prompts, save/reload/reset, validation |
 | Persistence | Theme restoration, Scratchpad settings/file backends, atomic replacement, cross-open reload, visible failures |
 | Quick Launch | Hyper and Caps Lock dispatch, direct Finder menu entry, app string overrides, repeat suppression, capitalization preservation, and cleanup |
