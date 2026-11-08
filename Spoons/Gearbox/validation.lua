@@ -7,8 +7,6 @@ local positions = { top = true, center = true, bottom = true }
 
 local screens = { main = true, mouse = true }
 
-local accentSources = { system = true, theme = true }
-
 local fontWeights = { regular = true, bold = true }
 
 local hotkeyModifiers = {
@@ -224,7 +222,7 @@ end
 --- Accepted menu timeout presets for the runtime submenu.
 function Validation.isMenuTimeoutPreset(value)
   return type(value) == "number" and ({ [5] = true, [10] = true, [15] = true, [20] = true, [30] = true, [60] = true })
-  [value] == true
+      [value] == true
 end
 
 --- Validate the authoritative Gearbox configuration.
@@ -336,20 +334,6 @@ function Validation.validateConfig(config)
   assertType(config.theme.system.light, "string", "theme.system.light")
   assert(config.theme.system.light ~= "",
     "Gearbox: theme.system.light cannot be empty")
-  assert(accentSources[config.theme.accentSource],
-    "Gearbox: theme.accentSource must be system or theme")
-
-  local fallbackModel = Validation.validateColor(
-    config.theme.fallbackAccent,
-    "theme.fallbackAccent",
-    { configMessages = true })
-
-  assert(fallbackModel == "rgb",
-    "Gearbox: theme.fallbackAccent must use RGB components")
-
-  Validation.validateColor(config.theme.systemAccentText,
-    "theme.systemAccentText",
-    { configMessages = true })
 
   assertType(config.theme.overrides, "table", "theme.overrides")
 

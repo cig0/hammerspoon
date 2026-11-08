@@ -77,7 +77,6 @@ Merge into `config.lua:theme`:
 ```lua
 theme = {
   name = "nord",
-  accentSource = "theme",
   overrides = {
     nord = { background = {white = 0.08}, selectionAlpha = 0.18 },
   },

@@ -328,9 +328,6 @@ Scratchpad's editor keeps its separate `scratchpad.fontSize` setting.
 | `theme.persistSelection` | `true`            | Restores the selection and matching pair after reload  |
 | `theme.system.light`     | `"gearbox-light"` | Default palette for light macOS appearance             |
 | `theme.system.dark`      | `"gearbox-dark"`  | Default palette for dark macOS appearance              |
-| `theme.accentSource`     | `"system"`        | `"system"` accent or the selected theme's accent       |
-| `theme.fallbackAccent`   | macOS blue        | RGB accent used when AppKit lookup fails               |
-| `theme.systemAccentText` | white             | Text rendered over the macOS accent                    |
 | `theme.overrides`        | `{}`              | Partial semantic overrides keyed by theme ID           |
 
 A partial theme override replaces only the supplied values:
@@ -525,8 +522,6 @@ documented in
 
 ## Appearance lifecycle
 
-`theme.accentSource = "system"` queries AppKit once during Hammerspoon
-configuration load. Changing the macOS accent afterward requires `hs.reload()`.
 System light/dark appearance is evaluated whenever a menu opens, so it does not
 require an appearance watcher. Fonts are likewise resolved once when the Spoon
 starts.
