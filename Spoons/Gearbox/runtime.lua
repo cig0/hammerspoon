@@ -10,13 +10,13 @@ local hotkeyIdentity = Validation.hotkeyIdentity
 local isCharacterActivationKey = Validation.isCharacterActivationKey
 
 local hotkeyModifierAliases = {
-    alt = "alt",
-    option = "alt",
-    cmd = "cmd",
-    command = "cmd",
-    ctrl = "ctrl",
-    control = "ctrl",
-    shift = "shift"
+  alt = "alt",
+  option = "alt",
+  cmd = "cmd",
+  command = "cmd",
+  ctrl = "ctrl",
+  control = "ctrl",
+  shift = "shift"
 }
 
 --- Resolve the configured hotkey modifiers to event-flag names.
@@ -25,22 +25,22 @@ local hotkeyModifierAliases = {
 ---@param modifiers table
 ---@return table
 local function resolveRequiredHotkeyModifiers(modifiers)
-    local required = {alt = false, cmd = false, ctrl = false, shift = false}
+  local required = { alt = false, cmd = false, ctrl = false, shift = false }
 
-    for _, modifier in ipairs(modifiers) do
-        local canonicalName = hotkeyModifierAliases[modifier]
+  for _, modifier in ipairs(modifiers) do
+    local canonicalName = hotkeyModifierAliases[modifier]
 
-        if canonicalName then required[canonicalName] = true end
-    end
+    if canonicalName then required[canonicalName] = true end
+  end
 
-    return required
+  return required
 end
 
 --- Return true when an event has no Command, Option, or Control modifiers.
 ---@param flags table
 ---@return boolean
 local function hasNoCharacterCommandModifiers(flags)
-    return flags.alt ~= true and flags.cmd ~= true and flags.ctrl ~= true
+  return flags.alt ~= true and flags.cmd ~= true and flags.ctrl ~= true
 end
 
 --- Return true when event Command, Option, and Control flags match `required`.
@@ -48,9 +48,9 @@ end
 ---@param required table
 ---@return boolean
 local function matchesCharacterCommandModifiers(flags, required)
-    return (flags.alt == true) == required.alt and
-               (flags.cmd == true) == required.cmd and
-               (flags.ctrl == true) == required.ctrl
+  return (flags.alt == true) == required.alt and
+      (flags.cmd == true) == required.cmd and
+      (flags.ctrl == true) == required.ctrl
 end
 
 --- Return true when event flags include the configured global-hotkey modifiers.
@@ -58,21 +58,21 @@ end
 ---@param required table
 ---@return boolean
 local function includesRequiredHotkeyModifiers(flags, required)
-    return (not required.alt or flags.alt == true) and
-               (not required.cmd or flags.cmd == true) and
-               (not required.ctrl or flags.ctrl == true) and
-               (not required.shift or flags.shift == true)
+  return (not required.alt or flags.alt == true) and
+      (not required.cmd or flags.cmd == true) and
+      (not required.ctrl or flags.ctrl == true) and
+      (not required.shift or flags.shift == true)
 end
 
 --- Resolve a named or raw Hammerspoon hotkey to its virtual keycode.
 ---@param key string
 ---@return integer|nil
 local function resolveHotkeyKeyCode(key)
-    local rawKeyCode = key:match("^#(%d+)$")
+  local rawKeyCode = key:match("^#(%d+)$")
 
-    if rawKeyCode then return tonumber(rawKeyCode) end
+  if rawKeyCode then return tonumber(rawKeyCode) end
 
-    return hs.keycodes.map[key:lower()]
+  return hs.keycodes.map[key:lower()]
 end
 
 --- Return true when `rawFlags` contains the power-of-two `flagMask`.
@@ -80,47 +80,47 @@ end
 ---@param flagMask integer
 ---@return boolean
 local function containsRawFlag(rawFlags, flagMask)
-    return math.floor(rawFlags / flagMask) % 2 == 1
+  return math.floor(rawFlags / flagMask) % 2 == 1
 end
 
 --- Return the Caps Lock state recorded on the key event.
 ---@param event any
 ---@return boolean
 local function eventHasCapsLock(event)
-    local rawFlagMasks = hs.eventtap.event.rawFlagMasks
+  local rawFlagMasks = hs.eventtap.event.rawFlagMasks
 
-    if event.rawFlags and rawFlagMasks and rawFlagMasks.alphaShift then
-        return containsRawFlag(event:rawFlags(), rawFlagMasks.alphaShift)
-    end
+  if event.rawFlags and rawFlagMasks and rawFlagMasks.alphaShift then
+    return containsRawFlag(event:rawFlags(), rawFlagMasks.alphaShift)
+  end
 
-    return hs.eventtap.checkKeyboardModifiers().capslock == true
+  return hs.eventtap.checkKeyboardModifiers().capslock == true
 end
 
 --- Invert one ASCII letter and leave every other character unchanged.
 ---@param character string
 ---@return string
 local function invertAsciiLetterCase(character)
-    if character:match("^[a-z]$") then return character:upper() end
+  if character:match("^[a-z]$") then return character:upper() end
 
-    if character:match("^[A-Z]$") then return character:lower() end
+  if character:match("^[A-Z]$") then return character:lower() end
 
-    return character
+  return character
 end
 
 --- Return the resulting activation character for a keyboard event.
 ---@param event any
 ---@return string|nil
 local function activationCharacterForEvent(event)
-    local character = event:getCharacters(true)
+  local character = event:getCharacters(true)
 
-    if not isCharacterActivationKey(character) then return nil end
+  if not isCharacterActivationKey(character) then return nil end
 
-    -- Clean characters preserve Shift but omit Caps Lock; see README provenance.
-    if eventHasCapsLock(event) then
-        character = invertAsciiLetterCase(character)
-    end
+  -- Clean characters preserve Shift but omit Caps Lock; see README provenance.
+  if eventHasCapsLock(event) then
+    character = invertAsciiLetterCase(character)
+  end
 
-    return character
+  return character
 end
 
 ---@class Runtime
@@ -152,47 +152,47 @@ Runtime.__index = Runtime
 ---@return Runtime
 function Runtime.new(config, menus, rootId, actions, theme, preferences, hud,
                      scratchpad)
-    local self = setmetatable({}, Runtime)
+  local self = setmetatable({}, Runtime)
 
-    self.config = config
-    self.menus = menus
-    self.rootId = rootId
-    self.actions = actions
-    self.theme = theme
-    self.preferences = preferences
-    self.hud = hud
-    self.scratchpad = scratchpad
+  self.config = config
+  self.menus = menus
+  self.rootId = rootId
+  self.actions = actions
+  self.theme = theme
+  self.preferences = preferences
+  self.hud = hud
+  self.scratchpad = scratchpad
 
-    self.activeMenu = nil
-    self.timeoutTimer = nil
-    self.globalHotkey = nil
-    self.quickLaunchHotkeys = {}
-    self.sessionInputTap = nil
-    self.requiredHotkeyModifiers = nil
-    self.globalHotkeyKeyCode = nil
-    self.started = false
+  self.activeMenu = nil
+  self.timeoutTimer = nil
+  self.globalHotkey = nil
+  self.quickLaunchHotkeys = {}
+  self.sessionInputTap = nil
+  self.requiredHotkeyModifiers = nil
+  self.globalHotkeyKeyCode = nil
+  self.started = false
 
-    return self
+  return self
 end
 
 --- Cancel the active auto-close timer.
 function Runtime:clearTimeout()
-    if self.timeoutTimer then
-        self.timeoutTimer:stop()
-        self.timeoutTimer = nil
-    end
+  if self.timeoutTimer then
+    self.timeoutTimer:stop()
+    self.timeoutTimer = nil
+  end
 end
 
 --- Restart the auto-close timer for `menu`.
 ---@param menu table
 function Runtime:resetTimeout(menu)
-    self:clearTimeout()
+  self:clearTimeout()
 
-    if self.config.menu.timeout <= 0 then return end
+  if self.config.menu.timeout <= 0 then return end
 
-    self.timeoutTimer = hs.timer.doAfter(self.config.menu.timeout, function()
-        if self.activeMenu == menu then self:endMenuSession() end
-    end)
+  self.timeoutTimer = hs.timer.doAfter(self.config.menu.timeout, function()
+    if self.activeMenu == menu then self:endMenuSession() end
+  end)
 end
 
 --- Bind a bare (unmodified) key in a modal.
@@ -209,12 +209,12 @@ function Runtime:bindBare(modal, key, callback) modal:bind({}, key, callback) en
 ---@param key string
 ---@param callback function
 function Runtime:bindFlexible(modal, key, callback)
-    self:bindBare(modal, key, callback)
+  self:bindBare(modal, key, callback)
 
-    -- Preserve the global toggle when a menu key matches its unmodified key.
-    if hotkeyIdentity(key) ~= hotkeyIdentity(self.config.hotkey.key) then
-        modal:bind(self.config.hotkey.modifiers, key, callback)
-    end
+  -- Preserve the global toggle when a menu key matches its unmodified key.
+  if hotkeyIdentity(key) ~= hotkeyIdentity(self.config.hotkey.key) then
+    modal:bind(self.config.hotkey.modifiers, key, callback)
+  end
 end
 
 --- Bind a key that repeats while held.
@@ -222,437 +222,442 @@ end
 ---@param key string
 ---@param callback function
 function Runtime:bindRepeating(modal, key, callback)
-    -- Hammerspoon's message-less overload expects pressedfn in position three.
-    modal:bind({}, key, callback, nil, callback)
+  -- Hammerspoon's message-less overload expects pressedfn in position three.
+  modal:bind({}, key, callback, nil, callback)
 end
 
 --- Determine which rows should show a checkmark.
 ---@param menu table
 ---@return table
 function Runtime:checkedRows(menu)
-    local checked = {}
-    local caffeinateMode
+  local checked = {}
+  local caffeinateMode
 
-    for index, row in ipairs(menu.rows) do
-        if not row.divider and row.checkable then
-            if row.action.type == "setCaffeinateMode" then
-                caffeinateMode = caffeinateMode or
-                                     self.actions.currentCaffeinateMode()
+  for index, row in ipairs(menu.rows) do
+    if not row.divider and row.checkable then
+      if row.action.type == "setCaffeinateMode" then
+        caffeinateMode = caffeinateMode or
+            self.actions.currentCaffeinateMode()
 
-                checked[index] = row.action.mode == caffeinateMode
-            elseif row.action.type == "setTheme" then
-                checked[index] = self.theme:isSelected(row.action.theme)
-            elseif row.action.type == "setMatchingTheme" then
-                checked[index] = self.theme:isMatchingTheme(row.action.theme)
-            elseif row.action.type == "configure" then
-                checked[index] = self.preferences:isSelected(row.action)
-            end
-        end
+        checked[index] = row.action.mode == caffeinateMode
+      elseif row.action.type == "setTheme" then
+        checked[index] = self.theme:isSelected(row.action.theme)
+      elseif row.action.type == "setMatchingTheme" then
+        checked[index] = self.theme:isMatchingTheme(row.action.theme)
+      elseif row.action.type == "configure" then
+        checked[index] = self.preferences:isSelected(row.action)
+      end
     end
+  end
 
-    return checked
+  return checked
 end
 
 --- Transition from `currentMenu` to the menu identified by `targetId`.
 ---@param currentMenu table
 ---@param targetId string
 function Runtime:switchMenu(currentMenu, targetId)
-    local target = self.menus[targetId]
+  local target = self.menus[targetId]
 
-    assert(target, "Gearbox: action references missing menu: " .. targetId)
+  assert(target, "Gearbox: action references missing menu: " .. targetId)
 
-    currentMenu.modal:exit()
-    target.modal:enter()
+  currentMenu.modal:exit()
+  target.modal:enter()
 end
 
 --- Start session input observation and enter the requested menu (default: root).
 ---@param targetId? string
 ---@return boolean
 function Runtime:beginMenuSession(targetId)
-    if hs.eventtap.isSecureInputEnabled() then
-        hs.alert.show("Gearbox cannot capture keys while Secure Input is active")
-        return false
-    end
+  if hs.eventtap.isSecureInputEnabled() then
+    hs.alert.show("Gearbox cannot capture keys while Secure Input is active")
+    return false
+  end
 
-    self.sessionInputTap:start()
+  self.sessionInputTap:start()
 
-    if not self.sessionInputTap:isEnabled() then
-        self.sessionInputTap:stop()
-        hs.alert.show("Gearbox could not start session input observation")
-        return false
-    end
+  if not self.sessionInputTap:isEnabled() then
+    self.sessionInputTap:stop()
+    hs.alert.show("Gearbox could not start session input observation")
+    return false
+  end
 
-    self.menus[targetId or self.rootId].modal:enter()
-    return true
+  self.menus[targetId or self.rootId].modal:enter()
+  return true
 end
 
 --- End the active Gearbox menu session and stop input observation.
 function Runtime:endMenuSession()
-    if self.sessionInputTap then self.sessionInputTap:stop() end
+  if self.sessionInputTap then self.sessionInputTap:stop() end
 
-    if self.activeMenu then self.activeMenu.modal:exit() end
+  if self.activeMenu then self.activeMenu.modal:exit() end
 end
 
 --- Dispatch one session input event without consuming modifier changes.
 ---@param event any
 ---@return boolean|nil
 function Runtime:handleSessionInput(event)
-    -- Hammerspoon reports modifier and status-key transitions as `flagsChanged`.
-    if event:getType() == hs.eventtap.event.types.flagsChanged then
-        if event:getKeyCode() == hs.keycodes.map.capslock then
-            local rootMenu = self.menus[self.rootId]
+  -- Hammerspoon reports modifier and status-key transitions as `flagsChanged`.
+  if event:getType() == hs.eventtap.event.types.flagsChanged then
+    if event:getKeyCode() == hs.keycodes.map.capslock then
+      local rootMenu = self.menus[self.rootId]
 
-            if self.activeMenu == rootMenu then
-                self.hud:refresh(rootMenu, self:checkedRows(rootMenu))
-            end
-        end
-
-        -- Observed modifier events must continue to macOS unchanged.
-        return nil
+      if self.activeMenu == rootMenu then
+        self.hud:refresh(rootMenu, self:checkedRows(rootMenu))
+      end
     end
 
-    return self:handleCharacterKeyDown(event)
+    -- Observed modifier events must continue to macOS unchanged.
+    return nil
+  end
+
+  return self:handleCharacterKeyDown(event)
 end
 
 --- Handle one key-down event while a Gearbox menu session is active.
 ---@param event any
 ---@return boolean|nil
 function Runtime:handleCharacterKeyDown(event)
-    local menu = self.activeMenu
+  local menu = self.activeMenu
 
-    -- Until Caps Lock is released, its tap owns letters. This prevents the f
-    -- opening Finder Folders from also selecting the menu's Home row.
-    if not menu or (self.capsLockTap and self.capsLockTap:isEnabled()) then
-        return nil
-    end
+  -- Until Caps Lock is released, its tap owns letters. This prevents the f
+  -- opening Finder Folders from also selecting the menu's Home row.
+  if not menu or (self.capsLockTap and self.capsLockTap:isEnabled()) then
+    return nil
+  end
 
-    local flags = event:getFlags()
+  local flags = event:getFlags()
 
-    if not hasNoCharacterCommandModifiers(flags) and
-        not matchesCharacterCommandModifiers(
-            flags, self.requiredHotkeyModifiers) then return nil end
+  if not hasNoCharacterCommandModifiers(flags) and
+      not matchesCharacterCommandModifiers(
+        flags, self.requiredHotkeyModifiers) then
+    return nil
+  end
 
-    if event:getKeyCode() == self.globalHotkeyKeyCode and
-        includesRequiredHotkeyModifiers(flags,
-                                        self.requiredHotkeyModifiers) then
-        return nil
-    end
+  if event:getKeyCode() == self.globalHotkeyKeyCode and
+      includesRequiredHotkeyModifiers(flags,
+        self.requiredHotkeyModifiers) then
+    return nil
+  end
 
-    local character = activationCharacterForEvent(event)
+  local character = activationCharacterForEvent(event)
 
-    if not character then return nil end
+  if not character then return nil end
 
-    -- Hyper letters belong to global shortcuts, including those owned by other apps.
-    if flags.ctrl and flags.alt and flags.cmd and flags.shift and
-        next(self.config.quickLaunch) and character:match("^[A-Za-z]$") then
-        return nil
-    end
+  -- Hyper letters belong to global shortcuts, including those owned by other apps.
+  if flags.ctrl and flags.alt and flags.cmd and flags.shift and
+      next(self.config.quickLaunch) and character:match("^[A-Za-z]$") then
+    return nil
+  end
 
-    local row = menu.activationRowsByCharacter[character]
+  local row = menu.activationRowsByCharacter[character]
 
-    if not row then return nil end
+  if not row then return nil end
 
-    local autorepeatProperty =
-        hs.eventtap.event.properties.keyboardEventAutorepeat
+  local autorepeatProperty =
+      hs.eventtap.event.properties.keyboardEventAutorepeat
 
-    if event:getProperty(autorepeatProperty) ~= 0 then return true end
+  if event:getProperty(autorepeatProperty) ~= 0 then return true end
 
-    self:runAction(menu, row)
-    return true
+  self:runAction(menu, row)
+  return true
 end
 
 --- Execute a row's action and update the menu state.
 ---@param menu table
 ---@param row table
 function Runtime:runAction(menu, row)
-    local previousTimeout = self.config.menu.timeout
-    local result = self.actions.execute(row.action, {
-        openMenu = function(targetId) self:switchMenu(menu, targetId) end,
-        exit = function() self:endMenuSession() end,
-        setTheme = function(selection) self.theme:select(selection) end,
-        setMatchingTheme = function(id) self.theme:setMatchingTheme(id) end,
-        configure = function(action) self.preferences:execute(action) end,
-        openScratchpad = function()
-            assert(self.scratchpad, "Gearbox: scratchpad is disabled")
+  local previousTimeout = self.config.menu.timeout
+  local result = self.actions.execute(row.action, {
+    openMenu = function(targetId) self:switchMenu(menu, targetId) end,
+    exit = function() self:endMenuSession() end,
+    setTheme = function(selection) self.theme:select(selection) end,
+    setMatchingTheme = function(id) self.theme:setMatchingTheme(id) end,
+    configure = function(action) self.preferences:execute(action) end,
+    openScratchpad = function()
+      assert(self.scratchpad, "Gearbox: scratchpad is disabled")
 
-            if self.scratchpad:show() then self:endMenuSession() end
-        end
-    })
-
-    if result.handled then return end
-
-    if result.refresh then
-        self.preferences:refreshMenu(menu)
-        self.hud:refresh(menu, self:checkedRows(menu))
+      if self.scratchpad:show() then self:endMenuSession() end
     end
+  })
 
-    if self.config.menu.timeout ~= previousTimeout or
-        (result.refresh and self.config.navigation.resetTimeoutOnInput) then
-        self:resetTimeout(menu)
-    end
+  if result.handled then return end
 
-    if result.close then
-        self:endMenuSession()
-    end
+  if result.refresh then
+    self.preferences:refreshMenu(menu)
+    self.hud:refresh(menu, self:checkedRows(menu))
+  end
+
+  if self.config.menu.timeout ~= previousTimeout or
+      (result.refresh and self.config.navigation.resetTimeoutOnInput) then
+    self:resetTimeout(menu)
+  end
+
+  if result.close then
+    self:endMenuSession()
+  end
 end
 
 --- Move the selection up or down by `direction` rows.
 ---@param menu table
 ---@param direction integer
 function Runtime:moveSelection(menu, direction)
-    local count = #menu.navigableRows
+  local count = #menu.navigableRows
 
-    if count == 0 then return end
+  if count == 0 then return end
 
-    if not menu.selectedPosition then
-        menu.selectedPosition = direction > 0 and 1 or count
+  if not menu.selectedPosition then
+    menu.selectedPosition = direction > 0 and 1 or count
+  else
+    local nextPosition = menu.selectedPosition + direction
+
+    if self.config.navigation.wrap then
+      menu.selectedPosition = ((nextPosition - 1) % count) + 1
     else
-        local nextPosition = menu.selectedPosition + direction
-
-        if self.config.navigation.wrap then
-            menu.selectedPosition = ((nextPosition - 1) % count) + 1
-        else
-            menu.selectedPosition = math.max(1, math.min(count, nextPosition))
-        end
+      menu.selectedPosition = math.max(1, math.min(count, nextPosition))
     end
+  end
 
-    menu.selectedIndex = menu.navigableRows[menu.selectedPosition]
-    self.hud:select(menu)
+  menu.selectedIndex = menu.navigableRows[menu.selectedPosition]
+  self.hud:select(menu)
 
-    if self.config.navigation.resetTimeoutOnInput then
-        self:resetTimeout(menu)
-    end
+  if self.config.navigation.resetTimeoutOnInput then
+    self:resetTimeout(menu)
+  end
 end
 
 --- Activate the currently selected row, if any.
 ---@param menu table
 function Runtime:activateSelection(menu)
-    if not menu.selectedIndex then return end
+  if not menu.selectedIndex then return end
 
-    local row = menu.rows[menu.selectedIndex]
+  local row = menu.rows[menu.selectedIndex]
 
-    if row and row.action then self:runAction(menu, row) end
+  if row and row.action then self:runAction(menu, row) end
 end
 
 --- Register hotkeys and lifecycle callbacks for `menu`.
 ---@param menu table
 function Runtime:registerMenu(menu)
-    menu.navigableRows = {}
+  menu.navigableRows = {}
 
-    for index, row in ipairs(menu.rows) do
-        if not row.divider then
-            local callback = function() self:runAction(menu, row) end
+  for index, row in ipairs(menu.rows) do
+    if not row.divider then
+      local callback = function() self:runAction(menu, row) end
 
-            -- See menus/README.md for character versus modal key ownership.
-            if row.kind == "footer" then
-                self:bindBare(menu.modal, row.key, callback)
-            elseif not isCharacterActivationKey(row.key) then
-                self:bindFlexible(menu.modal, row.key, callback)
-            end
-
-            if row.kind ~= "footer" or self.config.navigation.includeFooter then
-                table.insert(menu.navigableRows, index)
-            end
+      -- Character rows are dispatched by the eventtap, not the modal.
+      -- Rows without a key are arrow/return only.
+      if row.key ~= nil then
+        if row.kind == "footer" then
+          self:bindBare(menu.modal, row.key, callback)
+        elseif not isCharacterActivationKey(row.key) then
+          self:bindFlexible(menu.modal, row.key, callback)
         end
+      end
+
+      if row.kind ~= "footer" or self.config.navigation.includeFooter then
+        table.insert(menu.navigableRows, index)
+      end
     end
+  end
 
-    if self.config.navigation.enabled then
-        self:bindRepeating(menu.modal, "up",
-                           function() self:moveSelection(menu, -1) end)
+  if self.config.navigation.enabled then
+    self:bindRepeating(menu.modal, "up",
+      function() self:moveSelection(menu, -1) end)
 
-        self:bindRepeating(menu.modal, "down",
-                           function() self:moveSelection(menu, 1) end)
+    self:bindRepeating(menu.modal, "down",
+      function() self:moveSelection(menu, 1) end)
 
-        self:bindBare(menu.modal, self.config.navigation.activateKey,
-                      function() self:activateSelection(menu) end)
-    end
+    self:bindBare(menu.modal, self.config.navigation.activateKey,
+      function() self:activateSelection(menu) end)
+  end
 
-    menu.modal.entered = function()
-        self.activeMenu = menu
-        menu.selectedIndex = nil
-        menu.selectedPosition = nil
+  menu.modal.entered = function()
+    self.activeMenu = menu
+    menu.selectedIndex = nil
+    menu.selectedPosition = nil
 
-        self.theme:refreshAppearance()
-        self.preferences:refreshMenu(menu)
-        self.hud:show(menu, self:checkedRows(menu))
-        self:resetTimeout(menu)
-    end
+    self.theme:refreshAppearance()
+    self.preferences:refreshMenu(menu)
+    self.hud:show(menu, self:checkedRows(menu))
+    self:resetTimeout(menu)
+  end
 
-    menu.modal.exited = function()
-        if self.activeMenu == menu then self.activeMenu = nil end
+  menu.modal.exited = function()
+    if self.activeMenu == menu then self.activeMenu = nil end
 
-        menu.selectedIndex = nil
-        menu.selectedPosition = nil
+    menu.selectedIndex = nil
+    menu.selectedPosition = nil
 
-        self.hud:close()
-        self:clearTimeout()
-    end
+    self.hud:close()
+    self:clearTimeout()
+  end
 end
 
 --- Activate an app name or an already-validated openMenu target.
 -- Both four-modifier Hyper and the Caps Lock handler enter here.
 -- Menu targets retain the session; app launches close it before switching focus.
 function Runtime:dispatchQuickLaunch(target)
-    if type(target) == "string" then
-        if self.activeMenu then self:endMenuSession() end
-        self.actions.execute({type = "launchApp", name = target})
-    elseif not self.activeMenu then
-        self:beginMenuSession(target.menu)
-    elseif self.activeMenu.id ~= target.menu then
-        self:switchMenu(self.activeMenu, target.menu)
-    end
+  if type(target) == "string" then
+    if self.activeMenu then self:endMenuSession() end
+    self.actions.execute({ type = "launchApp", name = target })
+  elseif not self.activeMenu then
+    self:beginMenuSession(target.menu)
+  elseif self.activeMenu.id ~= target.menu then
+    self:switchMenu(self.activeMenu, target.menu)
+  end
 end
 
 --- F18 supplies a physical down/up pair after macOS remaps Caps Lock.
 --- Only observe other keys while it is held. Modifier changes also cancel a tap.
 function Runtime:bindCapsLock()
-    local events = hs.eventtap.event
-    -- F18 is a held key, not a modifier. Only an unused down/up pair toggles
-    -- capitalization; any intervening key or modifier makes this a chord.
-    local used = false
-    local tap = hs.eventtap.new({events.types.keyDown, events.types.flagsChanged}, function(event)
-        if event:getType() == events.types.flagsChanged then
-            used = true
-            return nil
-        end
-        local code = event:getKeyCode()
-        if code == hs.keycodes.map.f18 then return nil end
-        used = true
-        -- Resolve by physical letter even when capitalization is already on.
-        -- Once the chord is released, menu rows resume their usual case rules.
-        local flags = event:getFlags()
-        if flags.cmd or flags.ctrl or flags.alt or flags.shift then return nil end
-        local target = self.config.quickLaunch[hs.keycodes.map[code]]
-        if not target then return nil end
-        if event:getProperty(events.properties.keyboardEventAutorepeat) == 0 then
-            self:dispatchQuickLaunch(target)
-        end
-        return true
-    end)
-    assert(tap, "Gearbox: could not create Caps Lock input tap")
-    self.capsLockTap = tap
-    local binding = hs.hotkey.bind({}, "f18", function()
-        used = false
-        if hs.eventtap.isSecureInputEnabled() then return end
-        tap:start()
-        if not tap:isEnabled() then hs.alert.show("Gearbox could not capture Caps Lock") end
-    end, function()
-        local toggle = tap:isEnabled() and not used and not hs.eventtap.isSecureInputEnabled()
-        tap:stop()
-        if toggle then
-            hs.hid.capslock.toggle()
-            if self.activeMenu == self.menus[self.rootId] then
-                self.hud:refresh(self.activeMenu, self:checkedRows(self.activeMenu))
-            end
-        end
-    end)
-    assert(binding, "Gearbox: failed to register F18 for Caps Lock")
-    table.insert(self.quickLaunchHotkeys, binding)
+  local events = hs.eventtap.event
+  -- F18 is a held key, not a modifier. Only an unused down/up pair toggles
+  -- capitalization; any intervening key or modifier makes this a chord.
+  local used = false
+  local tap = hs.eventtap.new({ events.types.keyDown, events.types.flagsChanged }, function(event)
+    if event:getType() == events.types.flagsChanged then
+      used = true
+      return nil
+    end
+    local code = event:getKeyCode()
+    if code == hs.keycodes.map.f18 then return nil end
+    used = true
+    -- Resolve by physical letter even when capitalization is already on.
+    -- Once the chord is released, menu rows resume their usual case rules.
+    local flags = event:getFlags()
+    if flags.cmd or flags.ctrl or flags.alt or flags.shift then return nil end
+    local target = self.config.quickLaunch[hs.keycodes.map[code]]
+    if not target then return nil end
+    if event:getProperty(events.properties.keyboardEventAutorepeat) == 0 then
+      self:dispatchQuickLaunch(target)
+    end
+    return true
+  end)
+  assert(tap, "Gearbox: could not create Caps Lock input tap")
+  self.capsLockTap = tap
+  local binding = hs.hotkey.bind({}, "f18", function()
+    used = false
+    if hs.eventtap.isSecureInputEnabled() then return end
+    tap:start()
+    if not tap:isEnabled() then hs.alert.show("Gearbox could not capture Caps Lock") end
+  end, function()
+    local toggle = tap:isEnabled() and not used and not hs.eventtap.isSecureInputEnabled()
+    tap:stop()
+    if toggle then
+      hs.hid.capslock.toggle()
+      if self.activeMenu == self.menus[self.rootId] then
+        self.hud:refresh(self.activeMenu, self:checkedRows(self.activeMenu))
+      end
+    end
+  end)
+  assert(binding, "Gearbox: failed to register F18 for Caps Lock")
+  table.insert(self.quickLaunchHotkeys, binding)
 end
 
 --- Delete the global hotkey and all modal bindings.
 function Runtime:deleteBindings()
-    if self.capsLockTap then self.capsLockTap:stop() end
-    if self.sessionInputTap then
-        self.sessionInputTap:stop()
-        self.sessionInputTap = nil
-    end
+  if self.capsLockTap then self.capsLockTap:stop() end
+  if self.sessionInputTap then
+    self.sessionInputTap:stop()
+    self.sessionInputTap = nil
+  end
 
-    for _, binding in ipairs(self.quickLaunchHotkeys) do binding:delete() end
-    self.quickLaunchHotkeys = {}
+  for _, binding in ipairs(self.quickLaunchHotkeys) do binding:delete() end
+  self.quickLaunchHotkeys = {}
 
-    if self.globalHotkey then
-        self.globalHotkey:delete()
-        self.globalHotkey = nil
-    end
+  if self.globalHotkey then
+    self.globalHotkey:delete()
+    self.globalHotkey = nil
+  end
 
-    for _, menu in pairs(self.menus) do menu.modal:delete() end
+  for _, menu in pairs(self.menus) do menu.modal:delete() end
 end
 
 --- Start the runtime and register all bindings.
 ---@return Runtime
 function Runtime:start()
-    if self.started then return self end
+  if self.started then return self end
 
-    local started, startError = xpcall(function()
-        self.requiredHotkeyModifiers =
-            resolveRequiredHotkeyModifiers(self.config.hotkey.modifiers)
-        self.globalHotkeyKeyCode =
-            assert(resolveHotkeyKeyCode(self.config.hotkey.key),
-                   "Gearbox: cannot resolve the global hotkey keycode")
+  local started, startError = xpcall(function()
+    self.requiredHotkeyModifiers =
+        resolveRequiredHotkeyModifiers(self.config.hotkey.modifiers)
+    self.globalHotkeyKeyCode =
+        assert(resolveHotkeyKeyCode(self.config.hotkey.key),
+          "Gearbox: cannot resolve the global hotkey keycode")
 
-        self.sessionInputTap = hs.eventtap.new({
-            hs.eventtap.event.types.keyDown,
-            hs.eventtap.event.types.flagsChanged
-        }, function(event)
-            return self:handleSessionInput(event)
-        end)
+    self.sessionInputTap = hs.eventtap.new({
+      hs.eventtap.event.types.keyDown,
+      hs.eventtap.event.types.flagsChanged
+    }, function(event)
+      return self:handleSessionInput(event)
+    end)
 
-        if not self.sessionInputTap then
-            error("Gearbox: failed to create the session input tap", 0)
-        end
-
-        for _, menu in pairs(self.menus) do self:registerMenu(menu) end
-
-        self.globalHotkey = hs.hotkey.bind(self.config.hotkey.modifiers,
-                                           self.config.hotkey.key, function()
-            if self.activeMenu then
-                self:endMenuSession()
-            elseif self.scratchpad and self.scratchpad:isVisible() then
-                self.scratchpad:hide()
-            else
-                self:beginMenuSession()
-            end
-        end)
-
-        if not self.globalHotkey then
-            error("Gearbox: failed to register the global hotkey", 0)
-        end
-
-        local hyper = {"ctrl", "alt", "cmd", "shift"}
-        local toggle = self.requiredHotkeyModifiers
-        for _, key in ipairs(self.menus[self.rootId].quickLaunchKeys) do
-            if toggle.ctrl and toggle.alt and toggle.cmd and toggle.shift and
-                resolveHotkeyKeyCode(key) == self.globalHotkeyKeyCode then
-                error("Gearbox: Hyper+" .. key .. " is also the menu hotkey", 0)
-            end
-            local target = self.config.quickLaunch[key]
-            local binding = hs.hotkey.bind(hyper, key, function()
-                self:dispatchQuickLaunch(target)
-            end)
-            assert(binding, "Gearbox: failed to register Hyper+" .. key)
-            table.insert(self.quickLaunchHotkeys, binding)
-        end
-
-        if self.config.capsLockViaF18 then self:bindCapsLock() end
-        self.theme:activate()
-    end, debug.traceback)
-
-    if not started then
-        if self.scratchpad then self.scratchpad:delete() end
-
-        self:deleteBindings()
-        error(startError, 0)
+    if not self.sessionInputTap then
+      error("Gearbox: failed to create the session input tap", 0)
     end
 
-    self.started = true
-    return self
+    for _, menu in pairs(self.menus) do self:registerMenu(menu) end
+
+    self.globalHotkey = hs.hotkey.bind(self.config.hotkey.modifiers,
+      self.config.hotkey.key, function()
+        if self.activeMenu then
+          self:endMenuSession()
+        elseif self.scratchpad and self.scratchpad:isVisible() then
+          self.scratchpad:hide()
+        else
+          self:beginMenuSession()
+        end
+      end)
+
+    if not self.globalHotkey then
+      error("Gearbox: failed to register the global hotkey", 0)
+    end
+
+    local hyper = { "ctrl", "alt", "cmd", "shift" }
+    local toggle = self.requiredHotkeyModifiers
+    for _, key in ipairs(self.menus[self.rootId].quickLaunchKeys) do
+      if toggle.ctrl and toggle.alt and toggle.cmd and toggle.shift and
+          resolveHotkeyKeyCode(key) == self.globalHotkeyKeyCode then
+        error("Gearbox: Hyper+" .. key .. " is also the menu hotkey", 0)
+      end
+      local target = self.config.quickLaunch[key]
+      local binding = hs.hotkey.bind(hyper, key, function()
+        self:dispatchQuickLaunch(target)
+      end)
+      assert(binding, "Gearbox: failed to register Hyper+" .. key)
+      table.insert(self.quickLaunchHotkeys, binding)
+    end
+
+    if self.config.capsLockViaF18 then self:bindCapsLock() end
+    self.theme:activate()
+  end, debug.traceback)
+
+  if not started then
+    if self.scratchpad then self.scratchpad:delete() end
+
+    self:deleteBindings()
+    error(startError, 0)
+  end
+
+  self.started = true
+  return self
 end
 
 --- Stop the runtime, close the HUD, and clear all bindings.
 function Runtime:stop()
-    if not self.started then return end
+  if not self.started then return end
 
-    self:endMenuSession()
+  self:endMenuSession()
 
-    self:clearTimeout()
-    self.hud:close()
+  self:clearTimeout()
+  self.hud:close()
 
-    if self.scratchpad then self.scratchpad:delete() end
+  if self.scratchpad then self.scratchpad:delete() end
 
-    self:deleteBindings()
+  self:deleteBindings()
 
-    self.started = false
+  self.started = false
 end
 
 return Runtime

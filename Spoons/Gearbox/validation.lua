@@ -3,59 +3,59 @@
 -- Domain-specific menu and theme graph checks remain in their owning modules.
 local Validation = {}
 
-local positions = {top = true, center = true, bottom = true}
+local positions = { top = true, center = true, bottom = true }
 
-local screens = {main = true, mouse = true}
+local screens = { main = true, mouse = true }
 
-local accentSources = {system = true, theme = true}
+local accentSources = { system = true, theme = true }
 
-local fontWeights = {regular = true, bold = true}
+local fontWeights = { regular = true, bold = true }
 
 local hotkeyModifiers = {
-    alt = true,
-    option = true,
-    cmd = true,
-    command = true,
-    ctrl = true,
-    control = true,
-    shift = true
+  alt = true,
+  option = true,
+  cmd = true,
+  command = true,
+  ctrl = true,
+  control = true,
+  shift = true
 }
 
 local printableKeypadKeys = {
-    pad0 = true,
-    pad1 = true,
-    pad2 = true,
-    pad3 = true,
-    pad4 = true,
-    pad5 = true,
-    pad6 = true,
-    pad7 = true,
-    pad8 = true,
-    pad9 = true,
-    ["pad."] = true,
-    ["pad*"] = true,
-    ["pad+"] = true,
-    ["pad/"] = true,
-    ["pad-"] = true,
-    ["pad="] = true
+  pad0 = true,
+  pad1 = true,
+  pad2 = true,
+  pad3 = true,
+  pad4 = true,
+  pad5 = true,
+  pad6 = true,
+  pad7 = true,
+  pad8 = true,
+  pad9 = true,
+  ["pad."] = true,
+  ["pad*"] = true,
+  ["pad+"] = true,
+  ["pad/"] = true,
+  ["pad-"] = true,
+  ["pad="] = true
 }
 
 --- Classify a color table as "grayscale", "rgb", "mixed", or nil.
 ---@param value any
 ---@return "grayscale"|"rgb"|"mixed"|nil
 local function colorModel(value)
-    if type(value) ~= "table" then return nil end
+  if type(value) ~= "table" then return nil end
 
-    local hasWhite = value.white ~= nil
-    local hasRGB = value.red ~= nil or value.green ~= nil or value.blue ~= nil
+  local hasWhite = value.white ~= nil
+  local hasRGB = value.red ~= nil or value.green ~= nil or value.blue ~= nil
 
-    if hasWhite and hasRGB then return "mixed" end
+  if hasWhite and hasRGB then return "mixed" end
 
-    if hasWhite then return "grayscale" end
+  if hasWhite then return "grayscale" end
 
-    if hasRGB then return "rgb" end
+  if hasRGB then return "rgb" end
 
-    return nil
+  return nil
 end
 
 --- Assert that `value` has the expected Lua type.
@@ -63,8 +63,8 @@ end
 ---@param expectedType string
 ---@param name string
 local function assertType(value, expectedType, name)
-    assert(type(value) == expectedType,
-           ("Gearbox: %s must be a %s"):format(name, expectedType))
+  assert(type(value) == expectedType,
+    ("Gearbox: %s must be a %s"):format(name, expectedType))
 end
 
 --- Raise a Gearbox-prefixed validation error.
@@ -76,13 +76,13 @@ local function fail(message) error("Gearbox: " .. message, 3) end
 ---@param componentName string
 ---@param useConfigMessages boolean
 local function validateColorComponent(value, componentName, useConfigMessages)
-    if useConfigMessages then
-        assertType(value, "number", componentName)
-        assert(value >= 0 and value <= 1,
-               componentName .. " must be 0..1")
-    elseif type(value) ~= "number" or value < 0 or value > 1 then
-        fail(componentName .. " must be a number from 0 to 1")
-    end
+  if useConfigMessages then
+    assertType(value, "number", componentName)
+    assert(value >= 0 and value <= 1,
+      componentName .. " must be 0..1")
+  elseif type(value) ~= "number" or value < 0 or value > 1 then
+    fail(componentName .. " must be a number from 0 to 1")
+  end
 end
 
 --- Validate a color table without mutating it.
@@ -90,55 +90,55 @@ end
 ---@param name string
 ---@param options? {requireAlpha?: boolean, configMessages?: boolean}
 function Validation.validateColor(color, name, options)
-    options = options or {}
+  options = options or {}
 
-    if options.configMessages then
-        assertType(color, "table", name)
-    elseif type(color) ~= "table" then
-        fail(name .. " must be a color table")
+  if options.configMessages then
+    assertType(color, "table", name)
+  elseif type(color) ~= "table" then
+    fail(name .. " must be a color table")
+  end
+
+  local model = colorModel(color)
+
+  if options.configMessages then
+    assert(model ~= "mixed",
+      "Gearbox: " .. name .. " cannot mix white with RGB components")
+
+    assert(model == "grayscale" or model == "rgb",
+      "Gearbox: " .. name ..
+      " must define white or red, green, and blue")
+  else
+    if model == "mixed" then
+      fail(name .. " cannot mix white with RGB components")
     end
 
-    local model = colorModel(color)
+    if model ~= "grayscale" and model ~= "rgb" then
+      fail(name .. " must define white or red, green, and blue")
+    end
+  end
 
-    if options.configMessages then
-        assert(model ~= "mixed",
-               "Gearbox: " .. name .. " cannot mix white with RGB components")
+  local components = model == "grayscale" and { "white" } or
+      { "red", "green", "blue" }
 
-        assert(model == "grayscale" or model == "rgb",
-               "Gearbox: " .. name ..
-                   " must define white or red, green, and blue")
-    else
-        if model == "mixed" then
-            fail(name .. " cannot mix white with RGB components")
-        end
+  for _, component in ipairs(components) do
+    local componentName = name .. "." .. component
+    validateColorComponent(color[component], componentName,
+      options.configMessages)
+  end
 
-        if model ~= "grayscale" and model ~= "rgb" then
-            fail(name .. " must define white or red, green, and blue")
-        end
+  if options.configMessages then
+    validateColorComponent(color.alpha, name .. ".alpha", true)
+  else
+    if options.requireAlpha and color.alpha == nil then
+      fail(name .. ".alpha is required")
     end
 
-    local components = model == "grayscale" and {"white"} or
-                           {"red", "green", "blue"}
-
-    for _, component in ipairs(components) do
-        local componentName = name .. "." .. component
-        validateColorComponent(color[component], componentName,
-                               options.configMessages)
+    if color.alpha ~= nil then
+      validateColorComponent(color.alpha, name .. ".alpha", false)
     end
+  end
 
-    if options.configMessages then
-        validateColorComponent(color.alpha, name .. ".alpha", true)
-    else
-        if options.requireAlpha and color.alpha == nil then
-            fail(name .. ".alpha is required")
-        end
-
-        if color.alpha ~= nil then
-            validateColorComponent(color.alpha, name .. ".alpha", false)
-        end
-    end
-
-    return model
+  return model
 end
 
 --- Return true when `key` is a printable ASCII character owned by the event tap.
@@ -148,21 +148,21 @@ end
 ---@param key any
 ---@return boolean
 function Validation.isCharacterActivationKey(key)
-    if type(key) ~= "string" or #key ~= 1 then return false end
+  if type(key) ~= "string" or #key ~= 1 then return false end
 
-    local byte = key:byte()
-    return byte >= 0x21 and byte <= 0x7e
+  local byte = key:byte()
+  return byte >= 0x21 and byte <= 0x7e
 end
 
 --- Return true when `key` can be bound by `hs.hotkey`.
 ---@param key any
 ---@return boolean
 function Validation.isHotkeyKey(key)
-    if type(key) ~= "string" then return false end
+  if type(key) ~= "string" then return false end
 
-    if key:match("^#%d+$") then return true end
+  if key:match("^#%d+$") then return true end
 
-    return hs.keycodes.map[key:lower()] ~= nil
+  return hs.keycodes.map[key:lower()] ~= nil
 end
 
 --- Return true when a physical key can ambiguously overlap character input.
@@ -172,36 +172,36 @@ end
 ---@param key any
 ---@return boolean
 local function isAmbiguousPhysicalCharacterKey(key)
-    if type(key) ~= "string" then return false end
+  if type(key) ~= "string" then return false end
 
-    return key:match("^#%d+$") ~= nil or
-               printableKeypadKeys[key:lower()] == true
+  return key:match("^#%d+$") ~= nil or
+      printableKeypadKeys[key:lower()] == true
 end
 
 --- Return true when `key` is valid for a declarative menu row.
 ---@param key any
 ---@return boolean
 function Validation.isMenuActivationKey(key)
-    return Validation.isCharacterActivationKey(key) or
-               (Validation.isHotkeyKey(key) and
-                   not isAmbiguousPhysicalCharacterKey(key))
+  return Validation.isCharacterActivationKey(key) or
+      (Validation.isHotkeyKey(key) and
+        not isAmbiguousPhysicalCharacterKey(key))
 end
 
 --- Return true when `key` can safely remain modal-owned during a menu session.
 ---@param key any
 ---@return boolean
 function Validation.isMenuNavigationKey(key)
-    return Validation.isHotkeyKey(key) and
-               not isAmbiguousPhysicalCharacterKey(key)
+  return Validation.isHotkeyKey(key) and
+      not isAmbiguousPhysicalCharacterKey(key)
 end
 
 --- Normalize a physical Hammerspoon key for comparison.
 ---@param key string
 ---@return string
 function Validation.hotkeyIdentity(key)
-    if key:match("^#%d+$") then return "#" .. tonumber(key:sub(2)) end
+  if key:match("^#%d+$") then return "#" .. tonumber(key:sub(2)) end
 
-    return key:lower()
+  return key:lower()
 end
 
 --- Normalize a menu key for duplicate and reserved-key detection.
@@ -211,182 +211,206 @@ end
 ---@param key string
 ---@return string
 function Validation.menuActivationIdentity(key)
-    if Validation.isCharacterActivationKey(key) then return key end
+  if Validation.isCharacterActivationKey(key) then return key end
 
-    return Validation.hotkeyIdentity(key)
+  return Validation.hotkeyIdentity(key)
 end
 
 --- Accepted background opacity presets, shared by config, profiles, and menu actions.
 function Validation.isMenuOpacity(value)
-    return type(value) == "number" and value >= 50 and value <= 100 and value % 5 == 0
+  return type(value) == "number" and value >= 50 and value <= 100 and value % 5 == 0
 end
 
 --- Accepted menu timeout presets for the runtime submenu.
 function Validation.isMenuTimeoutPreset(value)
-    return type(value) == "number" and ({[5]=true,[10]=true,[15]=true,[20]=true,[30]=true,[60]=true})[value] == true
+  return type(value) == "number" and ({ [5] = true, [10] = true, [15] = true, [20] = true, [30] = true, [60] = true })
+  [value] == true
 end
 
 --- Validate the authoritative Gearbox configuration.
 ---@param config table
 function Validation.validateConfig(config)
-    assertType(config.capsLockViaF18, "boolean", "capsLockViaF18")
-    assertType(config.quickLaunch, "table", "quickLaunch")
+  assertType(config.capsLockViaF18, "boolean", "capsLockViaF18")
+  assertType(config.quickLaunch, "table", "quickLaunch")
+  local isOrderedList = config.quickLaunch[1] ~= nil and
+      type(config.quickLaunch[1]) == "table" and
+      type(config.quickLaunch[1].key) == "string"
+  if isOrderedList then
+    local seenQuickKeys = {}
+    for index, entry in ipairs(config.quickLaunch) do
+      local key = entry.key
+      local target = entry.target
+      local location = ("quickLaunch[%d].%s"):format(index, tostring(key))
+      assert(type(key) == "string" and key:match("^[a-z]$"),
+        "Gearbox: quickLaunch keys must be lowercase ASCII letters")
+      assert(not seenQuickKeys[key], "Gearbox: duplicate quickLaunch key: " .. key)
+      seenQuickKeys[key] = true
+      if type(target) == "table" then
+        assert(target.type == "openMenu" and type(target.menu) == "string" and
+          target.menu:match("%S"), location .. " requires an openMenu target with a menu ID")
+      else
+        assert(type(target) == "string" and target:match("%S"),
+          location .. " requires an application name")
+      end
+    end
+  else
     for key, target in pairs(config.quickLaunch) do
-        assert(type(key) == "string" and key:match("^[a-z]$"),
-               "Gearbox: quickLaunch keys must be lowercase ASCII letters")
-        local location = "Gearbox: quickLaunch." .. key
-        if type(target) == "table" then
-            assert(target.type == "openMenu" and type(target.menu) == "string" and
-                   target.menu:match("%S"), location .. " requires an openMenu target with a menu ID")
-        else
-            assert(type(target) == "string" and target:match("%S"),
-                   location .. " requires an application name")
-        end
+      assert(type(key) == "string" and key:match("^[a-z]$"),
+        "Gearbox: quickLaunch keys must be lowercase ASCII letters")
+      local location = "Gearbox: quickLaunch." .. key
+      if type(target) == "table" then
+        assert(target.type == "openMenu" and type(target.menu) == "string" and
+          target.menu:match("%S"), location .. " requires an openMenu target with a menu ID")
+      else
+        assert(type(target) == "string" and target:match("%S"),
+          location .. " requires an application name")
+      end
     end
+  end
 
-    assertType(config.hotkey.modifiers, "table", "hotkey.modifiers")
-    assert(#config.hotkey.modifiers > 0,
-           "Gearbox: hotkey.modifiers cannot be empty")
+  assertType(config.hotkey.modifiers, "table", "hotkey.modifiers")
+  assert(#config.hotkey.modifiers > 0,
+    "Gearbox: hotkey.modifiers cannot be empty")
 
-    for index, modifier in ipairs(config.hotkey.modifiers) do
-        assertType(modifier, "string", "hotkey.modifiers[" .. index .. "]")
-        assert(hotkeyModifiers[modifier],
-               "Gearbox: invalid hotkey modifier: " .. modifier)
-    end
+  for index, modifier in ipairs(config.hotkey.modifiers) do
+    assertType(modifier, "string", "hotkey.modifiers[" .. index .. "]")
+    assert(hotkeyModifiers[modifier],
+      "Gearbox: invalid hotkey modifier: " .. modifier)
+  end
 
-    assertType(config.hotkey.key, "string", "hotkey.key")
-    assert(config.hotkey.key ~= "", "Gearbox: hotkey.key cannot be empty")
-    assert(Validation.isHotkeyKey(config.hotkey.key),
-           "Gearbox: invalid hotkey key: " .. config.hotkey.key)
+  assertType(config.hotkey.key, "string", "hotkey.key")
+  assert(config.hotkey.key ~= "", "Gearbox: hotkey.key cannot be empty")
+  assert(Validation.isHotkeyKey(config.hotkey.key),
+    "Gearbox: invalid hotkey key: " .. config.hotkey.key)
 
-    assertType(config.menu.timeout, "number", "menu.timeout")
-    assert(config.menu.timeout >= 0, "Gearbox: menu.timeout cannot be negative")
-    assert(positions[config.menu.position], "Gearbox: invalid menu.position")
-    assert(screens[config.menu.screen], "Gearbox: invalid menu.screen")
-    assertType(config.menu.width, "number", "menu.width")
-    assert(config.menu.width >= 200, "Gearbox: menu.width must be at least 200")
-    assertType(config.menu.showEmojis, "boolean", "menu.showEmojis")
-    assertType(config.menu.highlightGroups, "boolean", "menu.highlightGroups")
-    assertType(config.menu.showWindowShadow, "boolean", "menu.showWindowShadow")
-    assert(Validation.isMenuOpacity(config.menu.backgroundOpacity),
-           "Gearbox: menu.backgroundOpacity must be 50 to 100 in steps of 5")
-    assertType(config.menu.showAccentBorder, "boolean",
-               "menu.showAccentBorder")
+  assertType(config.menu.timeout, "number", "menu.timeout")
+  assert(config.menu.timeout >= 0, "Gearbox: menu.timeout cannot be negative")
+  assert(positions[config.menu.position], "Gearbox: invalid menu.position")
+  assert(screens[config.menu.screen], "Gearbox: invalid menu.screen")
+  assertType(config.menu.width, "number", "menu.width")
+  assert(config.menu.width >= 200, "Gearbox: menu.width must be at least 200")
+  assertType(config.menu.showEmojis, "boolean", "menu.showEmojis")
+  assertType(config.menu.highlightGroups, "boolean", "menu.highlightGroups")
+  assertType(config.menu.showWindowShadow, "boolean", "menu.showWindowShadow")
+  assert(Validation.isMenuOpacity(config.menu.backgroundOpacity),
+    "Gearbox: menu.backgroundOpacity must be 50 to 100 in steps of 5")
+  assertType(config.menu.showAccentBorder, "boolean",
+    "menu.showAccentBorder")
 
-    if config.font.family ~= nil then
-        assertType(config.font.family, "string", "font.family")
-    end
+  if config.font.family ~= nil then
+    assertType(config.font.family, "string", "font.family")
+  end
 
-    assertType(config.font.size, "number", "font.size")
-    assert(config.font.size > 0, "Gearbox: font.size must be positive")
-    assertType(config.font.titleSize, "number", "font.titleSize")
-    assert(config.font.titleSize > 0, "Gearbox: font.titleSize must be positive")
-    assert(fontWeights[config.font.bodyWeight],
-           "Gearbox: invalid font.bodyWeight")
-    assert(fontWeights[config.font.groupWeight],
-           "Gearbox: invalid font.groupWeight")
-    assert(fontWeights[config.font.titleWeight],
-           "Gearbox: invalid font.titleWeight")
+  assertType(config.font.size, "number", "font.size")
+  assert(config.font.size > 0, "Gearbox: font.size must be positive")
+  assertType(config.font.titleSize, "number", "font.titleSize")
+  assert(config.font.titleSize > 0, "Gearbox: font.titleSize must be positive")
+  assert(fontWeights[config.font.bodyWeight],
+    "Gearbox: invalid font.bodyWeight")
+  assert(fontWeights[config.font.groupWeight],
+    "Gearbox: invalid font.groupWeight")
+  assert(fontWeights[config.font.titleWeight],
+    "Gearbox: invalid font.titleWeight")
 
-    assertType(config.loupe.enabled, "boolean", "loupe.enabled")
-    assertType(config.loupe.selectedScale, "number", "loupe.selectedScale")
-    assert(config.loupe.selectedScale >= 1,
-           "Gearbox: loupe.selectedScale must be >= 1")
-    assertType(config.loupe.adjacentScale, "number", "loupe.adjacentScale")
-    assert(config.loupe.adjacentScale >= 1,
-           "Gearbox: loupe.adjacentScale must be >= 1")
-    assert(config.loupe.adjacentScale <= config.loupe.selectedScale,
-           "Gearbox: adjacentScale cannot exceed selectedScale")
-    assertType(config.loupe.duration, "number", "loupe.duration")
-    assert(config.loupe.duration >= 0,
-           "Gearbox: loupe.duration cannot be negative")
+  assertType(config.loupe.enabled, "boolean", "loupe.enabled")
+  assertType(config.loupe.selectedScale, "number", "loupe.selectedScale")
+  assert(config.loupe.selectedScale >= 1,
+    "Gearbox: loupe.selectedScale must be >= 1")
+  assertType(config.loupe.adjacentScale, "number", "loupe.adjacentScale")
+  assert(config.loupe.adjacentScale >= 1,
+    "Gearbox: loupe.adjacentScale must be >= 1")
+  assert(config.loupe.adjacentScale <= config.loupe.selectedScale,
+    "Gearbox: adjacentScale cannot exceed selectedScale")
+  assertType(config.loupe.duration, "number", "loupe.duration")
+  assert(config.loupe.duration >= 0,
+    "Gearbox: loupe.duration cannot be negative")
 
-    assertType(config.theme.name, "string", "theme.name")
-    assert(config.theme.name ~= "", "Gearbox: theme.name cannot be empty")
-    assertType(config.theme.persistSelection, "boolean",
-               "theme.persistSelection")
-    assertType(config.theme.system, "table", "theme.system")
-    assertType(config.theme.system.dark, "string", "theme.system.dark")
-    assert(config.theme.system.dark ~= "",
-           "Gearbox: theme.system.dark cannot be empty")
-    assertType(config.theme.system.light, "string", "theme.system.light")
-    assert(config.theme.system.light ~= "",
-           "Gearbox: theme.system.light cannot be empty")
-    assert(accentSources[config.theme.accentSource],
-           "Gearbox: theme.accentSource must be system or theme")
+  assertType(config.theme.name, "string", "theme.name")
+  assert(config.theme.name ~= "", "Gearbox: theme.name cannot be empty")
+  assertType(config.theme.persistSelection, "boolean",
+    "theme.persistSelection")
+  assertType(config.theme.system, "table", "theme.system")
+  assertType(config.theme.system.dark, "string", "theme.system.dark")
+  assert(config.theme.system.dark ~= "",
+    "Gearbox: theme.system.dark cannot be empty")
+  assertType(config.theme.system.light, "string", "theme.system.light")
+  assert(config.theme.system.light ~= "",
+    "Gearbox: theme.system.light cannot be empty")
+  assert(accentSources[config.theme.accentSource],
+    "Gearbox: theme.accentSource must be system or theme")
 
-    local fallbackModel = Validation.validateColor(
-                              config.theme.fallbackAccent,
-                              "theme.fallbackAccent",
-                              {configMessages = true})
+  local fallbackModel = Validation.validateColor(
+    config.theme.fallbackAccent,
+    "theme.fallbackAccent",
+    { configMessages = true })
 
-    assert(fallbackModel == "rgb",
-           "Gearbox: theme.fallbackAccent must use RGB components")
+  assert(fallbackModel == "rgb",
+    "Gearbox: theme.fallbackAccent must use RGB components")
 
-    Validation.validateColor(config.theme.systemAccentText,
-                             "theme.systemAccentText",
-                             {configMessages = true})
+  Validation.validateColor(config.theme.systemAccentText,
+    "theme.systemAccentText",
+    { configMessages = true })
 
-    assertType(config.theme.overrides, "table", "theme.overrides")
+  assertType(config.theme.overrides, "table", "theme.overrides")
 
-    assertType(config.navigation.enabled, "boolean", "navigation.enabled")
-    assertType(config.navigation.wrap, "boolean", "navigation.wrap")
-    assertType(config.navigation.activateKey, "string", "navigation.activateKey")
-    assertType(config.navigation.cancelKey, "string", "navigation.cancelKey")
-    assert(config.navigation.cancelKey ~= "",
-           "Gearbox: navigation.cancelKey cannot be empty")
-    assert(Validation.isMenuNavigationKey(config.navigation.cancelKey),
-           "Gearbox: invalid navigation.cancelKey: " ..
-               config.navigation.cancelKey)
+  assertType(config.navigation.enabled, "boolean", "navigation.enabled")
+  assertType(config.navigation.wrap, "boolean", "navigation.wrap")
+  assertType(config.navigation.activateKey, "string", "navigation.activateKey")
+  assertType(config.navigation.cancelKey, "string", "navigation.cancelKey")
+  assert(config.navigation.cancelKey ~= "",
+    "Gearbox: navigation.cancelKey cannot be empty")
+  assert(Validation.isMenuNavigationKey(config.navigation.cancelKey),
+    "Gearbox: invalid navigation.cancelKey: " ..
+    config.navigation.cancelKey)
 
-    if config.navigation.enabled then
-        assert(config.navigation.activateKey ~= "",
-               "Gearbox: navigation.activateKey cannot be empty")
-        assert(Validation.isMenuNavigationKey(config.navigation.activateKey),
-               "Gearbox: invalid navigation.activateKey: " ..
-                   config.navigation.activateKey)
-        assert(Validation.hotkeyIdentity(config.navigation.activateKey) ~=
-                   Validation.hotkeyIdentity(config.navigation.cancelKey),
-               "Gearbox: navigation activate and cancel keys must differ")
-        assert(Validation.hotkeyIdentity(config.navigation.activateKey) ~= "up" and
-                   Validation.hotkeyIdentity(config.navigation.activateKey) ~=
-                   "down",
-               "Gearbox: navigation.activateKey cannot be up or down")
-    end
+  if config.navigation.enabled then
+    assert(config.navigation.activateKey ~= "",
+      "Gearbox: navigation.activateKey cannot be empty")
+    assert(Validation.isMenuNavigationKey(config.navigation.activateKey),
+      "Gearbox: invalid navigation.activateKey: " ..
+      config.navigation.activateKey)
+    assert(Validation.hotkeyIdentity(config.navigation.activateKey) ~=
+      Validation.hotkeyIdentity(config.navigation.cancelKey),
+      "Gearbox: navigation activate and cancel keys must differ")
+    assert(Validation.hotkeyIdentity(config.navigation.activateKey) ~= "up" and
+      Validation.hotkeyIdentity(config.navigation.activateKey) ~=
+      "down",
+      "Gearbox: navigation.activateKey cannot be up or down")
+  end
 
-    assertType(config.navigation.includeFooter, "boolean",
-               "navigation.includeFooter")
-    assertType(config.navigation.resetTimeoutOnInput, "boolean",
-               "navigation.resetTimeoutOnInput")
+  assertType(config.navigation.includeFooter, "boolean",
+    "navigation.includeFooter")
+  assertType(config.navigation.resetTimeoutOnInput, "boolean",
+    "navigation.resetTimeoutOnInput")
 
-    assertType(config.scratchpad.enable, "boolean", "scratchpad.enable")
-    assertType(config.scratchpad.fontSize, "number", "scratchpad.fontSize")
-    assert(config.scratchpad.fontSize > 0,
-           "Gearbox: scratchpad.fontSize must be positive")
-    assertType(config.scratchpad.width, "number", "scratchpad.width")
-    assert(config.scratchpad.width >= 360,
-           "Gearbox: scratchpad.width must be at least 360")
-    assertType(config.scratchpad.height, "number", "scratchpad.height")
-    assert(config.scratchpad.height >= 240,
-           "Gearbox: scratchpad.height must be at least 240")
-    assertType(config.scratchpad.maxCharacters, "number",
-               "scratchpad.maxCharacters")
-    assert(config.scratchpad.maxCharacters >= 1 and
-               config.scratchpad.maxCharacters % 1 == 0,
-           "Gearbox: scratchpad.maxCharacters must be a positive integer")
-    assertType(config.scratchpad.persistContent, "boolean",
-               "scratchpad.persistContent")
+  assertType(config.scratchpad.enable, "boolean", "scratchpad.enable")
+  assertType(config.scratchpad.fontSize, "number", "scratchpad.fontSize")
+  assert(config.scratchpad.fontSize > 0,
+    "Gearbox: scratchpad.fontSize must be positive")
+  assertType(config.scratchpad.width, "number", "scratchpad.width")
+  assert(config.scratchpad.width >= 360,
+    "Gearbox: scratchpad.width must be at least 360")
+  assertType(config.scratchpad.height, "number", "scratchpad.height")
+  assert(config.scratchpad.height >= 240,
+    "Gearbox: scratchpad.height must be at least 240")
+  assertType(config.scratchpad.maxCharacters, "number",
+    "scratchpad.maxCharacters")
+  assert(config.scratchpad.maxCharacters >= 1 and
+    config.scratchpad.maxCharacters % 1 == 0,
+    "Gearbox: scratchpad.maxCharacters must be a positive integer")
+  assertType(config.scratchpad.persistContent, "boolean",
+    "scratchpad.persistContent")
 
-    if config.scratchpad.storagePath ~= nil then
-        assertType(config.scratchpad.storagePath, "string",
-                   "scratchpad.storagePath")
-        assert(config.scratchpad.storagePath:sub(1, 1) == "/" or
-                   config.scratchpad.storagePath:sub(1, 2) == "~/",
-               "Gearbox: scratchpad.storagePath must be absolute or begin with ~/")
-    end
+  if config.scratchpad.storagePath ~= nil then
+    assertType(config.scratchpad.storagePath, "string",
+      "scratchpad.storagePath")
+    assert(config.scratchpad.storagePath:sub(1, 1) == "/" or
+      config.scratchpad.storagePath:sub(1, 2) == "~/",
+      "Gearbox: scratchpad.storagePath must be absolute or begin with ~/")
+  end
 
-    assertType(config.scratchpad.showInstructions, "boolean",
-               "scratchpad.showInstructions")
+  assertType(config.scratchpad.showInstructions, "boolean",
+    "scratchpad.showInstructions")
 end
 
 return Validation

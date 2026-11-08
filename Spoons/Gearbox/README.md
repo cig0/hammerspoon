@@ -192,14 +192,14 @@ poll.
 
 ## Customize menus
 
-| Change | Edit |
-| --- | --- |
-| Root app rows, Scratchpad key, Exit divider | [menus/leader.lua](./menus/leader.lua) |
-| Finder destinations | [menus/finder.lua](./menus/finder.lua) |
-| Developer app rows | [menus/developer.lua](./menus/developer.lua) |
-| Global Hyper / Caps Lock shortcuts | [hyperkeys.lua](./hyperkeys.lua) |
-| App groups, order, and dividers | [menu recipes](./menus/README.md#customize-sections) |
-| Theme palettes and selection | [themes/README.md](./themes/README.md) |
+| Change                                      | Edit                                         |
+| ------------------------------------------- | -------------------------------------------- |
+| Root app rows, Scratchpad key, Exit divider | [menus/leader.lua](./menus/leader.lua)       |
+| Finder destinations                         | [menus/finder.lua](./menus/finder.lua)       |
+| Developer app rows                          | [menus/developer.lua](./menus/developer.lua) |
+| Global Hyper / Caps Lock shortcuts          | [hyperkeys.lua](./hyperkeys.lua)             |
+| App groups, order, and dividers             | [menu recipes](./menus/README.md)            |
+| Theme palettes and selection                | [themes/README.md](./themes/README.md)       |
 
 Menu files load automatically. Save the file and reload Hammerspoon.
 The menu README covers adding a submenu, moving it between parents, and
@@ -228,25 +228,25 @@ Hammerspoon releases those assertions when its configuration reloads.
 
 ## Directory map
 
-| Path | Owns |
-| --- | --- |
-| [`config.lua`](./config.lua) | Runtime defaults; Nix substitutes the exposed delivery options |
-| [`hyperkeys.lua`](./hyperkeys.lua) | Global shortcut targets, independent of menu-row keys |
-| [`menus/`](./menus/README.md) | Passive, file-backed menu graph and action descriptors |
-| [`themes/`](./themes/README.md) | Passive palettes and generated Themes-menu metadata |
-| [`loader.lua`](./loader.lua) | Discovery, validation, ordering, dividers, and footers |
-| [`actions.lua`](./actions.lua) | Application, filesystem, power, and theme operations |
-| [`runtime.lua`](./runtime.lua) | Modal lifecycle, session input, timeout, selection, and rollback |
-| [`hud.lua`](./hud.lua) | Canvas geometry, text, checks, selection, and loupe rendering |
-| [`scratchpad.lua`](./scratchpad.lua) | Editable webview, keyboard handling, persistence, and focus |
-| [`scratchpad_storage.lua`](./scratchpad_storage.lua) | Scratchpad settings/file persistence and atomic file replacement |
-| [`configuration_menu.lua`](./configuration_menu.lua) | Passive generated Gearbox Configuration menu graph and memory-aid legend |
-| [`preferences.lua`](./preferences.lua) | Profile/local preference layering and configuration actions |
-| [`theme.lua`](./theme.lua) | Theme loading, persistence, colors, and the generated Themes menu |
-| [`validation.lua`](./validation.lua) | Configuration, color, and hotkey validation |
-| [`dependencies.lua`](./dependencies.lua) | Resolves the packaged RetroUI copy, then a development checkout |
-| [`init.lua`](./init.lua) | Public `start()` and `stop()` boundary |
-| [`tests/`](../../tests/README.md) | Mocked-Hammerspoon smoke and regression coverage |
+| Path                                                 | Owns                                                                              |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------- |
+| [`config.lua`](./config.lua)                         | Runtime defaults; Nix substitutes the exposed delivery options                    |
+| [`hyperkeys.lua`](./hyperkeys.lua)                   | Hyper/Caps Lock Quick Launch — list of `{key, target}`, alphabetical by label     |
+| [`menus/`](./menus/README.md)                        | Passive, file-backed menu graph and action descriptors                            |
+| [`themes/`](./themes/README.md)                      | Passive palettes and generated Themes-menu metadata                               |
+| [`loader.lua`](./loader.lua)                         | Discovery, validation, ordering, dividers, and footers                            |
+| [`actions.lua`](./actions.lua)                       | Application, filesystem, power, and theme operations                              |
+| [`runtime.lua`](./runtime.lua)                       | Modal lifecycle, session input, timeout, selection, and rollback                  |
+| [`hud.lua`](./hud.lua)                               | Canvas geometry, text, checks, selection, and loupe rendering                     |
+| [`scratchpad.lua`](./scratchpad.lua)                 | Editable webview, keyboard handling, persistence, and focus                       |
+| [`scratchpad_storage.lua`](./scratchpad_storage.lua) | Scratchpad settings/file persistence and atomic file replacement                  |
+| [`configuration_menu.lua`](./configuration_menu.lua) | Generated Gearbox Configuration submenus (arrow-only rows for profile/scratchpad) |
+| [`preferences.lua`](./preferences.lua)               | Profile/local preference layering and configuration actions                       |
+| [`theme.lua`](./theme.lua)                           | Theme loading, persistence, colors, and generated arrow-only Themes menu          |
+| [`validation.lua`](./validation.lua)                 | Configuration, color, and hotkey validation                                       |
+| [`dependencies.lua`](./dependencies.lua)             | Resolves the packaged RetroUI copy, then a development checkout                   |
+| [`init.lua`](./init.lua)                             | Public `start()` and `stop()` boundary                                            |
+| [`tests/`](../../tests/README.md)                    | Mocked-Hammerspoon smoke and regression coverage                                  |
 
 ```text
 config.lua + preferences.json + local hs.settings + menus/*.lua + themes/*.lua
@@ -276,19 +276,19 @@ at startup. See [configuration ownership](../../assets/docs/NIX.md#configuration
 
 ### Hotkey and menu
 
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `hotkey.modifiers` | `{ "ctrl", "alt", "cmd" }` | Modifiers used to open or close Gearbox |
-| `hotkey.key` | `"space"` | Hammerspoon key name paired with the modifiers |
-| `menu.timeout` | `0` | Seconds before closing; zero leaves Gearbox stopped and shows its configuration dialog |
-| `menu.position` | `"top"` | `"top"`, `"center"`, or `"bottom"` screen placement |
-| `menu.screen` | `"main"` | `"main"` or the `"mouse"` pointer screen |
-| `menu.width` | `420` | HUD width in points |
-| `menu.showEmojis` | `true` | Includes the menu definition's emoji in its title |
-| `menu.highlightGroups` | `true` | Uses the active accent behind group shortcut key caps at every submenu depth |
-| `menu.showWindowShadow` | `true` | Draws a shadow around each menu |
-| `menu.backgroundOpacity` | `100` | Menu background opacity in percent, 50–100 in steps of 5 |
-| `menu.showAccentBorder` | `true` | Draws a two-point active-theme accent border around every menu |
+| Option                   | Default                    | Meaning                                                                                |
+| ------------------------ | -------------------------- | -------------------------------------------------------------------------------------- |
+| `hotkey.modifiers`       | `{ "ctrl", "alt", "cmd" }` | Modifiers used to open or close Gearbox                                                |
+| `hotkey.key`             | `"space"`                  | Hammerspoon key name paired with the modifiers                                         |
+| `menu.timeout`           | `0`                        | Seconds before closing; zero leaves Gearbox stopped and shows its configuration dialog |
+| `menu.position`          | `"top"`                    | `"top"`, `"center"`, or `"bottom"` screen placement                                    |
+| `menu.screen`            | `"main"`                   | `"main"` or the `"mouse"` pointer screen                                               |
+| `menu.width`             | `420`                      | HUD width in points                                                                    |
+| `menu.showEmojis`        | `true`                     | Includes the menu definition's emoji in its title                                      |
+| `menu.highlightGroups`   | `true`                     | Uses the active accent behind group shortcut key caps at every submenu depth           |
+| `menu.showWindowShadow`  | `true`                     | Draws a shadow around each menu                                                        |
+| `menu.backgroundOpacity` | `100`                      | Menu background opacity in percent, 50–100 in steps of 5                               |
+| `menu.showAccentBorder`  | `true`                     | Draws a two-point active-theme accent border around every menu                         |
 
 A timeout of `0` leaves Gearbox stopped and shows a configuration dialog.
 Set a positive number of seconds to enable it. The dialog closes after 30
@@ -311,31 +311,31 @@ Scratchpad's editor keeps its separate `scratchpad.fontSize` setting.
 
 ### Fonts and loupe
 
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `font.family` | `nil` | macOS system font; otherwise a valid installed family |
-| `font.size` | `14` | Menu-row text size |
-| `font.titleSize` | `20` | Header text size |
-| `font.bodyWeight` | `"regular"` | Ordinary-entry weight |
-| `font.groupWeight` | `"bold"` | Child-menu entry weight |
-| `font.titleWeight` | `"bold"` | Header weight |
-| `loupe.enabled` | `true` | Magnifies selected and adjacent rows |
-| `loupe.selectedScale` | `1.18` | Selected-row scale |
-| `loupe.adjacentScale` | `1.06` | Neighboring-row scale |
-| `loupe.duration` | `0` | Selection-frame animation duration; zero is immediate |
+| Option                | Default     | Meaning                                               |
+| --------------------- | ----------- | ----------------------------------------------------- |
+| `font.family`         | `nil`       | macOS system font; otherwise a valid installed family |
+| `font.size`           | `14`        | Menu-row text size                                    |
+| `font.titleSize`      | `20`        | Header text size                                      |
+| `font.bodyWeight`     | `"regular"` | Ordinary-entry weight                                 |
+| `font.groupWeight`    | `"bold"`    | Child-menu entry weight                               |
+| `font.titleWeight`    | `"bold"`    | Header weight                                         |
+| `loupe.enabled`       | `true`      | Magnifies selected and adjacent rows                  |
+| `loupe.selectedScale` | `1.18`      | Selected-row scale                                    |
+| `loupe.adjacentScale` | `1.06`      | Neighboring-row scale                                 |
+| `loupe.duration`      | `0`         | Selection-frame animation duration; zero is immediate |
 
 ### Themes
 
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `theme.name` | `"system"` | Fixed theme ID or automatic macOS light/dark selection |
-| `theme.persistSelection` | `true` | Restores the selection and matching pair after reload |
-| `theme.system.light` | `"gearbox-light"` | Default palette for light macOS appearance |
-| `theme.system.dark` | `"gearbox-dark"` | Default palette for dark macOS appearance |
-| `theme.accentSource` | `"system"` | `"system"` accent or the selected theme's accent |
-| `theme.fallbackAccent` | macOS blue | RGB accent used when AppKit lookup fails |
-| `theme.systemAccentText` | white | Text rendered over the macOS accent |
-| `theme.overrides` | `{}` | Partial semantic overrides keyed by theme ID |
+| Option                   | Default           | Meaning                                                |
+| ------------------------ | ----------------- | ------------------------------------------------------ |
+| `theme.name`             | `"system"`        | Fixed theme ID or automatic macOS light/dark selection |
+| `theme.persistSelection` | `true`            | Restores the selection and matching pair after reload  |
+| `theme.system.light`     | `"gearbox-light"` | Default palette for light macOS appearance             |
+| `theme.system.dark`      | `"gearbox-dark"`  | Default palette for dark macOS appearance              |
+| `theme.accentSource`     | `"system"`        | `"system"` accent or the selected theme's accent       |
+| `theme.fallbackAccent`   | macOS blue        | RGB accent used when AppKit lookup fails               |
+| `theme.systemAccentText` | white             | Text rendered over the macOS accent                    |
+| `theme.overrides`        | `{}`              | Partial semantic overrides keyed by theme ID           |
 
 A partial theme override replaces only the supplied values:
 
@@ -357,14 +357,14 @@ Bundled IDs and semantic palette fields are documented beside the
 
 ### Navigation
 
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `navigation.enabled` | `true` | Enables arrow selection and activation |
-| `navigation.wrap` | `true` | Wraps at the first and last selectable row |
-| `navigation.activateKey` | `"return"` | Activates the current selection |
-| `navigation.cancelKey` | `"escape"` | Returns to the parent or exits |
-| `navigation.includeFooter` | `true` | Includes Back or Exit in arrow navigation |
-| `navigation.resetTimeoutOnInput` | `true` | Restarts an enabled timeout after navigation |
+| Option                           | Default    | Meaning                                      |
+| -------------------------------- | ---------- | -------------------------------------------- |
+| `navigation.enabled`             | `true`     | Enables arrow selection and activation       |
+| `navigation.wrap`                | `true`     | Wraps at the first and last selectable row   |
+| `navigation.activateKey`         | `"return"` | Activates the current selection              |
+| `navigation.cancelKey`           | `"escape"` | Returns to the parent or exits               |
+| `navigation.includeFooter`       | `true`     | Includes Back or Exit in arrow navigation    |
+| `navigation.resetTimeoutOnInput` | `true`     | Restarts an enabled timeout after navigation |
 
 Displayed character shortcuts accept either no Command, Option, or Control
 modifier, or the exact subset used by the Gearbox hotkey. This permits an
@@ -380,16 +380,16 @@ physical input as a resulting-character row, leaving two input owners.
 
 ### Scratchpad
 
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `scratchpad.enable` | `true` | Includes the scratchpad in the root menu |
-| `scratchpad.fontSize` | `14` | Editor font size in pixels |
-| `scratchpad.width` | `720` | Width in points, clamped to the selected screen |
-| `scratchpad.height` | `480` | Height in points, clamped to the selected screen |
-| `scratchpad.maxCharacters` | `4096` | Maximum editable text capacity; existing longer content is preserved |
-| `scratchpad.persistContent` | `true` | Restores content through local `hs.settings` storage |
-| `scratchpad.storagePath` | `nil` | Local `hs.settings`; an absolute or `~/` path selects one regular text file |
-| `scratchpad.showInstructions` | `true` | Displays the non-editable keyboard reference footer |
+| Option                        | Default | Meaning                                                                     |
+| ----------------------------- | ------- | --------------------------------------------------------------------------- |
+| `scratchpad.enable`           | `true`  | Includes the scratchpad in the root menu                                    |
+| `scratchpad.fontSize`         | `14`    | Editor font size in pixels                                                  |
+| `scratchpad.width`            | `720`   | Width in points, clamped to the selected screen                             |
+| `scratchpad.height`           | `480`   | Height in points, clamped to the selected screen                            |
+| `scratchpad.maxCharacters`    | `4096`  | Maximum editable text capacity; existing longer content is preserved        |
+| `scratchpad.persistContent`   | `true`  | Restores content through local `hs.settings` storage                        |
+| `scratchpad.storagePath`      | `nil`   | Local `hs.settings`; an absolute or `~/` path selects one regular text file |
+| `scratchpad.showInstructions` | `true`  | Displays the non-editable keyboard reference footer                         |
 
 The `s` shortcut and `openScratchpad` action are declared directly in
 [`menus/leader.lua`](./menus/leader.lua), following the same structure as the
@@ -427,12 +427,12 @@ that was already saved above the configured limit.
 The generated Gearbox Configuration menus update a strict subset of the
 effective configuration:
 
-| Menu | Values |
-| --- | --- |
-| Themes | outer frame, window shadow, menu background opacity |
-| Menu Position | `top`, `bottom` |
-| Scratchpad | persistence, storage folder/filename, width, height |
-| Profile | save, reload, clear local overrides |
+| Menu          | Values                                              |
+| ------------- | --------------------------------------------------- |
+| Themes        | outer frame, window shadow, menu background opacity |
+| Menu Position | `top`, `bottom`                                     |
+| Scratchpad    | persistence, storage folder/filename, width, height |
+| Profile       | save, reload, clear local overrides                 |
 
 Every selection applies immediately and is stored as a local override under
 `hs.settings["Gearbox.preferences.local.v1"]`. The effective value flow is:

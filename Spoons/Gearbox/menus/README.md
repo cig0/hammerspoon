@@ -1,201 +1,144 @@
 # Gearbox menus
 
-`menus/` contains passive menu data. Each Lua file returns one definition;
-none creates Hammerspoon objects, registers hotkeys, or depends on file load
-order.
+`menus/` is the declarative menu graph. No runtime, no hotkeys — just data.
 
 ```text
-menus/*.lua
-  → loader.lua discovery and graph validation
-  → ordered rows, dividers, and Back/Exit footer
-  → runtime.lua character dispatch and named-key modal bindings
+menus/*.lua → loader.lua → runtime.lua → hud.lua
+  discovery + validation → ordering + dividers + footer → dispatch + modal
 ```
 
-Files beginning with `.` or `_` are ignored. Every other `.lua` file enters the
-same validated graph.
+- One file = one menu: `return { id, title, parent?, entry?, items? }`
+- Ignored: dotfiles (`.foo.lua`), underscore prefix (`_draft.lua`)
+- No load order. Every file joins the same validated graph.
 
-## Customize sections
-
-Save changes in the repository and reload Hammerspoon after deploying them.
-For Nix installations, edits under `~/.hammerspoon` are temporary; the next
-activation deploys the flake's copy again.
-
-### Add an app to Developer Tools
-
-Append this row to `items` in `developer.lua` to launch Ghostty with uppercase
-`G` while that menu is open:
+## Shape
 
 ```lua
-{
-  key = "G",
-  label = "Ghostty",
-  kind = "application",
-  action = {type = "launchApp", name = "Ghostty"},
-},
+-- menus/acme.lua — copy this
+return {
+  id = "acme",           -- [a-z0-9_-]+, unique
+  title = "ACME",        -- HUD header, required
+  emoji = "🧪",           -- optional
+  parent = "leader",     -- omit only for root (leader)
+  entry = {              -- required if parent exists
+    key = "a",           -- one printable ASCII (no space), case-sensitive
+    label = "ACME",      -- shown in parent; defaults to title
+    section = "groups",  -- default group
+    sectionOrder = 100,  -- lower first; 200 = utilities
+    order = 10,          -- within section; explicit < implicit
+  },
+  items = {              -- in file order; your dividers only
+    { key = "F", label = "FooBar", kind = "application", action = { type = "launchApp", name = "FooBar" } },
+    { divider = true },
+    { label = "Dummy action", kind = "action", action = { type = "openPath", path = os.getenv("HOME") .. "/dummy" } }, -- no key = arrow-only
+    { key = "x", label = "ACME hidden", requires = "acme", kind = "application", action = { type = "launchApp", name = "ACME" } },
+  },
+  -- showFooterDivider = false
+}
 ```
 
-Keep commas between rows. `items` stay in written order. Insert
-`{divider = true},` between rows to separate groups. Back and Exit are added
-by the loader.
+## Fields
 
-### Move Developer Tools before the other app groups
+| Field                                      | Notes                                                                                           |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `id`                                       | Stable identity. Rename = break `parent` refs.                                                  |
+| `title` / `emoji` / `legend`               | HUD header. `legend` = small help text.                                                         |
+| `parent` / `entry`                         | Where you hang. Root `leader` has neither.                                                      |
+| `entry.section` / `sectionOrder` / `order` | Sorted placement of sibling menus. Same `section` must share `sectionOrder`.                    |
+| `items`                                    | Rows. File order. `{ divider = true }` = separator.                                             |
+| `items[].key`                              | Optional. If present: single printable ASCII `0x21..0x7e`. If absent: row is arrow/return only. |
+| `items[].requires`                         | Gated by `config.<name>.enable` (e.g. `scratchpad`).                                            |
+| `items[].action`                           | Validated by `actions.lua`, run by `runtime.lua`.                                               |
+| `showFooterDivider`                        | `true` (default) = divider before Back/Exit.                                                    |
 
-Replace its `entry` in `developer.lua` with:
+## Keys
+
+- One printable ASCII `0x21..0x7e`. `w` ≠ `W` ≠ `1` ≠ `!`. Omit `key` to make a row arrow-only (no letter dispatch, no key cap).
+- Dispatch uses the produced character (Shift/Caps Lock matter) — not the physical chord.
+- Reserved: `escape` + `config.navigation.*` (`cancelKey`, `activateKey`, `up`/`down` when enabled). A reserved letter blocks both cases.
+- No raw keycodes (`#123`) or keypad names (`pad1`) — they alias character rows.
+
+Convention: lowercase for navigation, uppercase for apps. Loader doesn't enforce it, you do. Prefer removing keys over hiding them — hidden activators cause operational confusion.
+
+## Ordering
+
+1. `items` stay as written. You own dividers.
+2. Child menus auto-sort inside each `section`: `sectionOrder` → `entry.order` → `label` (case-insensitive) → `id`
+3. Loader adds `Back` (submenu) / `Exit` (root) + dividers. Don't write them.
+
+To put a new menu in utilities after macOS Utilities: `entry = { key="z", label="Dummy", section="utilities", sectionOrder=200, order=15 }`
+
+## Recipes
+
+**Add an app row to `menus/acme.lua`:**
 
 ```lua
-entry = {
-  key = "d",
-  label = "Developer Tools",
-  section = "groups",
-  sectionOrder = 100,
-  order = 10,
-},
+{ key = "B", label = "Baz", kind = "application", action = { type = "launchApp", name = "Baz" } },
 ```
 
-| Field | Ordering rule |
-| --- | --- |
-| `section` | Groups sibling menus under one divider; defaults to `"groups"` |
-| `sectionOrder` | Lower numbers appear first; defaults to `100` |
-| `order` | Position inside the section; explicit numbers precede unnumbered entries |
+**Add an arrow-only row:**
 
-Sibling menus in the same section must use the same `sectionOrder`. Ties
-sort by label, then menu ID. macOS Utilities and Gearbox Configuration use
-`section = "utilities"` and `sectionOrder = 200`. Give another child those
-same values to place it in that section.
+```lua
+{ label = "Dummy (arrow only)", kind = "action", action = { type = "sleep" } },
+```
 
-To move Developer Tools inside Applications, change its `parent` to
-`"applications"`. Its `entry.key` must be unique in that parent.
-Application rows can use uppercase keys alongside lowercase submenu keys.
-
-### Change a Finder destination
-
-In `finder.lua`, change the Projects row's `path` to
-`home .. "/Projects/hoagie"` to open the Hoagie checkout. Paths are passed to
-`hs.open`; use `home .. "/..."` for a home-relative folder.
-Both main-menu `f` and Hyper+F use these rows.
-
-## Add a submenu
-
-The existing `web-browsers.lua` illustrates a submenu with Safari. To add a
-different group, copy that file and change its `id`, title, entry key, and
-app rows. Every menu needs a unique `id` and a parent except the single root.
+**Add a submenu `menus/foobar.lua`:**
 
 ```lua
 return {
-  id = "browsers",
-  title = "Web Browsers",
-  emoji = "🌐",
+  id = "foobar",
+  title = "Foobar",
   parent = "leader",
-
-  entry = {
-    key = "w",
-    label = "Web Browsers",
-  },
-
+  entry = { key = "b", label = "Foobar" },
   items = {
-    {
-      key = "S",
-      label = "Safari",
-      kind = "application",
-      action = {
-        type = "launchApp",
-        name = "Safari",
-      },
-    },
+    { key = "D", label = "Dummy", kind = "application", action = { type = "launchApp", name = "Dummy" } },
   },
 }
 ```
 
-| Field | Destination |
-| --- | --- |
-| `id` | Stable graph identity |
-| `title`, `emoji` | HUD header |
-| `parent` | Parent menu ID; omitted only by the root |
-| `entry.key`, `entry.label` | Shortcut and label shown by the parent |
-| `entry.section`, `entry.sectionOrder`, `entry.order` | Optional parent-section and deterministic ordering metadata |
-| `items` | Rows owned by this menu; omitted when the definition only groups children |
-| `items[].requires` | Optional feature name whose `config.<name>.enable` controls the row |
-| `items[].action` | Descriptor validated by `actions.lua` and dispatched by `runtime.lua` |
-| `{ divider = true }` | Explicit divider between item groups |
-| `showFooterDivider` | Optional Boolean; `false` places Back/Exit directly after the final row |
+**Reparent under ACME:**
 
-The loader rejects duplicate IDs and keys, missing parents, parent cycles,
-invalid Hammerspoon keys, reserved navigation keys, unsupported actions, and
-missing action targets before runtime bindings are created.
+```lua
+parent = "acme" -- entry.key must be unique in acme
+```
 
-## Activation-key contract
+Save, reload Hammerspoon. On Nix edit the repo — `~/.hammerspoon` is overwritten on activation.
 
-An item or child-menu entry may use one exact printable ASCII character other
-than space. Letter case is significant: `w` and `W` are separate shortcuts, as
-are a digit and its shifted symbol such as `1` and `!`. Runtime dispatch uses
-the character produced by Shift and Caps Lock, not an inferred physical chord.
-See the main README's
-[character input provenance](../README.md#character-input-provenance) for the
-native event contract.
+## Generated menus
 
-Bundled definitions use lowercase characters for menu navigation and uppercase
-characters for application launches. Keep that convention explicit in menu
-data; the loader does not guess action intent from case.
+Not in `menus/`. Injected as supplemental definitions:
 
-Named Hammerspoon keys such as `escape`, `return`, `up`, and `down` remain
-modal-owned physical controls. The generated Back/Exit footer and configured
-navigation controls follow that path. A modal-owned letter reserves both cases
-because Caps Lock can produce either one without changing the modal chord.
-Raw keycodes and printable keypad names are not valid menu-row or navigation
-keys because they can alias a resulting-character row. Use the resulting
-character itself for those entries.
+- `theme.lua` → `themes` + `matching-themes` (under Gearbox Configuration) — currently arrow-only (no keys) by design
+- `configuration_menu.lua` via `preferences.lua` → Gearbox Configuration subtree — `configuration` (`p`/`r`/`x`) and `scratchpad-settings` are arrow-only; navigation submenus keep letter keys
 
-## Current graph
+Same shape, owned by their modules. Don't recreate them here. If you add keys to generated rows, validation will enforce them.
 
-| Definition | Parent | Parent key | Concern |
-| --- | --- | --- | --- |
-| `leader.lua` | — | — | Root applications and optional scratchpad |
-| `agenda.lua` | `leader` | `n` | Calendar, Mail, Reminders |
-| `ai.lua` | `leader` | `i` | ChatGPT and Gemini |
-| `applications.lua` | `leader` | `a` | Parent for application suites |
-| `developer.lua` | `leader` | `d` | Developer applications |
-| `finder.lua` | `leader` | `f` | Finder destinations |
-| `web-browsers.lua` | `leader` | `w` | Web browsers |
-| `macos.lua` | `leader` | `m` | Caffeinate and macOS system controls |
-| `comms.lua` | `applications` | `c` | Communications |
-| `omni.lua` | `applications` | `o` | Omni applications |
-| `photo-and-video.lua` | `applications` | `p` | Photo and video applications |
+## Actions
 
-Ordinary child definitions are sorted by their displayed label. Explicit root
-sections place `macOS Utilities` and the generated `Gearbox Configuration`
-entry together after ordinary groups. The root definition enables the divider
-before Exit. Set `showFooterDivider = false` there to remove it.
+| type                                   | Effect                                               |
+| -------------------------------------- | ---------------------------------------------------- |
+| `launchApp`                            | `hs.application.launchOrFocus(name)`                 |
+| `openPath`                             | `hs.open(path)`                                      |
+| `openMenu`                             | Navigate `{ menu="acme" }` — prefer `parent`/`entry` |
+| `openScratchpad`                       | Show scratchpad + dismiss                            |
+| `setCaffeinateMode`                    | `display` / `idle` / `normal`                        |
+| `setTheme` / `setMatchingTheme`        | Pick palette, refresh HUD                            |
+| `configure`                            | `preferences.lua` ops                                |
+| `reload` / `sleep` / `exit` / `custom` | `hs.reload`, sleep, exit, callback                   |
 
-`menus/` intentionally contains only passive, file-backed definitions. Two
-generated menu sets join that graph during startup: `theme.lua` supplies
-Themes and its Set matching themes child. `preferences.lua` supplies the
-definitions from `configuration_menu.lua`.
-Themes and Font Size are children of Gearbox Configuration.
+## Layout
 
-## Action descriptors
+- Root `leader` width is `config.menu.width` (now `620` for 3-col Hyperkey/Caps Lock; was `420` for 2-col). `hud.lua:appendQuickLaunch` lays Quick Launch as 3 columns (`ceil(#keys/3)`). `hud.lua:menuContentTop` reserves `1 + ceil(#keys/3)` lines — keep divisor in sync. Widen via `config.lua:menu.width`.
+- Quick Launch `hyperkeys.lua` is a list of tuples `{{key="a", target="ACME"}, {key="f", target={type="openMenu", menu="finder"}}}` — **key is free choice, display is alphabetical by label** (`labels[a]:lower()`), same rule as `leader` submenus (`sortedSections` by `label`). File order does not matter; `loader.lua` sorts by label. Legacy map `{a="ACME"}` still works but was key-sorted — don't use it.
 
-| Type | Owner at runtime |
-| --- | --- |
-| `launchApp` | `hs.application.launchOrFocus` |
-| `openPath` | `hs.open` |
-| `openMenu` | Runtime menu transition |
-| `setCaffeinateMode` | Mutually exclusive Hammerspoon caffeinate assertions |
-| `setTheme` | Theme selection and HUD refresh |
-| `setMatchingTheme` | Light/dark palette assignment and HUD refresh |
-| `configure` | Validated preferences, profile operations, and HUD refresh |
-| `openScratchpad` | Scratchpad display and menu dismissal |
-| `reload` | `hs.reload` |
-| `sleep` | `hs.caffeinate.systemSleep` |
-| `exit` | Active modal exit |
-| `custom` | Definition-owned callback escape hatch |
+## Validation
+
+Fails on `Gearbox.start()` before any modal builds: duplicate `id`/key (only when key present), missing `parent`, cycle, bad key, reserved nav key, unknown `kind`/`type`, missing action target. `key=nil` skips key checks — use it for arrow-only rows.
 
 ## Where to look next
 
-- [`../README.md`](../README.md) — Gearbox installation, controls, and complete
-  configuration.
-- [`../themes/README.md`](../themes/README.md) — the generated Themes menu and
-  palette contract.
-- [`../preferences.lua`](../preferences.lua) — generated Gearbox Configuration
-  menus and their profile/local preference state.
-- [`../loader.lua`](../loader.lua) — discovery, validation, sorting, dividers,
-  and footer assembly.
+- `../README.md` — install, hotkey, config
+- `../themes/README.md` — palette contract (now arrow-only, no per-palette keys)
+- `../loader.lua` — discovery / validation / sorting impl
+- `../preferences.lua` + `../configuration_menu.lua` — generated config menus (arrow-only items)
+- `../theme.lua` — generated themes menus (arrow-only items)

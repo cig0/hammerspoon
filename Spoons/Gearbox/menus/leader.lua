@@ -7,46 +7,21 @@ return {
 
   items = {
     {
-      key = "C",
-      label = "Calculator",
+      key = "f",
+      label = "ForkLift",
       kind = "application",
-      action = { type = "launchApp", name = "Calculator" }
+      action = { type = "launchApp", name = "ForkLift" }
     }, {
-    key = "L",
-    label = "ForkLift",
-    kind = "application",
-    action = { type = "launchApp", name = "ForkLift" }
-  }, {
-    key = "I",
-    label = "iA Writer",
-    kind = "application",
-    action = { type = "launchApp", name = "iA Writer" }
-  }, {
-    key = "K",
-    label = "KeePassXC",
-    kind = "application",
-    action = { type = "launchApp", name = "KeePassXC" }
-  }, {
-    key = "N",
-    label = "Notes",
-    kind = "application",
-    action = { type = "launchApp", name = "Notes" }
-  }, {
-    key = "O",
-    label = "Obsidian",
-    kind = "application",
-    action = { type = "launchApp", name = "Obsidian" }
-  }, {
-    key = "P",
-    label = "Passwords",
-    kind = "application",
-    action = { type = "launchApp", name = "Passwords" }
-  }, {
     key = "s",
     label = "Scratchpad",
     kind = "action",
     requires = "scratchpad",
     action = { type = "openScratchpad" }
+  }, {
+    key = "i",
+    label = "SimpleMind",
+    kind = "application",
+    action = { type = "launchApp", name = "SimpleMind" }
   }
   }
 }
