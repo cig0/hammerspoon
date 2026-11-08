@@ -127,7 +127,7 @@ local document = [[
       wrap="soft"
     ></textarea>
     <footer id="instructions">
-      Arrows to move · Tab to indent
+      Arrows to move &nbsp;·&nbsp; Tab to indent
     </footer>
   </main>
 
@@ -342,14 +342,15 @@ function Scratchpad:state(includeContent)
   local hotkeyLabel = formatHotkey(self.config.hotkey.modifiers,
     self.config.hotkey.key)
   local contentLength = self.content and #self.content or 0
+  local sep = " \194\160·\194\160 "
   local instructions
 
   if contentLength > 0 then
-    instructions = hotkeyLabel .. " to close · " .. contentLength .. " / " ..
+    instructions = hotkeyLabel .. " to close" .. sep .. contentLength .. " / " ..
         self.config.scratchpad.maxCharacters
   else
-    instructions = "Arrows to move · Tab to indent · " .. hotkeyLabel ..
-        " to close"
+    instructions = "Arrows to move" .. sep .. "Tab to indent" .. sep ..
+        hotkeyLabel .. " to close"
   end
 
   local state = {
