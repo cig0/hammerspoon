@@ -367,7 +367,7 @@ function HUD:appendQuickLaunch(elements, keys, labels)
   end
 
   local width = self.config.menu.width - 2 * layout.horizontalPadding
-  label("hyper-heading", "Hyperkey / Caps Lock", layout.horizontalPadding, y,
+  label("hyper-heading", "Hyperkey (Caps Lock)", layout.horizontalPadding, y,
     width, self.theme.colors.secondary)
   y = y + layout.legendTextHeight
   -- Fill top-to-bottom, left-to-right. Matches loader key order.

@@ -3,6 +3,7 @@ return {
   id = "leader",
   title = "Gearbox",
   emoji = "⚙️",
+  legend = "Letter or return opens or launch • ↑↓ + return navigates",
   showFooterDivider = true,
 
   items = {
