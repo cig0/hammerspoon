@@ -5,9 +5,11 @@ return {
     key = "g",
     group = "light",
 
+    frame = {red = 0.447059, green = 0.333333, blue = 0.235294, alpha = 1}, -- #72553c
+
     -- Warm selection colors stay readable with either macOS or theme accents.
-    selection = {red = 0.843137, green = 0.6, blue = 0.129412, alpha = 1}, -- #d79921
-    selectionText = {red = 0.235294, green = 0.219608, blue = 0.211765, alpha = 1}, -- #3c3836
+    selection = {red = 0.4, green = 0.360784, blue = 0.329412, alpha = 1}, -- #665c54
+    selectionText = {red = 0.984314, green = 0.945098, blue = 0.780392, alpha = 1}, -- #fbf1c7
     selectionAlpha = 0.16,
     background = {
         red = 0.984314,

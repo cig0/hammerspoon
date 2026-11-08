@@ -471,7 +471,7 @@ function HUD:show(menu, checkedRows)
                 w = self.config.menu.width - (borderInset * 2),
                 h = height - (borderInset * 2)
             },
-            strokeColor = colors.accent,
+            strokeColor = colors.frame,
             strokeWidth = layout.accentBorderWidth,
             roundedRectRadii = {
                 xRadius = math.max(0, self.theme.metrics.windowCornerRadius -

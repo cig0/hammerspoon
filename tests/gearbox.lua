@@ -1354,7 +1354,7 @@ assert(assert(elementById(runtime.hud.canvas,
     "menu-accent-border")).action == "stroke" and
   elementById(runtime.hud.canvas,
     "menu-accent-border").strokeColor ==
-  runtime.theme.colors.accent and
+  runtime.theme.colors.frame and
   elementById(runtime.hud.canvas,
     "menu-accent-border").strokeWidth == 2 and
   elementById(runtime.hud.canvas,
@@ -2541,15 +2541,19 @@ function keys.checkGruvboxSelection()
     globalHotkeyPressed()
     local menu = quick.activeMenu
     local first, second = menu.navigableRows[1], menu.navigableRows[2]
+    local selectedTextRed = id == "gruvbox-light" and 0.984314 or 0.235294
+    local selectionRed = id == "gruvbox-light" and 0.4 or 0.843137
+    local frame = elementById(quick.hud.canvas, "menu-accent-border").strokeColor
+    assert(frame.red == (id == "gruvbox-light" and 0.447059 or 0.984314))
     local original = menu.rowVisuals[first].labelColor
     menu.modal.bindings.down()
     local canvas = quick.hud.canvas
     local visual = menu.rowVisuals[first]
-    assert(canvas.elements[menu.selectionElementIndex].fillColor.red == 0.843137)
-    assert(canvas.elements[visual.labelTextIndex].text.segments[1].attributes.color.red == 0.235294)
+    assert(canvas.elements[menu.selectionElementIndex].fillColor.red == selectionRed)
+    assert(canvas.elements[visual.labelTextIndex].text.segments[1].attributes.color.red == selectedTextRed)
     menu.modal.bindings.down()
     assert(canvas.elements[visual.labelTextIndex].text.segments[1].attributes.color == original)
-    assert(canvas.elements[menu.rowVisuals[second].keyTextIndex].text.segments[1].attributes.color.red == 0.235294)
+    assert(canvas.elements[menu.rowVisuals[second].keyTextIndex].text.segments[1].attributes.color.red == selectedTextRed)
     -- Group keycaps must not cover the selected yellow row with a system accent.
     local group
     for index, row in ipairs(menu.rows) do
@@ -2568,4 +2572,11 @@ function keys.checkGruvboxSelection()
   end
 end
 keys.checkGruvboxSelection()
+function keys.checkOtherFrame()
+  local other = startGearbox({menu = {timeout = 5}, theme = {name = "nord", persistSelection = false}})
+  globalHotkeyPressed()
+  assert(elementById(other.hud.canvas, "menu-accent-border").strokeColor == other.theme.colors.accent)
+  Gearbox.stop()
+end
+keys.checkOtherFrame()
 print("Gearbox smoke test passed")
