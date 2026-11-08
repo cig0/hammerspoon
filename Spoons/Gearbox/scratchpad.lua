@@ -8,7 +8,7 @@ Scratchpad.__index = Scratchpad
 
 local Storage = require("Spoons.Gearbox.scratchpad_storage")
 
-local verticalPositions = {top = 0.25, center = 0.50, bottom = 0.75}
+local verticalPositions = { top = 0.25, center = 0.50, bottom = 0.75 }
 
 local document = [[
 <!doctype html>
@@ -228,289 +228,296 @@ local document = [[
 local function round(value) return math.floor(value + 0.5) end
 
 local function cssColor(color)
-    local alpha = color.alpha or 1
+  local alpha = color.alpha or 1
 
-    if color.white ~= nil then
-        local component = round(color.white * 255)
+  if color.white ~= nil then
+    local component = round(color.white * 255)
 
-        return ("rgba(%d, %d, %d, %.4f)"):format(component, component,
-                                                 component, alpha)
-    end
+    return ("rgba(%d, %d, %d, %.4f)"):format(component, component,
+      component, alpha)
+  end
 
-    return ("rgba(%d, %d, %d, %.4f)"):format(round(color.red * 255),
-                                             round(color.green * 255),
-                                             round(color.blue * 255), alpha)
+  return ("rgba(%d, %d, %d, %.4f)"):format(round(color.red * 255),
+    round(color.green * 255),
+    round(color.blue * 255), alpha)
 end
 
 function Scratchpad.new(config, theme)
-    local self = setmetatable({}, Scratchpad)
+  local self = setmetatable({}, Scratchpad)
 
-    self.config = config
-    self.theme = theme
-    self.webview = nil
-    self.controller = nil
-    self.ready = false
-    self.appliedThemeId = nil
-    self.storage = Storage.new(config)
-    self.lastStorageError = nil
-    self.persistedContent = nil
+  self.config = config
+  self.theme = theme
+  self.webview = nil
+  self.controller = nil
+  self.ready = false
+  self.appliedThemeId = nil
+  self.storage = Storage.new(config)
+  self.lastStorageError = nil
+  self.persistedContent = nil
 
-    local stored
+  local stored
 
-    if config.scratchpad.persistContent and self.storage:isSettings() then
-        stored = self.storage:load()
-    end
+  if config.scratchpad.persistContent and self.storage:isSettings() then
+    stored = self.storage:load()
+  end
 
-    self.content = type(stored) == "string" and stored or ""
-    self.persistedContent = stored
+  self.content = type(stored) == "string" and stored or ""
+  self.persistedContent = stored
 
-    return self
+  return self
 end
 
 function Scratchpad:targetScreen()
-    if self.config.menu.screen == "mouse" then
-        return hs.mouse.getCurrentScreen() or hs.screen.mainScreen()
-    end
+  if self.config.menu.screen == "mouse" then
+    return hs.mouse.getCurrentScreen() or hs.screen.mainScreen()
+  end
 
-    return hs.screen.mainScreen()
+  return hs.screen.mainScreen()
 end
 
 function Scratchpad:frame()
-    local screen = assert(self:targetScreen(),
-                          "Gearbox: no screen is available for the scratchpad")
+  local screen = assert(self:targetScreen(),
+    "Gearbox: no screen is available for the scratchpad")
 
-    local screenFrame = screen:frame()
-    local width = math.min(self.config.scratchpad.width, screenFrame.w)
-    local height = math.min(self.config.scratchpad.height, screenFrame.h)
-    local availableHeight = math.max(0, screenFrame.h - height)
+  local screenFrame = screen:frame()
+  local width = math.min(self.config.scratchpad.width, screenFrame.w)
+  local height = math.min(self.config.scratchpad.height, screenFrame.h)
+  local availableHeight = math.max(0, screenFrame.h - height)
 
-    return {
-        x = screenFrame.x + (screenFrame.w - width) / 2,
-        y = screenFrame.y + availableHeight *
-            verticalPositions[self.config.menu.position],
-        w = width,
-        h = height
-    }
+  return {
+    x = screenFrame.x + (screenFrame.w - width) / 2,
+    y = screenFrame.y + availableHeight *
+        verticalPositions[self.config.menu.position],
+    w = width,
+    h = height
+  }
 end
 
 function Scratchpad:state(includeContent)
-    local bodyFont = self.theme.fonts.body
-    local titleFont = self.theme.fonts.title
-    local colors = self.theme.colors
+  local bodyFont = self.theme.fonts.body
+  local titleFont = self.theme.fonts.title
+  local colors = self.theme.colors
 
-    local state = {
-        title = self.config.menu.showEmojis and "📝  Scratchpad" or
-            "Scratchpad",
-        editorFontFamily = bodyFont.name or "-apple-system",
-        bodySize = self.config.scratchpad.fontSize,
-        titleSize = titleFont.size or self.config.font.titleSize,
-        footerSize = math.max(11, self.config.scratchpad.fontSize - 1),
-        bodyWeight = self.config.font.bodyWeight == "bold" and 700 or 400,
-        titleWeight = self.config.font.titleWeight == "bold" and 700 or 400,
-        cornerRadius = self.theme.metrics.windowCornerRadius,
-        showInstructions = self.config.scratchpad.showInstructions,
-        maxCharacters = self.config.scratchpad.maxCharacters,
-        instructions = "Cursor keys move · Tab inserts tabs · " ..
-            table.concat(self.config.hotkey.modifiers, "+") .. "+" ..
-            self.config.hotkey.key .. " closes scratchpad",
-        colors = {
-            background = cssColor(colors.background),
-            primary = cssColor(colors.primary),
-            secondary = cssColor(colors.secondary),
-            divider = cssColor(colors.divider),
-            accent = cssColor(colors.accent),
-            selection = cssColor(colors.selection)
-        }
+  -- Match HUD transparency: palette background alpha is overridden by the
+  -- Transparency slider (Gearbox Configuration → Transparency). HUD does
+  -- `background.alpha = opacity/100`, so we mirror it here for consistency.
+  local background = {}
+  for key, value in pairs(colors.background) do background[key] = value end
+  background.alpha = self.config.menu.backgroundOpacity / 100
+
+  local state = {
+    title = self.config.menu.showEmojis and "📝  Scratchpad" or
+        "Scratchpad",
+    editorFontFamily = bodyFont.name or "-apple-system",
+    bodySize = self.config.scratchpad.fontSize,
+    titleSize = titleFont.size or self.config.font.titleSize,
+    footerSize = math.max(11, self.config.scratchpad.fontSize - 1),
+    bodyWeight = self.config.font.bodyWeight == "bold" and 700 or 400,
+    titleWeight = self.config.font.titleWeight == "bold" and 700 or 400,
+    cornerRadius = self.theme.metrics.windowCornerRadius,
+    showInstructions = self.config.scratchpad.showInstructions,
+    maxCharacters = self.config.scratchpad.maxCharacters,
+    instructions = "Cursor keys move · Tab inserts tabs · " ..
+        table.concat(self.config.hotkey.modifiers, "+") .. "+" ..
+        self.config.hotkey.key .. " closes scratchpad",
+    colors = {
+      background = cssColor(background),
+      primary = cssColor(colors.primary),
+      secondary = cssColor(colors.secondary),
+      divider = cssColor(colors.divider),
+      accent = cssColor(colors.accent),
+      selection = cssColor(colors.selection)
     }
+  }
 
-    if includeContent then state.content = self.content end
+  if includeContent then state.content = self.content end
 
-    return state
+  return state
 end
 
 --- Report one alert per storage failure episode while retaining console detail.
 ---@param message string
 function Scratchpad:reportStorageError(message)
-    if message == self.lastStorageError then return end
+  if message == self.lastStorageError then return end
 
-    self.lastStorageError = message
-    print("Gearbox Scratchpad storage: " .. message)
-    hs.alert.show("Gearbox Scratchpad storage failed; see the console", nil,
-                  nil, 5)
+  self.lastStorageError = message
+  print("Gearbox Scratchpad storage: " .. message)
+  hs.alert.show("Gearbox Scratchpad storage failed; see the console", nil,
+    nil, 5)
 end
 
 --- Load the selected persistent backend before presenting the editor.
 ---@return boolean
 function Scratchpad:loadContent()
-    if not self.config.scratchpad.persistContent then return true end
+  if not self.config.scratchpad.persistContent then return true end
 
-    local content, loadError = self.storage:load()
+  local content, loadError = self.storage:load()
 
-    if content == nil then
-        self:reportStorageError(loadError or "unknown read error")
-        return false
-    end
+  if content == nil then
+    self:reportStorageError(loadError or "unknown read error")
+    return false
+  end
 
-    self.lastStorageError = nil
-    self.content = content
-    self.persistedContent = content
-    return true
+  self.lastStorageError = nil
+  self.content = content
+  self.persistedContent = content
+  return true
 end
 
 function Scratchpad:save(content)
-    if type(content) ~= "string" then return false end
+  if type(content) ~= "string" then return false end
 
-    self.content = content
+  self.content = content
 
-    if not self.config.scratchpad.persistContent then return true end
+  if not self.config.scratchpad.persistContent then return true end
 
-    if content == self.persistedContent then return true end
+  if content == self.persistedContent then return true end
 
-    local saved, saveError = self.storage:save(content)
+  local saved, saveError = self.storage:save(content)
 
-    if not saved then
-        self:reportStorageError(saveError or "unknown write error")
-        return false
-    end
+  if not saved then
+    self:reportStorageError(saveError or "unknown write error")
+    return false
+  end
 
-    self.lastStorageError = nil
-    self.persistedContent = content
-    return true
+  self.lastStorageError = nil
+  self.persistedContent = content
+  return true
 end
 
 function Scratchpad:handleMessage(message)
-    if type(message) ~= "table" then return end
+  if type(message) ~= "table" then return end
 
-    if message.action == "save" then self:save(message.content) end
+  if message.action == "save" then self:save(message.content) end
 end
 
 function Scratchpad:applyState(includeContent, focusEditor)
-    if not self.webview or not self.ready then return end
+  if not self.webview or not self.ready then return end
 
-    local encoded = hs.json.encode(self:state(includeContent))
+  local encoded = hs.json.encode(self:state(includeContent))
 
-    local script = "window.GearboxScratchpad.update(" .. encoded .. ");"
+  local script = "window.GearboxScratchpad.update(" .. encoded .. ");"
 
-    if focusEditor then
-        script = script .. "window.GearboxScratchpad.focus();"
-    end
+  if focusEditor then
+    script = script .. "window.GearboxScratchpad.focus();"
+  end
 
-    self.webview:evaluateJavaScript(script)
-    self.appliedThemeId = self.theme.activeThemeId
+  self.webview:evaluateJavaScript(script)
+  self.appliedThemeId = self.theme.activeThemeId
 end
 
 function Scratchpad:focusWindow()
-    if not self.webview or not self.ready then return end
+  if not self.webview or not self.ready then return end
 
-    self.webview:bringToFront()
-    self.webview:hswindow():focus()
+  self.webview:bringToFront()
+  self.webview:hswindow():focus()
 end
 
 function Scratchpad:ensureView()
-    if self.webview then return end
+  if self.webview then return end
 
-    -- usercontent wraps the JavaScript payload in message.body.
-    self.controller = hs.webview.usercontent.new("gearboxScratchpad")
-    self.controller:setCallback(
-        function(message) self:handleMessage(message.body) end)
+  -- usercontent wraps the JavaScript payload in message.body.
+  self.controller = hs.webview.usercontent.new("gearboxScratchpad")
+  self.controller:setCallback(
+    function(message) self:handleMessage(message.body) end)
 
-    self.webview = hs.webview.new(self:frame(), {
-        developerExtrasEnabled = false,
-        javaScriptCanOpenWindowsAutomatically = false,
-        javaScriptEnabled = true
-    }, self.controller)
+  self.webview = hs.webview.new(self:frame(), {
+    developerExtrasEnabled = false,
+    javaScriptCanOpenWindowsAutomatically = false,
+    javaScriptEnabled = true
+  }, self.controller)
 
-    self.webview:windowStyle({}):allowTextEntry(true):allowGestures(false)
-        :allowNewWindows(false):transparent(true):shadow(true):deleteOnClose(
-            false):navigationCallback(function(action)
-            if action == "didFinishNavigation" then
-                self.ready = true
+  self.webview:windowStyle({}):allowTextEntry(true):allowGestures(false)
+      :allowNewWindows(false):transparent(true):shadow(true):deleteOnClose(
+    false):navigationCallback(function(action)
+    if action == "didFinishNavigation" then
+      self.ready = true
 
-                if self:isVisible() then
-                    self:focusWindow()
-                    self:applyState(true, true)
-                else
-                    self:applyState(true, false)
-                end
-            end
-        end):html(document)
+      if self:isVisible() then
+        self:focusWindow()
+        self:applyState(true, true)
+      else
+        self:applyState(true, false)
+      end
+    end
+  end):html(document)
 end
 
 function Scratchpad:isVisible()
-    return self.webview ~= nil and self.webview:isVisible()
+  return self.webview ~= nil and self.webview:isVisible()
 end
 
 function Scratchpad:show()
-    if not self:loadContent() then return false end
+  if not self:loadContent() then return false end
 
-    local shown, showError = xpcall(function()
-        self.theme:refreshAppearance()
-        self:ensureView()
-        self.webview:frame(self:frame())
-        self.webview:show()
+  local shown, showError = xpcall(function()
+    self.theme:refreshAppearance()
+    self:ensureView()
+    self.webview:frame(self:frame())
+    self.webview:show()
 
-        if self.ready then
-            self:focusWindow()
-            self:applyState(true, true)
-        end
-    end, debug.traceback)
+    if self.ready then
+      self:focusWindow()
+      self:applyState(true, true)
+    end
+  end, debug.traceback)
 
-    if not shown then
-        local webview = self.webview
-        local controller = self.controller
+  if not shown then
+    local webview = self.webview
+    local controller = self.controller
 
-        self.webview = nil
-        self.controller = nil
-        self.ready = false
-        self.appliedThemeId = nil
+    self.webview = nil
+    self.controller = nil
+    self.ready = false
+    self.appliedThemeId = nil
 
-        if controller then
-            pcall(function() controller:setCallback(nil) end)
-        end
-
-        if webview then pcall(function() webview:delete() end) end
-
-        error(showError, 0)
+    if controller then
+      pcall(function() controller:setCallback(nil) end)
     end
 
-    return true
+    if webview then pcall(function() webview:delete() end) end
+
+    error(showError, 0)
+  end
+
+  return true
 end
 
 -- Fetch the latest text before hiding; autosave may lag behind typing.
 -- Keep the editor visible if saving fails so the draft is recoverable.
 function Scratchpad:hide()
-    if not self.webview then return end
+  if not self.webview then return end
 
-    if self.ready then
-        self.webview:evaluateJavaScript("window.GearboxScratchpad.content();",
-                                        function(content)
-            if self:save(content) then self.webview:hide() end
-        end)
-    else
-        self.webview:hide()
-    end
+  if self.ready then
+    self.webview:evaluateJavaScript("window.GearboxScratchpad.content();",
+      function(content)
+        if self:save(content) then self.webview:hide() end
+      end)
+  else
+    self.webview:hide()
+  end
 end
 
 function Scratchpad:delete()
-    if self.webview then
-        if self.ready and self.config.scratchpad.persistContent then
-            self.webview:evaluateJavaScript(
-                "window.GearboxScratchpad.content();", function(content)
-                    self:save(content)
-                end)
-        end
-
-        self.webview:delete()
-        self.webview = nil
+  if self.webview then
+    if self.ready and self.config.scratchpad.persistContent then
+      self.webview:evaluateJavaScript(
+        "window.GearboxScratchpad.content();", function(content)
+          self:save(content)
+        end)
     end
 
-    if self.controller then
-        self.controller:setCallback(nil)
-        self.controller = nil
-    end
+    self.webview:delete()
+    self.webview = nil
+  end
 
-    self.ready = false
-    self.appliedThemeId = nil
+  if self.controller then
+    self.controller:setCallback(nil)
+    self.controller = nil
+  end
+
+  self.ready = false
+  self.appliedThemeId = nil
 end
 
 return Scratchpad
