@@ -10,6 +10,20 @@ local isCharacterActivationKey = Validation.isCharacterActivationKey
 local isMenuActivationKey = Validation.isMenuActivationKey
 local menuActivationIdentity = Validation.menuActivationIdentity
 
+local modifierGlyphs = { ctrl = "⌃", alt = "⌥", cmd = "⌘", shift = "⇧" }
+
+local function formatHotkey(modifiers, key)
+  local glyphs = {}
+  for _, m in ipairs(modifiers or {}) do glyphs[#glyphs + 1] = modifierGlyphs[m] or m end
+  local keyLabel = key
+  if key == "space" then
+    keyLabel = "Space"
+  elseif key ~= nil and key ~= "" then
+    keyLabel = key:sub(1, 1):upper() .. key:sub(2)
+  end
+  return table.concat(glyphs) .. keyLabel
+end
+
 local validKinds = { action = true, application = true }
 
 --- Raise a Gearbox-prefixed error at the caller's level.
@@ -518,9 +532,8 @@ local function assembleMenus(definitions, rootId, config, actions)
 
     if id == rootId then
       footerAction = { type = "exit" }
-      footerLabel = "Exit Gearbox (also: " ..
-          table.concat(config.hotkey.modifiers, "+") .. "+" ..
-          config.hotkey.key .. ")"
+      local sep = " \194\160·\194\160 "
+      footerLabel = "Exit Gearbox" .. sep .. formatHotkey(config.hotkey.modifiers, config.hotkey.key)
     else
       footerAction = { type = "openMenu", menu = definition.parent }
       footerLabel = "Back to " ..
