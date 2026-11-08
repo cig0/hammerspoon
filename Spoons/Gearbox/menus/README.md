@@ -39,17 +39,17 @@ return {
 
 ## Fields
 
-| Field                                      | Notes                                                                                           |
-| ------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| `id`                                       | Stable identity. Rename = break `parent` refs.                                                  |
-| `title` / `emoji` / `legend`               | HUD header. `legend` = small help text.                                                         |
-| `parent` / `entry`                         | Where you hang. Root `leader` has neither.                                                      |
-| `entry.section` / `sectionOrder` / `order` | Sorted placement of sibling menus. Same `section` must share `sectionOrder`.                    |
-| `items`                                    | Rows. File order. `{ divider = true }` = separator.                                             |
-| `items[].key`                              | Optional. If present: single printable ASCII `0x21..0x7e`. If absent: row is arrow/return only. |
-| `items[].requires`                         | Gated by `config.<name>.enable` (e.g. `scratchpad`).                                            |
-| `items[].action`                           | Validated by `actions.lua`, run by `runtime.lua`.                                               |
-| `showFooterDivider`                        | `true` (default) = divider before Back/Exit.                                                    |
+| Field                                      | Notes                                                                                                                                |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `id`                                       | Stable identity. Rename = break `parent` refs.                                                                                       |
+| `title` / `emoji` / `legend`               | HUD header. `legend` = small help text.                                                                                              |
+| `parent` / `entry`                         | Where you hang. Root `leader` has neither.                                                                                           |
+| `entry.section` / `sectionOrder` / `order` | Sorted placement of sibling menus. Same `section` must share `sectionOrder`.                                                         |
+| `items`                                    | Rows. File order. `{ divider = true }` = separator. `{ header = "Title" }` = inline non-navigable label (e.g. `Size` in Scratchpad). |
+| `items[].key`                              | Optional. If present: single printable ASCII `0x21..0x7e`. If absent: row is arrow/return only.                                      |
+| `items[].requires`                         | Gated by `config.<name>.enable` (e.g. `scratchpad`).                                                                                 |
+| `items[].action`                           | Validated by `actions.lua`, run by `runtime.lua`.                                                                                    |
+| `showFooterDivider`                        | `true` (default) = divider before Back/Exit.                                                                                         |
 
 ## Keys
 
@@ -106,12 +106,12 @@ Save, reload Hammerspoon. On Nix edit the repo — `~/.hammerspoon` is overwritt
 
 ## Generated menus
 
-Not in `menus/`. Injected as supplemental definitions:
+Not in `menus/`. Injected as supplemental definitions (same shape, owned by their modules):
 
-- `theme.lua` → `themes` + `matching-themes` (under Gearbox Configuration) — currently arrow-only (no keys) by design
-- `configuration_menu.lua` via `preferences.lua` → Gearbox Configuration subtree — `configuration` (`p`/`r`/`x`) and `scratchpad-settings` are arrow-only; navigation submenus keep letter keys
+- `theme.lua` → `themes` + `matching-themes` under Gearbox Configuration — arrow-only by design (no keys, ↑↓+return)
+- `configuration_menu.lua` via `preferences.lua` → Gearbox Configuration subtree — `configuration` and `scratchpad-settings` are arrow-only; `menu-position`, `menu-timeout`, `font-size`, `menu-transparency` keep letter keys. `scratchpad-settings` uses an inline `{ header = "Size" }` row for the Width/Height group.
 
-Same shape, owned by their modules. Don't recreate them here. If you add keys to generated rows, validation will enforce them.
+Don't recreate them in `menus/`. If you add keys to generated rows, validation enforces them.
 
 ## Actions
 
@@ -128,12 +128,13 @@ Same shape, owned by their modules. Don't recreate them here. If you add keys to
 
 ## Layout
 
-- Root `leader` width is `config.menu.width` (now `620` for 3-col Hyperkey/Caps Lock; was `420` for 2-col). `hud.lua:appendQuickLaunch` lays Quick Launch as 3 columns (`ceil(#keys/3)`). `hud.lua:menuContentTop` reserves `1 + ceil(#keys/3)` lines — keep divisor in sync. Widen via `config.lua:menu.width`.
-- Quick Launch `hyperkeys.lua` is a list of tuples `{{key="a", target="ACME"}, {key="f", target={type="openMenu", menu="finder"}}}` — **key is free choice, display is alphabetical by label** (`labels[a]:lower()`), same rule as `leader` submenus (`sortedSections` by `label`). File order does not matter; `loader.lua` sorts by label. Legacy map `{a="ACME"}` still works but was key-sorted — don't use it.
+- Root `leader` width is `config.menu.width` = `620` for 3-col Hyperkey/Caps Lock (`420` for old 2-col). `hud.lua:appendQuickLaunch` and `hud.lua:menuContentTop` both use `ceil(#keys/3)` and `width/3` — keep divisor in sync. Widen via `config.lua:menu.width`.
+- Quick Launch `hyperkeys.lua` is a list of tuples `{{key="a", target="ACME"}, {key="f", target={type="openMenu", menu="finder"}}}` — **key is free choice, display is alphabetical by label** (`labels[a]:lower()`), same as `leader` submenus (`sortedSections` by `label`). File order doesn't matter; `loader.lua` sorts. Legacy map `{a="ACME"}` still works but was key-sorted — don't use it.
+- Inline headers: `{ header = "Size" }` renders as secondary-color small text (non-navigable, excluded from `runtime.navigableRows`). No `key`/`label`/`kind`/`action` allowed alongside `header`.
 
 ## Validation
 
-Fails on `Gearbox.start()` before any modal builds: duplicate `id`/key (only when key present), missing `parent`, cycle, bad key, reserved nav key, unknown `kind`/`type`, missing action target. `key=nil` skips key checks — use it for arrow-only rows.
+Fails on `Gearbox.start()` before any modal builds: duplicate `id`/key (only when `key` present), missing `parent`, cycle, bad key, reserved nav key, unknown `kind`/`type`, missing action target. `key=nil` and `header` rows skip key checks — use them for arrow-only rows. `header` must not coexist with `key`/`label`/`kind`/`action`.
 
 ## Where to look next
 

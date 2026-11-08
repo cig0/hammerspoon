@@ -45,7 +45,7 @@ function ConfigurationMenu.definitions()
       id = "font-size",
       title = "Font Size",
       parent = "configuration",
-      entry = { key = "f", label = "Font Size" },
+      entry = { key = "F", label = "Font Size" },
       items = fontRows
     },
     {
@@ -53,7 +53,7 @@ function ConfigurationMenu.definitions()
       title = "Transparency",
       legend = "Menu background opacity",
       parent = "themes",
-      entry = { key = "p", label = "Transparency", order = 300 },
+      entry = { key = "P", label = "Transparency", order = 300 },
       items = opacityRows
     },
     {
@@ -61,7 +61,7 @@ function ConfigurationMenu.definitions()
       title = "Gearbox Configuration",
       emoji = "⚙️",
       parent = "leader",
-      legend = "Choices saved automatically in Hammerspoon preferences:\n" ..
+      legend = "Choices are saved automatically in the Hammerspoon preferences file:\n" ..
           "~/Library/Preferences/" .. hs.settings.bundleID .. ".plist",
       entry = {
         key = "G",
@@ -98,7 +98,7 @@ function ConfigurationMenu.definitions()
       id = "menu-position",
       title = "Menu Position",
       parent = "configuration",
-      entry = { key = "m", label = "Menu Position" },
+      entry = { key = "M", label = "Menu Position" },
       items = {
         {
           key = "t",
@@ -126,14 +126,14 @@ function ConfigurationMenu.definitions()
       id = "menu-timeout",
       title = "Menu Timeout",
       parent = "configuration",
-      entry = { key = "o", label = "Menu Timeout" },
+      entry = { key = "O", label = "Menu Timeout" },
       items = timeoutRows
     },
     {
       id = "scratchpad-settings",
       title = "Scratchpad",
       parent = "configuration",
-      entry = { key = "s", label = "Scratchpad" },
+      entry = { key = "S", label = "Scratchpad" },
       items = {
         {
           label = "Persist Content",
@@ -165,6 +165,7 @@ function ConfigurationMenu.definitions()
           action = { type = "configure", operation = "setFilename" }
         },
         { divider = true },
+        { header = "Size" },
         {
           label = "Width",
           kind = "action",
