@@ -337,7 +337,16 @@ function Runtime:beginMenuSession(targetId)
     return false
   end
 
-  self.menus[targetId or self.rootId].modal:enter()
+  local target = self.menus[targetId or self.rootId]
+  -- Restore leader selector across invocations (close → reopen). In-memory
+  -- returnPosition already handles Back/Esc; this hydrates it after reload.
+  if target.id == self.rootId and not target.returnPosition then
+    local ok, saved = pcall(function() return hs.settings.get("Gearbox.ui.leaderPosition") end)
+    if ok and type(saved) == "number" and saved >= 1 and saved <= #target.navigableRows then
+      target.returnPosition = saved
+    end
+  end
+  target.modal:enter()
   return true
 end
 
@@ -424,10 +433,17 @@ end
 function Runtime:runAction(menu, row)
   local previousTimeout = self.config.menu.timeout
   -- Remember where we are before leaving: when we return via Esc/Back
-  -- we restore the parent on the entry we just activated.
-  if row.action and row.action.type == "openMenu" then
-    local pos = navigablePositionForRow(menu, row)
-    if pos then menu.returnPosition = pos end
+  -- we restore the parent on the entry we just activated. For leader we
+  -- also persist across invocations (hs.settings) so close→reopen lands
+  -- on last activated row. Only leader-originated activations persist.
+  local pos = navigablePositionForRow(menu, row)
+  if pos then
+    if menu.id == self.rootId then
+      menu.returnPosition = pos
+      pcall(function() hs.settings.set("Gearbox.ui.leaderPosition", pos) end)
+    elseif row.action and row.action.type == "openMenu" then
+      menu.returnPosition = pos
+    end
   end
   local result = self.actions.execute(row.action, {
     openMenu = function(targetId) self:switchMenu(menu, targetId) end,
