@@ -565,6 +565,7 @@ hs = {
   },
 
   settings = {
+    bundleID = "org.hammerspoon.GearboxTests",
     clear = function(key) settings[key] = nil end,
     get = function(key) return settings[key] end,
     set = function(key, value) settings[key] = value end
@@ -937,8 +938,9 @@ assert(menus.configuration.title == "Gearbox Configuration" and
   menus.themes.parentId == "configuration",
   "Themes must belong to Gearbox Configuration")
 assert(menus.configuration.legend ==
-  "See Spoon documentation to customize the menu shortcut",
-  "configuration legend must remain a concise memory aid")
+  "Choices saved automatically in Hammerspoon preferences:\n" ..
+    "~/Library/Preferences/org.hammerspoon.GearboxTests.plist",
+  "configuration legend must use Hammerspoon's settings bundle ID")
 assert(rowShape(menus["menu-position"]) == "t,b,|,escape",
   "Menu Position menu shape changed")
 assert(rowShape(menus["scratchpad-settings"]) ==
@@ -1743,11 +1745,13 @@ assert(styledTextValue(assert(elementById(runtime.hud.canvas,
   elementById(runtime.hud.canvas,
     "menu-legend").text.segments[1].attributes.font.size ==
   runtime.config.font.size - 2 and
+  elementById(runtime.hud.canvas, "menu-legend").frame.h ==
+    2 * runtime.hud.layout.legendTextHeight and
   runtime.menus.configuration.rowVisuals[1].baseY -
   (elementById(runtime.hud.canvas, "menu-legend").frame.y +
     elementById(runtime.hud.canvas, "menu-legend").frame.h) ==
   runtime.hud.layout.legendBottomSpacing,
-  "Gearbox Configuration must separate its smaller, subdued memory aid")
+  "Gearbox Configuration must leave space for both lines of its subdued legend")
 
 sendCharacterKeyDown("h")
 assert(reloadCalls == 2 and runtime.activeMenu.id == "configuration",
