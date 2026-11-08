@@ -8,6 +8,7 @@ return {
   selectionAlpha = 0.22,
   selection = { red = 1, green = 0, blue = 0.498039, alpha = 1 },
   selectionText = { red = 1, green = 1, blue = 1, alpha = 1 },
+  frame = { red = 0.352941, green = 0.662745, blue = 0.8, alpha = 1 },
   background = {
     red = 0.101961,
     green = 0.105882,
