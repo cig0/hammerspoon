@@ -164,6 +164,7 @@ function ConfigurationMenu.definitions()
           kind = "action",
           action = { type = "configure", operation = "setFilename" }
         },
+        { divider = true },
         { header = "Size" },
         {
           label = "Width",
