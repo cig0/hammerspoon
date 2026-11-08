@@ -20,7 +20,24 @@ function ConfigurationMenu.definitions()
     }
   end
 
+  local fontRows = {}
+  for size = 12, 18 do
+    fontRows[#fontRows + 1] = {
+      key = tostring(size - 11),
+      label = size .. " pt",
+      kind = "action",
+      action = { type = "configure", operation = "setFontSize", value = size }
+    }
+  end
+
   return {
+    {
+      id = "font-size",
+      title = "Font Size",
+      parent = "configuration",
+      entry = { key = "f", label = "Font Size" },
+      items = fontRows
+    },
     {
       id = "menu-transparency",
       title = "Transparency",

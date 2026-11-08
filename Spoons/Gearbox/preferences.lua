@@ -12,6 +12,10 @@ local profilePath = "~/.config/hammerspoon-gearbox/preferences.json"
 local settingsKey = "Gearbox.preferences.local.v1"
 local schemaVersion = 1
 
+local function validFontSize(value)
+  return type(value) == "number" and value >= 12 and value <= 18 and value % 1 == 0
+end
+
 local positions = { top = true, center = true, bottom = true }
 local configurableOperations = {
   chooseStorageFolder = true,
@@ -21,6 +25,7 @@ local configurableOperations = {
   setFilename = true,
   setHeight = true,
   setBackgroundOpacity = true,
+  setFontSize = true,
   setPosition = true,
   setWidth = true,
   toggleOuterFrame = true,
@@ -32,6 +37,7 @@ local configurableOperations = {
 local checkableOperations = {
   chooseStorageFolder = true,
   setBackgroundOpacity = true,
+  setFontSize = true,
   setPosition = true,
   toggleOuterFrame = true,
   togglePersistence = true,
@@ -109,10 +115,15 @@ local function validateRecord(record, name, complete)
   if type(record) ~= "table" then fail(name .. " must be an object") end
 
   rejectUnknown(record, {
+    fontSize = not complete,
     menu = true,
     schemaVersion = true,
     scratchpad = true
   }, name)
+
+  if record.fontSize ~= nil and not validFontSize(record.fontSize) then
+    fail(name .. ".fontSize must be an integer from 12 to 18")
+  end
 
   if record.schemaVersion ~= schemaVersion then
     fail(name .. ".schemaVersion must be " .. schemaVersion)
@@ -298,6 +309,10 @@ function Preferences.validateAction(action, location)
     fail(location .. " has invalid configure operation")
   end
 
+  if action.operation == "setFontSize" and not validFontSize(action.value) then
+    fail(location .. " font size must be an integer from 12 to 18")
+  end
+
   if action.operation == "setBackgroundOpacity" and not Validation.isMenuOpacity(action.value) then
     fail(location .. " background opacity must be 50 to 100 in steps of 5")
   end
@@ -317,6 +332,9 @@ function Preferences.new(config)
   -- `require` caches config.lua. Own a copy so a stop/start cycle cannot turn
   -- values from the previous runtime into the next runtime's defaults.
   self.config = copy(config)
+  self.baseFontSize = config.font.size
+  self.baseTitleSize = config.font.titleSize
+  self.baseMenuWidth = config.menu.width
   self.defaults = snapshot(self.config)
   self.profile = self:readProfile()
   self.localOverrides = self:readLocalOverrides()
@@ -363,6 +381,12 @@ function Preferences:apply()
   if self.profile then applyRecord(self.config, self.profile) end
 
   applyRecord(self.config, self.localOverrides)
+  -- Display sizing is machine-local. Always scale from source defaults so
+  -- repeated previews and resets cannot accumulate rounding or size drift.
+  self.config.font.size = self.localOverrides.fontSize or self.baseFontSize
+  local scale = self.config.font.size / self.baseFontSize
+  self.config.font.titleSize = self.baseTitleSize * scale
+  self.config.menu.width = math.max(200, math.floor(self.baseMenuWidth * scale + 0.5))
 end
 
 function Preferences:persistLocalOverrides()
@@ -462,8 +486,13 @@ function Preferences:saveProfile()
   end
 
   self.profile = record
-  self.localOverrides = { schemaVersion = schemaVersion }
-  hs.settings.clear(settingsKey)
+  -- Saving a portable profile retains this machine's font preference locally.
+  self.localOverrides = { schemaVersion = schemaVersion, fontSize = self.localOverrides.fontSize }
+  if self.localOverrides.fontSize then
+    hs.settings.set(settingsKey, self.localOverrides)
+  else
+    hs.settings.clear(settingsKey)
+  end
   self:apply()
   hs.alert.show("Gearbox profile saved", nil, nil, 3)
 end
@@ -488,7 +517,10 @@ function Preferences:execute(action)
   local ok, actionError = xpcall(function()
     local operation = action.operation
 
-    if operation == "setPosition" then
+    if operation == "setFontSize" then
+      self.localOverrides.fontSize = action.value
+      self:persistLocalOverrides()
+    elseif operation == "setPosition" then
       self:setMenuValue("position", action.value)
     elseif operation == "toggleOuterFrame" then
       self:setMenuValue("showAccentBorder", not self.config.menu.showAccentBorder)
@@ -529,7 +561,9 @@ end
 ---@param action table
 ---@return boolean
 function Preferences:isSelected(action)
-  if action.operation == "setPosition" then
+  if action.operation == "setFontSize" then
+    return self.config.font.size == action.value
+  elseif action.operation == "setPosition" then
     return self.config.menu.position == action.value
   elseif action.operation == "toggleOuterFrame" then
     return self.config.menu.showAccentBorder

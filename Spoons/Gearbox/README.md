@@ -291,6 +291,21 @@ A timeout of `0` leaves Gearbox stopped and shows a configuration dialog.
 Set a positive number of seconds to enable it. The dialog closes after 30
 seconds, Return, or Accept. Reload Hammerspoon after changing the timeout.
 
+### Font size menu
+
+Open Gearbox Configuration → Font Size to choose **12–18 pt** in one-point
+steps. Keys `1`–`7` select those sizes. The active value is checked and updates
+immediately. Escape returns to Gearbox Configuration.
+
+Start with 16 or 18 pt on the 4K display. The menu title, legend, keycaps,
+spacing, and width scale with the text. Arrow navigation scrolls through rows
+when the root menu exceeds the screen height. The title stays visible.
+
+The choice is local to this Mac and survives Hammerspoon reloads. Saving a
+versioned profile preserves it locally without adding it to the portable
+profile. Reset Local Overrides restores the source font size, normally 14 pt.
+Scratchpad's editor keeps its separate `scratchpad.fontSize` setting.
+
 ### Fonts and loupe
 
 | Option | Default | Meaning |

@@ -392,6 +392,13 @@ function Theme.new(config, rootDirectory)
     return self
 end
 
+--- Resize the resolved fonts without querying macOS fonts or accents again.
+function Theme:refreshFontSizes()
+    self.fonts.body.size = self.config.font.size
+    self.fonts.group.size = self.config.font.size
+    self.fonts.title.size = self.config.font.titleSize
+end
+
 --- Return true when `selection` is a known theme or "system".
 ---@param selection string
 ---@return boolean

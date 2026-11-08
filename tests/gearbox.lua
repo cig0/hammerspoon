@@ -929,7 +929,7 @@ end), "passive menu legends must be non-empty strings")
 
 assert(rowShape(menus.themes) == "s,o,w,|,a,l,g,|,c,r,h,d,m,n,t,|,p,|,escape",
   "Themes menu shape changed")
-assert(rowShape(menus.configuration) == "h,|,p,r,x,|,m,s,t,|,escape",
+assert(rowShape(menus.configuration) == "h,|,p,r,x,|,f,m,s,t,|,escape",
   "Gearbox Configuration menu shape changed")
 assert(menus.configuration.title == "Gearbox Configuration" and
   menus.themes.parentId == "configuration",
@@ -2579,4 +2579,65 @@ function keys.checkOtherFrame()
   Gearbox.stop()
 end
 keys.checkOtherFrame()
+function keys.checkFontSize()
+  keys.screenHeight = 740
+  settings["Gearbox.preferences.local.v1"] = nil
+  jsonFiles[preferencesPath] = nil
+  fileModes[preferencesPath] = nil
+  local quick = startGearbox({menu = {timeout = 5}})
+  local queries = defaultTextStyleCalls
+  local accents = osascriptCalls
+  local editorSize = quick.config.scratchpad.fontSize
+  globalHotkeyPressed()
+  assert(sendCharacterKeyDown("g") and sendCharacterKeyDown("f"))
+  assert(quick.activeMenu.id == "font-size")
+  local fontMenu = quick.activeMenu
+  for index = 1, 7 do
+    assert(fontMenu.rows[index].label == (11 + index) .. " pt")
+    assert(sendCharacterKeyDown(tostring(index)))
+    local size = 11 + index
+    assert(quick.config.font.size == size and quick.theme.fonts.body.size == size)
+    assert(quick.config.menu.width == math.floor(420 * size / 14 + 0.5))
+    assert(quick.activeMenu == fontMenu)
+    local checks = quick:checkedRows(fontMenu)
+    for row = 1, 7 do assert((checks[row] == true) == (row == index)) end
+    assert(quick.config.scratchpad.fontSize == editorSize)
+  end
+  assert(defaultTextStyleCalls == queries and osascriptCalls == accents)
+  fontMenu.modal.bindings.escape()
+  assert(quick.activeMenu.id == "configuration")
+  assert(sendCharacterKeyDown("p")) -- Save portable profile, retaining local size.
+  assert(settings["Gearbox.preferences.local.v1"].fontSize == 18)
+  assert(jsonFiles[preferencesPath].fontSize == nil)
+  local restarted = startGearbox({menu = {timeout = 5}})
+  assert(restarted.config.font.size == 18 and restarted.theme.fonts.body.size == 18)
+  globalHotkeyPressed()
+  local menu = restarted.activeMenu
+  local canvas = restarted.hud.canvas
+  assert(menu.overflow and elementById(canvas, "menu-scroll-hint"))
+  assert(canvas.currentFrame.y >= 0 and canvas.currentFrame.y + canvas.currentFrame.h <= 740)
+  for _ = 1, #menu.navigableRows do menu.modal.bindings.down() end
+  assert(menu.rows[menu.selectedIndex].kind == "footer")
+  assert(menu.scrollOffset > 0)
+  local visual = menu.rowVisuals[menu.selectedIndex]
+  assert(visual.baseY - menu.scrollOffset >= menu.viewportTop)
+  assert(visual.baseY + restarted.hud.layout.rowHeight - menu.scrollOffset <= menu.viewportTop + menu.viewportHeight)
+  assert(canvas.elements[menu.selectionElementIndex].transformation.tY == -menu.scrollOffset)
+  menu.modal.bindings.up()
+  assert(menu.rows[menu.selectedIndex].kind ~= "footer")
+  menu.modal.bindings.escape()
+  globalHotkeyPressed()
+  assert(sendCharacterKeyDown("g") and sendCharacterKeyDown("x"))
+  assert(restarted.config.font.size == 14 and restarted.config.menu.width == 420)
+  assert(restarted.theme.fonts.body.size == 14)
+  Gearbox.stop()
+
+  for _, invalid in ipairs({11, 19, 14.5, "16"}) do
+    settings["Gearbox.preferences.local.v1"] = {schemaVersion = 1, fontSize = invalid}
+    assert(not pcall(function() startGearbox({menu = {timeout = 5}}) end))
+  end
+  settings["Gearbox.preferences.local.v1"] = nil
+  keys.screenHeight = 1080
+end
+keys.checkFontSize()
 print("Gearbox smoke test passed")
