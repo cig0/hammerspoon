@@ -1335,7 +1335,7 @@ assert(runtime.hud.theme.colors.background.white == nil and
 assert(runtime.hud.theme.colors.background.alpha == 0.96,
   "color-model replacement must retain the default alpha")
 
-assert(runtime.hud.theme.colors.selection.red == 0.843137 and
+assert(runtime.hud.theme.colors.selection.red == 0.984314 and
   runtime.hud.theme.colors.selection.alpha == 1 and
   runtime.hud.theme.colors.accent.white == 0.5,
   "dedicated row colors must remain independent of accent overrides")
@@ -2542,9 +2542,15 @@ function keys.checkGruvboxSelection()
     local menu = quick.activeMenu
     local first, second = menu.navigableRows[1], menu.navigableRows[2]
     local selectedTextRed = id == "gruvbox-light" and 0.984314 or 0.235294
-    local selectionRed = id == "gruvbox-light" and 0.4 or 0.843137
+    local selectionRed = id == "gruvbox-light" and 0.4 or 0.984314
+    if id ~= "gruvbox-light" then
+      local lightBackground = quick.theme.themes["gruvbox-light"].background
+      for _, channel in ipairs({"red", "green", "blue"}) do
+        assert(quick.theme.colors.selection[channel] == lightBackground[channel])
+      end
+    end
     local frame = elementById(quick.hud.canvas, "menu-accent-border").strokeColor
-    assert(frame.red == (id == "gruvbox-light" and 0.447059 or 0.984314))
+    assert(frame.red == (id == "gruvbox-light" and 0.447059 or 0.4))
     local original = menu.rowVisuals[first].labelColor
     menu.modal.bindings.down()
     local canvas = quick.hud.canvas
