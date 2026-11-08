@@ -66,14 +66,14 @@ keeps ID `gearbox-dark` and key `d`, and displays Gruvbox Dark Hard.
 The lighter palette keeps ID `gruvbox-dark-hard` and key `h`, and displays
 Gruvbox Dark. Saved selections still refer to those IDs.
 
-The dark Gruvbox variants use a gold `#d79921` selection with dark brown
+The dark Gruvbox variants use the light palette's cream `#fbf1c7` selection with dark brown
 `#3c3836` text. Gruvbox Light uses a brown `#665c54` selection with the
 dark Gruvbox palette's normal pale yellow text, `#fbf1c7`. Only the selected
 row switches text colors. These selections also apply with
 `theme.accentSource = "system"`.
 
 Gruvbox Light has a Habano brown frame (`#72553c`). Both dark Gruvbox
-themes use the light palette's background (`#fbf1c7`) for their frame.
+themes use a muted gray-brown (`#665c54`) for their frame.
 Other palettes use the active accent. Show Outer Frame toggles the outline
 for every theme.
 
