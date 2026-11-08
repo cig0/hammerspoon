@@ -19,7 +19,7 @@ return {
   { key = "o", target = { name = "OmniFocus", bundleID = "com.omnigroup.OmniFocus4" } },
   { key = "p", target = { name = "Passwords", bundleID = "com.apple.Passwords" } },
   { key = "q", target = { name = "Safari", bundleID = "com.apple.Safari" } },
-  { key = "s", target = { name = "Siri" } },
+  { key = "s", target = { type = "openSiri" } },
   { key = "u", target = { name = "Sublime Merge", bundleID = "com.sublimemerge" } },
   { key = "e", target = { name = "System Settings", bundleID = "com.apple.systempreferences" } },
   { key = "t", target = { name = "Things", bundleID = "com.culturedcode.ThingsMac" } },

@@ -28,7 +28,7 @@ return {
     order = 10,          -- within section; explicit < implicit
   },
   items = {              -- in file order; your dividers only
-    { key = "F", label = "FooBar", kind = "application", action = { type = "launchApp", name = "FooBar" } },
+    { key = "F", label = "FooBar", kind = "application", action = { type = "launchApp", name = "FooBar", bundleID = "com.example.FooBar" } },
     { divider = true },
     { label = "Dummy action", kind = "action", action = { type = "openPath", path = os.getenv("HOME") .. "/dummy" } }, -- no key = arrow-only
     { key = "x", label = "ACME hidden", requires = "acme", kind = "application", action = { type = "launchApp", name = "ACME" } },
@@ -36,6 +36,8 @@ return {
   -- showFooterDivider = false
 }
 ```
+
+- `launchApp` `bundleID` is optional but recommended; `name` is the required fallback. For Safari web apps such as "WhatsApp Web" or "cig0's World of Wonders" a `name`-only entry is valid. Safari web app bundleIDs are ephemeral (`com.apple.Safari.WebApp.<UUID>`).
 
 ## Fields
 
@@ -116,16 +118,17 @@ Don't recreate them in `menus/`. If you add keys to generated rows, validation e
 
 ## Actions
 
-| type                                   | Effect                                               |
-| -------------------------------------- | ---------------------------------------------------- |
-| `launchApp`                            | `hs.application.launchOrFocus(name)`                 |
-| `openPath`                             | `hs.open(path)`                                      |
-| `openMenu`                             | Navigate `{ menu="acme" }` — prefer `parent`/`entry` |
-| `openScratchpad`                       | Show scratchpad + dismiss                            |
-| `setCaffeinateMode`                    | `display` / `idle` / `normal`                        |
-| `setTheme` / `setMatchingTheme`        | Pick palette, refresh HUD                            |
-| `configure`                            | `preferences.lua` ops                                |
-| `reload` / `sleep` / `exit` / `custom` | `hs.reload`, sleep, exit, callback                   |
+| type                                   | Effect                                                                                                                                                                                                   |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `launchApp`                            | `hs.application.launchOrFocusByBundleID(bundleID)` → `hs.application.get(bundleID):activate` → `hs.application.launchOrFocus(name)` (bundleID optional, name required; Safari web apps may be name-only) |
+| `openPath`                             | `hs.open(path)`                                                                                                                                                                                          |
+| `openMenu`                             | Navigate `{ menu="acme" }` — prefer `parent`/`entry`                                                                                                                                                     |
+| `openScratchpad`                       | Show scratchpad + dismiss                                                                                                                                                                                |
+| `setCaffeinateMode`                    | `display` / `idle` / `normal`                                                                                                                                                                            |
+| `setTheme` / `setMatchingTheme`        | Pick palette, refresh HUD                                                                                                                                                                                |
+| `configure`                            | `preferences.lua` ops                                                                                                                                                                                    |
+| `openSiri`                             | `hs.application.open("com.apple.campo")` + focus Siri composer                                                                                                                                           |
+| `reload` / `sleep` / `exit` / `custom` | `hs.reload`, sleep, exit, callback                                                                                                                                                                       |
 
 ## Layout
 

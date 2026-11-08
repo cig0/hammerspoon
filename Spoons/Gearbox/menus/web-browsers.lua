@@ -12,12 +12,17 @@ return {
       key = "o",
       label = "Brave Origin",
       kind = "application",
-      action = { type = "launchApp", name = "Brave Origin" }
+      action = { type = "launchApp", name = "Brave Origin", bundleID = "com.brave.Browser" }
     }, {
     key = "f",
     label = "Firefox",
     kind = "application",
-    action = { type = "launchApp", name = "Firefox" }
+    action = { type = "launchApp", name = "Firefox", bundleID = "org.mozilla.firefox" }
+  }, {
+    key = "t",
+    label = "TiledBrowser",
+    kind = "application",
+    action = { type = "launchApp", name = "TiledBrowser" }
   }
   }
 }

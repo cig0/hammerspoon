@@ -52,7 +52,7 @@ return {
     key = "a",
     label = "TablePlus",
     kind = "application",
-    action = { type = "launchApp", name = "TablePlus" }
+    action = { type = "launchApp", name = "TablePlus", bundleID = "com.tableplus.TablePlus" }
   }, {
     key = "t",
     label = "Tracexy",
@@ -62,7 +62,7 @@ return {
     key = "x",
     label = "Xcode",
     kind = "application",
-    action = { type = "launchApp", name = "Xcode" }
+    action = { type = "launchApp", name = "Xcode", bundleID = "com.apple.dt.Xcode" }
   }
   }
 }
