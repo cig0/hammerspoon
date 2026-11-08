@@ -17,7 +17,6 @@ local validateColor = Validation.validateColor
 ---@field clearLegacySelectionOnActivation boolean
 ---@field clearStoredSelectionOnActivation boolean
 ---@field selectionToPersistOnActivation table|nil
----@field systemAccent table
 ---@field fonts table
 ---@field selection string
 ---@field systemThemes table
@@ -32,20 +31,6 @@ local legacyThemeIds = {
   ["shift7-dark"] = "gearbox-dark",
   ["shift7-light"] = "gearbox-light"
 }
-
-local accentScript = [[
-  ObjC.import("AppKit")
-
-  const color = $.NSColor.controlAccentColor
-    .colorUsingColorSpace($.NSColorSpace.sRGBColorSpace)
-
-  JSON.stringify({
-    red: Number(color.redComponent),
-    green: Number(color.greenComponent),
-    blue: Number(color.blueComponent),
-    alpha: Number(color.alphaComponent)
-  })
-]]
 
 local themeGroups = { light = true, dark = true }
 
@@ -292,27 +277,6 @@ local function configuredFont(config, defaultFont, size, weight)
   return font
 end
 
---- Query the current macOS control accent color via JavaScript for Automation.
----@return table|nil
-local function macOSAccentColor()
-  local invoked, ok, encodedColor = pcall(hs.osascript.javascript,
-    accentScript)
-
-  if not invoked or not ok or type(encodedColor) ~= "string" then
-    return nil
-  end
-
-  local decoded, color = pcall(hs.json.decode, encodedColor)
-
-  if not decoded or type(color) ~= "table" then return nil end
-
-  local valid =
-      type(color.red) == "number" and type(color.green) == "number" and
-      type(color.blue) == "number" and type(color.alpha) == "number"
-
-  return valid and color or nil
-end
-
 --- Return theme definitions in `group`, sorted by label then id.
 ---@param themes table
 ---@param group "light"|"dark"
@@ -369,12 +333,6 @@ function Theme.new(config, rootDirectory)
 
   if config.theme.name ~= "system" and not themes[config.theme.name] then
     fail("theme.name references unknown theme: " .. config.theme.name, 2)
-  end
-
-  self.systemAccent = config.theme.fallbackAccent
-
-  if config.theme.accentSource == "system" then
-    self.systemAccent = macOSAccentColor() or self.systemAccent
   end
 
   local defaultFont
@@ -509,7 +467,7 @@ end
 
 --- Refresh the active semantic color set from the selected theme.
 -- Resolve the palette when a menu opens. System appearance can change between
--- openings; the macOS accent and fonts were already resolved during startup.
+-- openings; fonts were already resolved during startup.
 function Theme:refreshAppearance()
   local id = self:selectedThemeId()
   local definition = assert(self.themes[id],
@@ -518,11 +476,6 @@ function Theme:refreshAppearance()
 
   local accent = definition.accent
   local accentText = definition.accentText
-
-  if self.config.theme.accentSource == "system" then
-    accent = self.systemAccent
-    accentText = self.config.theme.systemAccentText
-  end
 
   local selection = copyTable(accent)
   selection.alpha = definition.selectionAlpha

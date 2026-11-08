@@ -45,11 +45,6 @@ return {
 
     system = { dark = "gruvbox-dark-hard", light = "purple-tentacle" },
 
-    accentSource = "system", -- "system", "theme"
-
-    fallbackAccent = { red = 0.04, green = 0.48, blue = 1, alpha = 1 },
-
-    systemAccentText = { white = 1, alpha = 1 },
     overrides = {}
   },
 
