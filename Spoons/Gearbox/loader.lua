@@ -564,11 +564,17 @@ local function assembleMenus(definitions, rootId, config, actions)
       local key = entry.key
       local target = entry.target
       if type(target) == "table" then
-        local menu = menus[target.menu]
-        if not menu then
-          fail("quickLaunch." .. key .. " references missing menu: " .. target.menu)
+        if target.type == "openMenu" then
+          local menu = menus[target.menu]
+          if not menu then
+            fail("quickLaunch." .. key .. " references missing menu: " .. target.menu)
+          end
+          labels[key] = menu.title
+        elseif target.name then
+          labels[key] = target.name
+        else
+          fail("quickLaunch." .. key .. " has invalid target")
         end
-        labels[key] = menu.title
       else
         labels[key] = target
       end
@@ -577,11 +583,17 @@ local function assembleMenus(definitions, rootId, config, actions)
   else
     for key, target in pairs(config.quickLaunch) do
       if type(target) == "table" then
-        local menu = menus[target.menu]
-        if not menu then
-          fail("quickLaunch." .. key .. " references missing menu: " .. target.menu)
+        if target.type == "openMenu" then
+          local menu = menus[target.menu]
+          if not menu then
+            fail("quickLaunch." .. key .. " references missing menu: " .. target.menu)
+          end
+          labels[key] = menu.title
+        elseif target.name then
+          labels[key] = target.name
+        else
+          fail("quickLaunch." .. key .. " has invalid target")
         end
-        labels[key] = menu.title
       else
         labels[key] = target
       end

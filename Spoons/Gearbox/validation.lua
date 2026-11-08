@@ -244,8 +244,18 @@ function Validation.validateConfig(config)
       assert(not seenQuickKeys[key], "Gearbox: duplicate quickLaunch key: " .. key)
       seenQuickKeys[key] = true
       if type(target) == "table" then
-        assert(target.type == "openMenu" and type(target.menu) == "string" and
-          target.menu:match("%S"), location .. " requires an openMenu target with a menu ID")
+        if target.type == "openMenu" then
+          assert(type(target.menu) == "string" and target.menu:match("%S"),
+            location .. " requires an openMenu target with a menu ID")
+        elseif type(target.name) == "string" then
+          assert(target.name:match("%S"), location .. " requires an application name")
+          if target.bundleID ~= nil then
+            assert(type(target.bundleID) == "string" and target.bundleID:match("%S"),
+              location .. " bundleID must be a non-empty string when provided")
+          end
+        else
+          error(location .. " requires an application name or openMenu target", 2)
+        end
       else
         assert(type(target) == "string" and target:match("%S"),
           location .. " requires an application name")
@@ -257,8 +267,18 @@ function Validation.validateConfig(config)
         "Gearbox: quickLaunch keys must be lowercase ASCII letters")
       local location = "Gearbox: quickLaunch." .. key
       if type(target) == "table" then
-        assert(target.type == "openMenu" and type(target.menu) == "string" and
-          target.menu:match("%S"), location .. " requires an openMenu target with a menu ID")
+        if target.type == "openMenu" then
+          assert(type(target.menu) == "string" and target.menu:match("%S"),
+            location .. " requires an openMenu target with a menu ID")
+        elseif type(target.name) == "string" then
+          assert(target.name:match("%S"), location .. " requires an application name")
+          if target.bundleID ~= nil then
+            assert(type(target.bundleID) == "string" and target.bundleID:match("%S"),
+              location .. " bundleID must be a non-empty string when provided")
+          end
+        else
+          error(location .. " requires an application name or openMenu target", 2)
+        end
       else
         assert(type(target) == "string" and target:match("%S"),
           location .. " requires an application name")

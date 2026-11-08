@@ -18,11 +18,6 @@ return {
     label = "Firefox",
     kind = "application",
     action = { type = "launchApp", name = "Firefox" }
-  }, {
-    key = "q",
-    label = "Safari",
-    kind = "application",
-    action = { type = "launchApp", name = "Safari" }
   }
   }
 }

@@ -9,16 +9,11 @@ return {
 
   items = {
     {
-      key = "d",
-      label = "Discord",
+      key = "s",
+      label = "Swiftcord",
       kind = "application",
-      action = { type = "launchApp", name = "Discord" }
+      action = { type = "launchApp", name = "Swiftcord" }
     }, {
-    key = "s",
-    label = "Swiftcord",
-    kind = "application",
-    action = { type = "launchApp", name = "Swiftcord" }
-  }, {
     key = "w",
     label = "WhatsApp",
     kind = "application",
