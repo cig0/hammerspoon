@@ -282,10 +282,39 @@ end
 --- Transition from `currentMenu` to the menu identified by `targetId`.
 ---@param currentMenu table
 ---@param targetId string
+--- Find the navigable position of `row` inside `menu` (1-based), or nil.
+---@param menu table
+---@param row table
+---@return integer|nil
+local function navigablePositionForRow(menu, row)
+  for position, rowIndex in ipairs(menu.navigableRows) do
+    if menu.rows[rowIndex] == row then return position end
+  end
+end
+
+--- Find the navigable position in `parent` that opens `childId`.
+---@param parent table
+---@param childId string
+---@return integer|nil
+local function navigablePositionForChild(parent, childId)
+  for position, rowIndex in ipairs(parent.navigableRows) do
+    local row = parent.rows[rowIndex]
+    if row.action and row.action.type == "openMenu" and row.action.menu == childId then
+      return position
+    end
+  end
+end
+
 function Runtime:switchMenu(currentMenu, targetId)
   local target = self.menus[targetId]
 
   assert(target, "Gearbox: action references missing menu: " .. targetId)
+
+  -- Going back to parent: parent should land on the child we are leaving.
+  if currentMenu.parentId == targetId then
+    local pos = navigablePositionForChild(target, currentMenu.id)
+    if pos then target.returnPosition = pos end
+  end
 
   currentMenu.modal:exit()
   target.modal:enter()
@@ -394,6 +423,12 @@ end
 ---@param row table
 function Runtime:runAction(menu, row)
   local previousTimeout = self.config.menu.timeout
+  -- Remember where we are before leaving: when we return via Esc/Back
+  -- we restore the parent on the entry we just activated.
+  if row.action and row.action.type == "openMenu" then
+    local pos = navigablePositionForRow(menu, row)
+    if pos then menu.returnPosition = pos end
+  end
   local result = self.actions.execute(row.action, {
     openMenu = function(targetId) self:switchMenu(menu, targetId) end,
     exit = function() self:endMenuSession() end,
@@ -500,18 +535,26 @@ function Runtime:registerMenu(menu)
 
   menu.modal.entered = function()
     self.activeMenu = menu
-    menu.selectedIndex = nil
-    menu.selectedPosition = nil
+    -- Restore last position when returning via Back/Esc; otherwise start fresh.
+    if menu.returnPosition and menu.returnPosition >= 1 and menu.returnPosition <= #menu.navigableRows then
+      menu.selectedPosition = menu.returnPosition
+      menu.selectedIndex = menu.navigableRows[menu.selectedPosition]
+    else
+      menu.selectedIndex = nil
+      menu.selectedPosition = nil
+    end
 
     self.theme:refreshAppearance()
     self.preferences:refreshMenu(menu)
     self.hud:show(menu, self:checkedRows(menu))
+    if menu.selectedPosition then self.hud:select(menu) end
     self:resetTimeout(menu)
   end
 
   menu.modal.exited = function()
     if self.activeMenu == menu then self.activeMenu = nil end
 
+    -- Keep returnPosition for the next Back/Esc into this menu; clear live selection.
     menu.selectedIndex = nil
     menu.selectedPosition = nil
 
