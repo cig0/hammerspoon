@@ -31,6 +31,10 @@ function M.validate(action, location)
     if action.type == "launchApp" then
         expect(action.name, "string",
                location .. " launchApp action requires name")
+        if action.bundleID ~= nil then
+            expect(action.bundleID, "string",
+                   location .. " launchApp bundleID must be a string when provided")
+        end
     elseif action.type == "openPath" then
         expect(action.path, "string",
                location .. " openPath action requires path")
@@ -149,6 +153,17 @@ function M.execute(action, context)
     if action.type == "launchApp" then
         if action.name == "Siri" then
             openSiri()
+        elseif action.bundleID then
+            local ok = false
+            if hs.application.launchOrFocusByBundleID then
+                ok = hs.application.launchOrFocusByBundleID(action.bundleID)
+            end
+            if not ok then
+                local app = hs.application.get(action.bundleID)
+                if app then app:activate(true) ok = true end
+            end
+            if not ok then ok = hs.application.launchOrFocus(action.name) end
+            if not ok then hs.alert.show("Gearbox: could not open " .. action.name) end
         elseif not hs.application.launchOrFocus(action.name) then
             hs.alert.show("Gearbox: could not open " .. action.name)
         end

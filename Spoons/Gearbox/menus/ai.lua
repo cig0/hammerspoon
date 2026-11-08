@@ -7,5 +7,12 @@ return {
 
   entry = { key = "I", label = "AI" },
 
-  items = {},
+  items = {
+    {
+      key = "o",
+      label = "Osaurus",
+      kind = "application",
+      action = { type = "launchApp", name = "Osaurus" }
+    }
+  }
 }

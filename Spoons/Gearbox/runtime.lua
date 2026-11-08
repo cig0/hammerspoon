@@ -610,10 +610,15 @@ function Runtime:dispatchQuickLaunch(target)
   if type(target) == "string" then
     if self.activeMenu then self:endMenuSession() end
     self.actions.execute({ type = "launchApp", name = target })
-  elseif not self.activeMenu then
-    self:beginMenuSession(target.menu)
-  elseif self.activeMenu.id ~= target.menu then
-    self:switchMenu(self.activeMenu, target.menu)
+  elseif target and target.type == "openMenu" then
+    if not self.activeMenu then
+      self:beginMenuSession(target.menu)
+    elseif self.activeMenu.id ~= target.menu then
+      self:switchMenu(self.activeMenu, target.menu)
+    end
+  elseif type(target) == "table" and target.name then
+    if self.activeMenu then self:endMenuSession() end
+    self.actions.execute({ type = "launchApp", name = target.name, bundleID = target.bundleID })
   end
 end
 

@@ -37,7 +37,7 @@ return {
     kind = "action",
     action = { type = "openPath", path = home .. "/Downloads" }
   }, {
-    key = "f",
+    key = "h",
     label = "Home",
     kind = "action",
     action = { type = "openPath", path = home }
@@ -60,15 +60,15 @@ return {
     kind = "action",
     action = { type = "openPath", path = home .. "/Projects" }
   }, {
+    key = "u",
+    label = "Public",
+    kind = "action",
+    action = { type = "openPath", path = home .. "/Public" }
+  }, {
     key = "t",
     label = "tmp",
     kind = "action",
     action = { type = "openPath", path = home .. "/tmp" }
-  }, {
-    key = "s",
-    label = "Sync",
-    kind = "action",
-    action = { type = "openPath", path = home .. "/Sync" }
   }
   }
 }
