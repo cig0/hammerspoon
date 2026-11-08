@@ -85,28 +85,43 @@ function HUD.new(config, theme)
     self.canvas = nil
     self.animationTimer = nil
 
-    -- Font-dependent minimums keep keycaps and text aligned when fonts grow.
-    -- menuContentTop() must reserve any header space that show() draws.
+    self:refreshLayout()
+    return self
+end
+
+--- Recompute geometry after a local font-size preview.
+function HUD:refreshLayout()
+    local config = self.config
+    local scale = config.font.size / 14
+
+    -- Geometry starts at the 14 pt baseline, then scales with the text.
+    -- menuContentTop() reserves the same header space that show() draws.
     self.layout = {
         horizontalPadding = 28,
         keyGap = 14,
-        checkWidth = math.max(22, round(config.font.size + 8)),
+        checkWidth = 22,
         selectionInset = 18,
         animationFPS = 60,
         headerTop = 25,
-        headerHeight = math.max(32, round(config.font.titleSize + 12)),
-        rowHeight = math.max(30, round(config.font.size + 16)),
-        textHeight = math.max(22, round(config.font.size + 8)),
-        keyWidth = math.max(36, round(config.font.size * 2.6)),
-        keyBackgroundHeight = math.max(23, round(config.font.size + 9)),
-        dividerHeight = math.max(17, round(config.font.size + 3)),
-        legendFontSize = math.max(1, config.font.size - 2),
-        legendTextHeight = math.max(18, round(config.font.size + 4)),
+        headerHeight = math.max(32, round(config.font.titleSize / scale + 12)),
+        rowHeight = 30,
+        textHeight = 22,
+        keyWidth = 36,
+        keyBackgroundHeight = 23,
+        dividerHeight = 17,
+        legendFontSize = 12,
+        legendTextHeight = 18,
         legendBottomSpacing = 8,
         accentBorderWidth = 2,
-        capsLockWarningWidth = math.max(104, round(config.font.size * 7.5)),
-        bottomPadding = math.max(16, round(config.font.size + 2))
+        capsLockWarningWidth = 105,
+        bottomPadding = 16
     }
+
+    for key, value in pairs(self.layout) do
+        if key ~= "animationFPS" and key ~= "accentBorderWidth" then
+            self.layout[key] = round(value * scale)
+        end
+    end
 
     -- show() may compress the root on short screens. Preserve these values
     -- so opening a submenu restores its usual spacing.
@@ -116,8 +131,6 @@ function HUD.new(config, theme)
 
     self.layout.labelX = self.layout.horizontalPadding + self.layout.keyWidth +
                              self.layout.keyGap
-
-    return self
 end
 
 --- Stop any running selection animation.
@@ -370,6 +383,8 @@ end
 ---@param checkedRows table
 function HUD:show(menu, checkedRows)
     self:close()
+    self.theme:refreshFontSizes()
+    self:refreshLayout()
 
     menu.rowVisuals = {}
     menu.selectionY = nil
@@ -399,6 +414,12 @@ function HUD:show(menu, checkedRows)
         layout.dividerHeight = math.ceil(self.normalDividerHeight / 2)
         height = self:calculateHeight(menu)
     end
+    local contentHeight = height
+    height = math.min(height, screenFrame.h)
+    menu.scrollOffset = 0
+    menu.viewportTop = self:menuContentTop(menu)
+    menu.viewportHeight = height - layout.bottomPadding - menu.viewportTop
+    menu.overflow = contentHeight > height
     local availableHeight = math.max(0, screenFrame.h - height)
 
     local posX = screenFrame.x + (screenFrame.w - self.config.menu.width) / 2
@@ -482,19 +503,6 @@ function HUD:show(menu, checkedRows)
         })
     end
 
-    menu.selectionElementIndex = appendElement(elements, {
-        type = "rectangle",
-        action = "skip",
-        frame = {
-            x = layout.selectionInset,
-            y = self:menuContentTop(menu),
-            w = self.config.menu.width - (layout.selectionInset * 2),
-            h = layout.rowHeight - 2
-        },
-        fillColor = colors.selection,
-        roundedRectRadii = {xRadius = 8, yRadius = 8}
-    })
-
     local titleWidth = self.config.menu.width - (layout.horizontalPadding * 2)
 
     if rootMenuCapsLockIsOn then
@@ -569,6 +577,25 @@ function HUD:show(menu, checkedRows)
         })
     end
 
+    -- Clip rows to the panel while the title and Hyper reference stay fixed.
+    appendElement(elements, {
+        type = "rectangle", action = "clip",
+        frame = {x = 0, y = menu.viewportTop, w = self.config.menu.width, h = menu.viewportHeight}
+    })
+    menu.firstRowElement = #elements + 1
+    menu.selectionElementIndex = appendElement(elements, {
+        type = "rectangle",
+        action = "skip",
+        frame = {
+            x = layout.selectionInset,
+            y = self:menuContentTop(menu),
+            w = self.config.menu.width - (layout.selectionInset * 2),
+            h = layout.rowHeight - 2
+        },
+        fillColor = colors.selection,
+        roundedRectRadii = {xRadius = 8, yRadius = 8}
+    })
+
     local y = self:menuContentTop(menu)
 
     for rowIndex, row in ipairs(menu.rows) do
@@ -585,6 +612,15 @@ function HUD:show(menu, checkedRows)
         end
     end
 
+    menu.lastRowElement = #elements
+    appendElement(elements, {type = "resetClip"})
+    if menu.overflow then
+        appendElement(elements, {
+            id = "menu-scroll-hint", type = "text",
+            frame = {x = 0, y = height - layout.bottomPadding, w = self.config.menu.width, h = layout.bottomPadding},
+            text = styledText("↑ ↓", resizedFont(self.theme.fonts.body, layout.legendFontSize), colors.secondary, "center")
+        })
+    end
     self.canvas:appendElements(elements)
     self.canvas:wantsLayer(true)
     self.canvas:show()
@@ -725,6 +761,21 @@ function HUD:select(menu)
 
     for rowIndex, visual in pairs(menu.rowVisuals) do
         self:renderRowScale(menu, rowIndex, self:targetScale(menu, visual))
+    end
+
+    -- Keep the selected row visible. All row elements share the same scroll
+    -- translation, including dividers, checks, keycaps, and the highlight.
+    local offset = menu.scrollOffset
+    local rowTop = selectedVisual.baseY - menu.viewportTop
+    offset = math.max(offset, rowTop + self.layout.rowHeight - menu.viewportHeight)
+    offset = math.max(0, math.min(offset, rowTop))
+    if offset ~= menu.scrollOffset then
+        menu.scrollOffset = offset
+        menu.selectionY = nil
+        local translation = hs.canvas.matrix.translate(0, -offset)
+        for index = menu.firstRowElement, menu.lastRowElement do
+            self.canvas:elementAttribute(index, "transformation", translation)
+        end
     end
 
     local targetY = selectedVisual.baseY + 1

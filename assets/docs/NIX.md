@@ -12,6 +12,7 @@ appending `extraConfig`.
 | Caps Lock tap/hold handler | `capsLockViaF18` option |
 | Physical Caps Lock → F18 mapping | Native nix-darwin configuration |
 | Menu rows, section order, palettes | Gearbox Lua files in this repository |
+| Font size | Local Gearbox preference on each Mac |
 | Saved position, frame visibility, Scratchpad preferences | Profile and local settings applied after `config.lua` |
 
 ## Change the Gearbox shortcut

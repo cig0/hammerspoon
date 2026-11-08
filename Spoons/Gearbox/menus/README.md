@@ -170,7 +170,7 @@ before Exit. Set `showFooterDivider = false` there to remove it.
 generated menu sets join that graph during startup: `theme.lua` supplies
 Themes, and `preferences.lua` supplies the definitions from
 `configuration_menu.lua`.
-Themes is a child of Gearbox Configuration.
+Themes and Font Size are children of Gearbox Configuration.
 
 ## Action descriptors
 
