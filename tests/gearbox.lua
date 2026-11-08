@@ -1679,7 +1679,7 @@ assert(not scratchpadWebview.document:match('event.key === "Escape"'),
 local scratchpadState = runtime.scratchpad:state(false)
 
 assert(scratchpadState.instructions ==
-  "Arrows to move · Tab to indent · ⌃⌥⌘Space to close",
+  "Arrows to move \194\160·\194\160 Tab to indent \194\160·\194\160 ⌃⌥⌘Space to close",
   "scratchpad instructions must include the configured Gearbox hotkey")
 assert(scratchpadState.bodySize == 14 and scratchpadState.footerSize == 10,
   "scratchpad font sizing must remain configurable and legible")
