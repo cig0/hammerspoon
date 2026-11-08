@@ -435,13 +435,14 @@ function Runtime:runAction(menu, row)
   -- Remember where we are before leaving: when we return via Esc/Back
   -- we restore the parent on the entry we just activated. For leader we
   -- also persist across invocations (hs.settings) so close→reopen lands
-  -- on last activated row. Only leader-originated activations persist.
+  -- on last activated row. Submenus remember last drift/activation except
+  -- footer (Esc) — otherwise re-enter would highlight Back instead of last item.
   local pos = navigablePositionForRow(menu, row)
   if pos then
     if menu.id == self.rootId then
       menu.returnPosition = pos
       pcall(function() hs.settings.set("Gearbox.ui.leaderPosition", pos) end)
-    elseif row.action and row.action.type == "openMenu" then
+    elseif row.action and row.action.type == "openMenu" and row.kind ~= "footer" then
       menu.returnPosition = pos
     end
   end
@@ -498,6 +499,16 @@ function Runtime:moveSelection(menu, direction)
   menu.selectedIndex = menu.navigableRows[menu.selectedPosition]
   self.hud:select(menu)
 
+  -- Drift is life: every ↑↓ updates returnPosition so Back/Esc → re-enter
+  -- lands on last highlighted row, not Esc footer. Only leader is persisted
+  -- via hs.settings (submenus stay in-memory for the session).
+  if menu.selectedPosition then
+    menu.returnPosition = menu.selectedPosition
+    if menu.id == self.rootId then
+      pcall(function() hs.settings.set("Gearbox.ui.leaderPosition", menu.selectedPosition) end)
+    end
+  end
+
   if self.config.navigation.resetTimeoutOnInput then
     self:resetTimeout(menu)
   end
@@ -551,10 +562,14 @@ function Runtime:registerMenu(menu)
 
   menu.modal.entered = function()
     self.activeMenu = menu
-    -- Restore last position when returning via Back/Esc; otherwise start fresh.
+    -- Restore last position when returning via Back/Esc; otherwise fallback to first row.
+    -- Ensures leader + every submenu open with a highlight (no empty state).
     if menu.returnPosition and menu.returnPosition >= 1 and menu.returnPosition <= #menu.navigableRows then
       menu.selectedPosition = menu.returnPosition
       menu.selectedIndex = menu.navigableRows[menu.selectedPosition]
+    elseif #menu.navigableRows > 0 then
+      menu.selectedPosition = 1
+      menu.selectedIndex = menu.navigableRows[1]
     else
       menu.selectedIndex = nil
       menu.selectedPosition = nil
