@@ -940,7 +940,7 @@ assert(menus.configuration.title == "Gearbox Configuration" and
   menus.themes.parentId == "configuration",
   "Themes must belong to Gearbox Configuration")
 assert(menus.configuration.legend ==
-  "Choices saved automatically in Hammerspoon preferences:\n" ..
+  "Choices are saved automatically in the Hammerspoon preferences file:\n" ..
   "~/Library/Preferences/org.hammerspoon.GearboxTests.plist",
   "configuration legend must use Hammerspoon's settings bundle ID")
 assert(rowShape(menus["menu-position"]) == "t,b,|,escape",

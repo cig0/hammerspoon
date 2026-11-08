@@ -61,7 +61,7 @@ function ConfigurationMenu.definitions()
       title = "Gearbox Configuration",
       emoji = "⚙️",
       parent = "leader",
-      legend = "Choices saved automatically in Hammerspoon preferences:\n" ..
+      legend = "Choices are saved automatically in the Hammerspoon preferences file:\n" ..
           "~/Library/Preferences/" .. hs.settings.bundleID .. ".plist",
       entry = {
         key = "G",
