@@ -53,7 +53,7 @@ function ConfigurationMenu.definitions()
       title = "Transparency",
       legend = "Menu background opacity",
       parent = "themes",
-      entry = { key = "p", label = "Transparency", order = 100 },
+      entry = { key = "p", label = "Transparency", order = 300 },
       items = opacityRows
     },
     {
@@ -62,7 +62,7 @@ function ConfigurationMenu.definitions()
       emoji = "⚙️",
       parent = "leader",
       legend = "Choices saved automatically in Hammerspoon preferences:\n" ..
-        "~/Library/Preferences/" .. hs.settings.bundleID .. ".plist",
+          "~/Library/Preferences/" .. hs.settings.bundleID .. ".plist",
       entry = {
         key = "g",
         label = "Gearbox Configuration",
