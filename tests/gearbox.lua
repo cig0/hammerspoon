@@ -1662,7 +1662,7 @@ assert(scratchpadWebview.currentFrame.w == 720 and
   scratchpadWebview.currentFrame.x == 600 and
   scratchpadWebview.currentFrame.y == 150,
   "scratchpad must use configured size and Gearbox placement")
-assert(scratchpadWebview.document:match("Tab inserts tabs"),
+assert(scratchpadWebview.document:match("Tab to indent"),
   "scratchpad must include the non-editable instructions")
 assert(scratchpadWebview.document:find('--interface-font: "Avenir Next",', 1,
     true) and
@@ -1679,9 +1679,9 @@ assert(not scratchpadWebview.document:match('event.key === "Escape"'),
 local scratchpadState = runtime.scratchpad:state(false)
 
 assert(scratchpadState.instructions ==
-  "Cursor keys move · Tab inserts tabs · ctrl+alt+cmd+space closes scratchpad",
+  "Arrows to move · Tab to indent · ⌃⌥⌘Space to close",
   "scratchpad instructions must include the configured Gearbox hotkey")
-assert(scratchpadState.bodySize == 14 and scratchpadState.footerSize == 13,
+assert(scratchpadState.bodySize == 14 and scratchpadState.footerSize == 10,
   "scratchpad font sizing must remain configurable and legible")
 assert(scratchpadState.editorFontFamily == "System",
   "scratchpad editor must retain the resolved Gearbox font")
