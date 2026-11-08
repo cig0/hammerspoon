@@ -65,7 +65,7 @@ Convention: lowercase for navigation, uppercase for apps. Loader doesn't enforce
 1. `items` stay as written. You own dividers.
 2. Child menus auto-sort inside each `section`: `sectionOrder` → `entry.order` → `label` (case-insensitive) → `id`
 3. Loader adds `Back` (submenu) / `Exit` (root) + dividers. Don't write them.
-4. `runtime.lua` remembers the last activated entry per menu (`returnPosition`). Returning via `Esc`/`Back` restores the selector on that entry instead of resetting to top.
+4. `runtime.lua` remembers the last activated entry per menu (`returnPosition`). Returning via `Esc`/`Back` restores the selector on that entry; `leader` persists across invocations via `hs.settings["Gearbox.ui.leaderPosition"]` (validated on open, falls back to top).
 
 To put a new menu in utilities after macOS Utilities: `entry = { key="z", label="Dummy", section="utilities", sectionOrder=200, order=15 }`
 
