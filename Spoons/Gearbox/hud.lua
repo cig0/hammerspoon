@@ -123,6 +123,11 @@ function HUD:refreshLayout()
     end
   end
 
+  -- Hyperkey chart / legend should stay close to body text: gap-fixed, not
+  -- ratio-fixed (14→12, 18→16 vs 14→12, 18→15). Keeps 14 baseline, scales more.
+  self.layout.legendFontSize = round(self.config.font.size - 2)
+  self.layout.legendTextHeight = round(self.layout.legendFontSize * 1.5)
+
   -- show() may compress the root on short screens. Preserve these values
   -- so opening a submenu restores its usual spacing.
   self.normalRowHeight = self.layout.rowHeight
