@@ -1,7 +1,7 @@
 --- Gearbox Light theme (light).
 return {
-  id = "gearbox-light",
-  label = "Gearbox Light",
+  id = "acidbox-light",
+  label = "acidbox Light",
   key = "l",
   group = "light",
 
